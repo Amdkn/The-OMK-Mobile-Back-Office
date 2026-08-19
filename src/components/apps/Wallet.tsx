@@ -2,7 +2,7 @@ import { ArrowUpRight, ArrowDownRight, DollarSign, WalletCards } from 'lucide-re
 
 export default function Wallet() {
   return (
-    <div className="p-6 pt-8 h-full overflow-y-auto pb-12">
+    <div className="p-6 pt-8 h-full overflow-y-auto scrollbar-hide pb-12">
       <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-6 border border-slate-700/50 shadow-2xl relative overflow-hidden mb-8">
         <div className="absolute top-0 right-0 p-4 opacity-10">
           <WalletCards size={100} />

@@ -62,7 +62,7 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
         </div>
       </div>
       
-      <div className="flex-1 overflow-y-auto relative bg-slate-950">
+      <div className="flex-1 overflow-y-auto scrollbar-hide relative bg-slate-950">
         {renderApp()}
       </div>
     </motion.div>
