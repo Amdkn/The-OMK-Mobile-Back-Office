@@ -9,6 +9,8 @@ import Wallet from './apps/Wallet';
 import Leads from './apps/Leads';
 import Terminal from './apps/Terminal';
 
+import Settings from './apps/Settings';
+
 interface AppViewerProps {
   appId: AppId;
   onClose: () => void;
@@ -24,7 +26,8 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
       case 'wallet': return <Wallet />;
       case 'leads': return <Leads />;
       case 'terminal': return <Terminal />;
-      default: return <div className="p-6 pt-24 text-center text-slate-500">Application not found</div>;
+      case 'settings': return <Settings />;
+      default: return <div className="p-6 pt-24 text-center text-slate-500 font-medium">L'application {appId} est en cours de développement.</div>;
     }
   };
 
@@ -37,7 +40,8 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
       case 'wallet': return 'Wallet';
       case 'leads': return 'Leads';
       case 'terminal': return 'Terminal';
-      default: return '';
+      case 'settings': return 'Réglages';
+      default: return appId.charAt(0).toUpperCase() + appId.slice(1);
     }
   };
 

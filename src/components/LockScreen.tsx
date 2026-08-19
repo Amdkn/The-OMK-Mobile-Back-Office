@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Lock, ScanFace, Bell } from 'lucide-react';
 import { Paradigm } from '../types';
 import { triggerFaceID } from './DynamicIsland';
+import { useOSStore } from '../store/osStore';
 
 interface LockScreenProps {
   onUnlock: () => void;

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
-import { OSState, Paradigm, AppId } from './types';
+import { useEffect } from 'react';
+import { useOSStore } from './store/osStore';
 import PhoneChassis from './components/PhoneChassis';
 import LockScreen from './components/LockScreen';
 import HomeScreen from './components/HomeScreen';
@@ -12,23 +12,7 @@ import AppViewer from './components/AppViewer';
 import StatusBar from './components/StatusBar';
 
 export default function App() {
-  const [osState, setOsState] = useState<OSState>('locked');
-  const [paradigm, setParadigm] = useState<Paradigm>('ios');
-  const [activeApp, setActiveApp] = useState<AppId | null>(null);
-
-  const handleUnlock = () => setOsState('unlocked');
-  const handleLock = () => {
-    setOsState('locked');
-    setActiveApp(null);
-  };
-  const handleOpenApp = (id: AppId) => {
-    if (id === 'lock') {
-      handleLock();
-    } else {
-      setActiveApp(id);
-    }
-  };
-  const handleCloseApp = () => setActiveApp(null);
+  const { isLocked, paradigm, activeApp, theme, unlock, closeApp, openApp, setParadigm } = useOSStore();
 
   return (
     <div className="fixed inset-0 bg-slate-950 flex items-center justify-center md:p-8 font-sans text-slate-100 selection:bg-blue-500/30">
@@ -58,17 +42,17 @@ export default function App() {
       </div>
 
       <PhoneChassis>
-        <div className="relative w-full h-full bg-slate-950 overflow-hidden text-slate-100 flex flex-col">
+        <div data-theme={theme} className="relative w-full h-full bg-slate-950 overflow-hidden text-slate-100 flex flex-col transition-colors duration-500">
           <StatusBar paradigm={paradigm} />
           
           <div className="relative flex-1 w-full overflow-hidden">
-            {osState === 'locked' ? (
-              <LockScreen onUnlock={handleUnlock} paradigm={paradigm} />
+            {isLocked ? (
+              <LockScreen onUnlock={unlock} paradigm={paradigm} />
             ) : (
               <>
-                <HomeScreen onOpenApp={handleOpenApp} />
+                <HomeScreen onOpenApp={openApp} />
                 {activeApp && (
-                  <AppViewer appId={activeApp} onClose={handleCloseApp} />
+                  <AppViewer appId={activeApp} onClose={closeApp} />
                 )}
               </>
             )}
@@ -78,4 +62,5 @@ export default function App() {
     </div>
   );
 }
+
 

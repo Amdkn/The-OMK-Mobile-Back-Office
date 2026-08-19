@@ -6,7 +6,21 @@ export type AppId =
   | 'wallet'
   | 'leads'
   | 'terminal'
+  | 'settings'
+  | 'dashboard'
+  | 'finance'
+  | 'legal'
+  | 'operations'
+  | 'sales'
+  | 'clients'
+  | 'growth'
+  | 'product'
+  | 'ontology'
+  | 'cognition'
+  | 'hr'
   | 'lock';
+
+export type ThemeId = 'dark-oled' | 'warm-paper' | 'cyberpunk' | 'glassmorphism';
 
 export interface AppDefinition {
   id: AppId;
@@ -18,3 +32,4 @@ export interface AppDefinition {
 
 export type OSState = 'locked' | 'unlocked';
 export type Paradigm = 'ios' | 'android';
+

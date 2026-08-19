@@ -21,3 +21,48 @@
   display: none;
 }
 
+/* --- OMK THEME ENGINE --- */
+/* By overriding Tailwind's internal CSS variables via arbitrary attributes, 
+   we can instantly theme the entire application without touching component classes! */
+
+[data-theme="warm-paper"] {
+  --color-slate-950: #f4f1ea;  /* Main Background */
+  --color-slate-900: #e8e3d8;  /* Cards / Panels */
+  --color-slate-800: #d6d0c4;  /* Borders */
+  --color-slate-500: #8a8377;  /* Muted Text / Icons */
+  --color-slate-400: #5c564b;  /* Text */
+  --color-slate-300: #3f3a32;  /* Headings */
+  --color-slate-200: #292520;  /* High Contrast */
+  --color-slate-100: #1a1714;  /* Absolute Contrast */
+  
+  --color-emerald-950: #faead6;
+  --color-emerald-900: #f5d0a9;
+  --color-emerald-600: #ea580c;
+  --color-emerald-500: #f97316; /* Bright Orange accent */
+  --color-emerald-400: #fdba74;
+}
+
+[data-theme="cyberpunk"] {
+  --color-slate-950: #050505;
+  --color-slate-900: #121212;
+  --color-slate-800: #facc15; /* Neon Yellow Borders */
+  --color-slate-500: #fde047;
+  --color-slate-400: #fef08a;
+  --color-slate-300: #fef9c3;
+  --color-slate-200: #fffbeb;
+  --color-slate-100: #facc15;
+  
+  --color-emerald-950: #222222;
+  --color-emerald-900: #333333;
+  --color-emerald-600: #eab308;
+  --color-emerald-500: #facc15;
+  --color-emerald-400: #fde047;
+}
+
+[data-theme="glassmorphism"] {
+  --color-slate-950: #0f172a;
+  --color-slate-900: rgba(30, 41, 59, 0.4);
+  --color-slate-800: rgba(255, 255, 255, 0.1);
+  --color-slate-100: #ffffff;
+}
+
