@@ -1,8 +1,10 @@
+import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { AppDefinition } from '../types';
 
 interface Props {
+  key?: React.Key;
   app: AppDefinition;
   onClick: () => void;
 }

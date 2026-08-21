@@ -21,48 +21,200 @@
   display: none;
 }
 
-/* --- OMK THEME ENGINE --- */
-/* By overriding Tailwind's internal CSS variables via arbitrary attributes, 
-   we can instantly theme the entire application without touching component classes! */
+/* Smooth color and theme transitions */
+.theme-transition {
+  transition: background-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
 
+/* --- OMK THEME & CONTRAST ENGINE --- */
+/* By overriding Tailwind's internal CSS variables dynamically, 
+   the entire OS and all internal apps adapt instantly with zero hardcoded drift! */
+
+/* =========================================================================
+   1. DARK OLED (Default)
+   ========================================================================= */
+[data-theme="dark-oled"] {
+  --color-slate-950: #05070c;
+  --color-slate-900: #0f1420;
+  --color-slate-800: #1e2638;
+  --color-slate-700: #334155;
+  --color-slate-500: #64748b;
+  --color-slate-400: #94a3b8;
+  --color-slate-300: #cbd5e1;
+  --color-slate-200: #e2e8f0;
+  --color-slate-100: #f8fafc;
+  
+  --color-emerald-950: #022c22;
+  --color-emerald-900: #064e3b;
+  --color-emerald-600: #059669;
+  --color-emerald-500: #10b981;
+  --color-emerald-400: #34d399;
+}
+
+[data-theme="dark-oled"][data-contrast="low"] {
+  --color-slate-950: #0b0f17;
+  --color-slate-900: #131926;
+  --color-slate-800: #1d2536;
+  --color-slate-700: #2b364c;
+  --color-slate-500: #64748b;
+  --color-slate-400: #8896ab;
+  --color-slate-300: #b0bfd4;
+  --color-slate-200: #cbd5e1;
+  --color-slate-100: #e2e8f0;
+}
+
+[data-theme="dark-oled"][data-contrast="high"] {
+  --color-slate-950: #000000;
+  --color-slate-900: #0c101a;
+  --color-slate-800: #334155;
+  --color-slate-700: #475569;
+  --color-slate-500: #94a3b8;
+  --color-slate-400: #cbd5e1;
+  --color-slate-300: #e2e8f0;
+  --color-slate-200: #f8fafc;
+  --color-slate-100: #ffffff;
+  --color-emerald-500: #34d399;
+}
+
+/* =========================================================================
+   2. WARM PAPER (Editorial Light)
+   ========================================================================= */
 [data-theme="warm-paper"] {
   --color-slate-950: #f4f1ea;  /* Main Background */
   --color-slate-900: #e8e3d8;  /* Cards / Panels */
   --color-slate-800: #d6d0c4;  /* Borders */
+  --color-slate-700: #c2baa9;  /* Dividers / Darker Borders */
   --color-slate-500: #8a8377;  /* Muted Text / Icons */
-  --color-slate-400: #5c564b;  /* Text */
+  --color-slate-400: #5c564b;  /* Text Secondary */
   --color-slate-300: #3f3a32;  /* Headings */
   --color-slate-200: #292520;  /* High Contrast */
-  --color-slate-100: #1a1714;  /* Absolute Contrast */
+  --color-slate-100: #1a1714;  /* Absolute Contrast Primary */
   
   --color-emerald-950: #faead6;
   --color-emerald-900: #f5d0a9;
   --color-emerald-600: #ea580c;
-  --color-emerald-500: #f97316; /* Bright Orange accent */
+  --color-emerald-500: #f97316; /* Bright Terracotta Orange */
   --color-emerald-400: #fdba74;
 }
 
+[data-theme="warm-paper"][data-contrast="low"] {
+  --color-slate-950: #f7f5ef;
+  --color-slate-900: #ede9df;
+  --color-slate-800: #ded8cb;
+  --color-slate-700: #cec7b7;
+  --color-slate-500: #9c9588;
+  --color-slate-400: #736b5d;
+  --color-slate-300: #50483c;
+  --color-slate-200: #3a342b;
+  --color-slate-100: #24201b;
+}
+
+[data-theme="warm-paper"][data-contrast="high"] {
+  --color-slate-950: #fffdf9;
+  --color-slate-900: #e5dfd1;
+  --color-slate-800: #a89f8d; /* Sharply defined borders */
+  --color-slate-700: #8f8572;
+  --color-slate-500: #665d4f;
+  --color-slate-400: #3e382e;
+  --color-slate-300: #24201a;
+  --color-slate-200: #12100d;
+  --color-slate-100: #000000; /* Pure Ink Black */
+  --color-emerald-500: #c2410c;
+}
+
+/* =========================================================================
+   3. CYBERPUNK (Electric Neon)
+   ========================================================================= */
 [data-theme="cyberpunk"] {
-  --color-slate-950: #050505;
-  --color-slate-900: #121212;
-  --color-slate-800: #facc15; /* Neon Yellow Borders */
-  --color-slate-500: #fde047;
-  --color-slate-400: #fef08a;
-  --color-slate-300: #fef9c3;
-  --color-slate-200: #fffbeb;
-  --color-slate-100: #facc15;
+  --color-slate-950: #060608;
+  --color-slate-900: #121217;
+  --color-slate-800: #272732;
+  --color-slate-700: #424254;
+  --color-slate-500: #eab308;
+  --color-slate-400: #facc15;
+  --color-slate-300: #fef08a;
+  --color-slate-200: #fef9c3;
+  --color-slate-100: #ffffea;
   
-  --color-emerald-950: #222222;
-  --color-emerald-900: #333333;
+  --color-emerald-950: #1c1917;
+  --color-emerald-900: #422006;
   --color-emerald-600: #eab308;
   --color-emerald-500: #facc15;
   --color-emerald-400: #fde047;
 }
 
+[data-theme="cyberpunk"][data-contrast="low"] {
+  --color-slate-950: #0d0d12;
+  --color-slate-900: #181820;
+  --color-slate-800: #252530;
+  --color-slate-700: #3a3a4c;
+  --color-slate-500: #ca8a04;
+  --color-slate-400: #eab308;
+  --color-slate-300: #facc15;
+  --color-slate-200: #fef08a;
+  --color-slate-100: #fef9c3;
+}
+
+[data-theme="cyberpunk"][data-contrast="high"] {
+  --color-slate-950: #000000;
+  --color-slate-900: #0c0c10;
+  --color-slate-800: #facc15; /* Electric Neon Yellow Borders */
+  --color-slate-700: #fde047;
+  --color-slate-500: #facc15;
+  --color-slate-400: #fef08a;
+  --color-slate-300: #ffffff;
+  --color-slate-200: #ffffff;
+  --color-slate-100: #ffffff;
+  --color-emerald-500: #facc15;
+}
+
+/* =========================================================================
+   4. GLASSMORPHISM (Frosted Studio)
+   ========================================================================= */
 [data-theme="glassmorphism"] {
-  --color-slate-950: #0f172a;
-  --color-slate-900: rgba(30, 41, 59, 0.4);
-  --color-slate-800: rgba(255, 255, 255, 0.1);
+  --color-slate-950: #090d16;
+  --color-slate-900: rgba(25, 36, 58, 0.65);
+  --color-slate-800: rgba(255, 255, 255, 0.14);
+  --color-slate-700: rgba(255, 255, 255, 0.25);
+  --color-slate-500: #94a3b8;
+  --color-slate-400: #cbd5e1;
+  --color-slate-300: #e2e8f0;
+  --color-slate-200: #f1f5f9;
+  --color-slate-100: #ffffff;
+  
+  --color-emerald-950: rgba(6, 78, 59, 0.4);
+  --color-emerald-900: rgba(6, 95, 70, 0.6);
+  --color-emerald-600: #0284c7;
+  --color-emerald-500: #38bdf8;
+  --color-emerald-400: #7dd3fc;
+}
+
+[data-theme="glassmorphism"][data-contrast="low"] {
+  --color-slate-950: #0e1422;
+  --color-slate-900: rgba(30, 41, 59, 0.45);
+  --color-slate-800: rgba(255, 255, 255, 0.08);
+  --color-slate-700: rgba(255, 255, 255, 0.16);
+  --color-slate-500: #64748b;
+  --color-slate-400: #94a3b8;
+  --color-slate-300: #cbd5e1;
+  --color-slate-200: #e2e8f0;
+  --color-slate-100: #f8fafc;
+}
+
+[data-theme="glassmorphism"][data-contrast="high"] {
+  --color-slate-950: #03050a;
+  --color-slate-900: rgba(15, 23, 42, 0.85);
+  --color-slate-800: rgba(255, 255, 255, 0.35);
+  --color-slate-700: rgba(255, 255, 255, 0.5);
+  --color-slate-500: #cbd5e1;
+  --color-slate-400: #e2e8f0;
+  --color-slate-300: #f8fafc;
+  --color-slate-200: #ffffff;
   --color-slate-100: #ffffff;
 }
+
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AppId, AppDefinition } from '../types';
 import { useOSStore } from '../store/osStore';
 import { 
@@ -19,7 +19,7 @@ import { SortableAppIcon } from './SortableAppIcon';
 import { 
   Bot, Scale, Users, Server, WalletCards, PhoneCall, TerminalSquare, 
   LockKeyhole, Settings, LayoutDashboard, Landmark, HardHat, PieChart,
-  Users2, LineChart, Cpu, Network, Lightbulb, UserCog
+  Users2, LineChart, Cpu, Network, Lightbulb, UserCog, Activity, DollarSign
 } from 'lucide-react';
 
 export const APPS: AppDefinition[] = [
@@ -45,7 +45,7 @@ export const APPS: AppDefinition[] = [
 ];
 
 export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => void }) {
-  const { lock, gridAppOrder, reorderGridApps } = useOSStore();
+  const { lock, gridAppOrder, reorderGridApps, workspace } = useOSStore();
   const [currentPage, setCurrentPage] = useState(0);
 
   const sensors = useSensors(
@@ -100,7 +100,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
   };
 
   return (
-    <div className="flex flex-col h-full w-full relative z-10 pt-16 pb-6 overflow-hidden">
+    <div className="flex flex-col h-full w-full relative z-10 pt-16 pb-6 overflow-hidden theme-transition">
       {/* Scrollable Pagination Area */}
       <div 
         className="flex-1 flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-hide"
@@ -117,18 +117,32 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
           >
             {/* Page 1 (Widgets + 8 Apps) */}
             <div className="w-full h-full flex-shrink-0 snap-center flex flex-col px-6">
-              <div className="grid grid-cols-2 gap-4 mb-6 shrink-0">
-                <div className="bg-slate-900/60 backdrop-blur border border-slate-800/80 p-4 rounded-3xl flex flex-col justify-between">
-                  <div className="text-[10px] font-bold tracking-widest uppercase text-emerald-500 mb-2">Coach OS</div>
-                  <div className="text-xl font-medium">En ligne</div>
-                  <div className="text-xs text-slate-400 mt-1">Prêt pour les requêtes</div>
+              <div className="grid grid-cols-2 gap-3 mb-6 shrink-0">
+                <div className="bg-slate-900/75 backdrop-blur-xl border border-slate-800 p-4 rounded-3xl flex flex-col justify-between shadow-lg theme-transition">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-500">Coach OS</span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-medium text-slate-100">{workspace}</div>
+                    <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                      <Activity size={12} /> Prêt pour requêtes
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-slate-900/60 backdrop-blur border border-slate-800/80 p-4 rounded-3xl flex flex-col justify-between">
-                  <div className="text-[10px] font-bold tracking-widest uppercase text-slate-500 mb-2">Règle des 5</div>
-                  <div className="text-xl font-medium text-blue-400">$12,450</div>
-                  <div className="text-xs text-slate-400 mt-1">Trésorerie active</div>
+
+                <div className="bg-slate-900/75 backdrop-blur-xl border border-slate-800 p-4 rounded-3xl flex flex-col justify-between shadow-lg theme-transition">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">Trésorerie</span>
+                    <DollarSign size={14} className="text-emerald-500" />
+                  </div>
+                  <div>
+                    <div className="text-lg font-medium text-slate-100">$12,450</div>
+                    <div className="text-xs text-slate-400 mt-0.5">Règle des 5 active</div>
+                  </div>
                 </div>
               </div>
+
               <div className="grid grid-cols-4 gap-x-4 gap-y-6 content-start">
                 {page1Apps.map(app => (
                   <SortableAppIcon key={app.id} app={app} onClick={() => handleAppClick(app.id)} />
@@ -156,7 +170,9 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
           {Array.from({ length: totalPages }).map((_, i) => (
             <div 
               key={i} 
-              className={`w-1.5 h-1.5 rounded-full transition-colors ${i === currentPage ? 'bg-slate-200' : 'bg-slate-700'}`} 
+              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                i === currentPage ? 'bg-slate-200 w-4' : 'bg-slate-700'
+              }`} 
             />
           ))}
         </div>
@@ -164,15 +180,15 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
 
       {/* Dock */}
       <div className="mt-auto shrink-0 px-6">
-        <div className="bg-slate-900/80 backdrop-blur-xl border border-white/5 rounded-[2rem] p-4 flex justify-around">
+        <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800/80 rounded-[2.2rem] p-3.5 flex justify-around shadow-xl theme-transition">
           {dockApps.map(app => (
             <button 
               key={app.id}
               onClick={() => handleAppClick(app.id)}
               className="flex flex-col items-center group relative"
             >
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${app.color} shadow-lg active:scale-95 transition-transform`}>
-                <app.icon size={24} strokeWidth={1.5} />
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${app.color} shadow-md active:scale-95 transition-all`}>
+                <app.icon size={22} strokeWidth={1.5} />
               </div>
             </button>
           ))}
