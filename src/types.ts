@@ -38,4 +38,33 @@ export interface AppDefinition {
 export type OSState = 'locked' | 'unlocked';
 export type Paradigm = 'ios' | 'android';
 
+export type NotificationCategory = 'finance' | 'sales' | 'operations' | 'security' | 'hr' | 'system' | 'coach';
+export type NotificationSeverity = 'info' | 'success' | 'warning' | 'urgent';
+
+export interface OSNotification {
+  id: string;
+  title: string;
+  description: string;
+  module: AppId;
+  category: NotificationCategory;
+  severity: NotificationSeverity;
+  timestamp: string;
+  isRead: boolean;
+  actionLabel?: string;
+}
+
+export type SearchResultCategory = 'apps' | 'settings' | 'actions';
+
+export interface SearchResultItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  category: SearchResultCategory;
+  icon: ElementType;
+  color?: string;
+  badge?: string;
+  action: () => void;
+  keywords?: string[];
+}
+
 

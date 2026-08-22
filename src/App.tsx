@@ -11,6 +11,7 @@ import HomeScreen from './components/HomeScreen';
 import AppViewer from './components/AppViewer';
 import StatusBar from './components/StatusBar';
 import WallpaperBackground from './components/WallpaperBackground';
+import NotificationCenter from './components/NotificationCenter';
 
 export default function App() {
   const { 
@@ -79,6 +80,8 @@ export default function App() {
                     <AppViewer key={activeApp} appId={activeApp} onClose={closeApp} />
                   )}
                 </AnimatePresence>
+                {/* Slide-over Notification Center */}
+                <NotificationCenter onOpenApp={openApp} />
               </>
             )}
           </div>
@@ -87,3 +90,4 @@ export default function App() {
     </div>
   );
 }
+
