@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   StickyNote, Plus, Search, Pin, Trash2, Tag, Sparkles, 
-  Check, Filter, Calendar, Folder, ArrowRight, Share2, Edit3, X, Copy, Save
+  Check, Filter, Calendar, Folder, ArrowRight, Share2, Edit3, X, Copy, Save,
+  Download, Upload, FileText, AlertCircle
 } from 'lucide-react';
 import DetailSection, { DetailCard, AIInsightCard, KPIItem } from '../layout/DetailSection';
 import { useOSStore } from '../../store/osStore';
 import { NotesService } from '../../modules/notes';
 import { NoteItem } from '../../types';
 import { haptics } from '../../services/haptics';
+import ConfirmationModal from '../ConfirmationModal';
 
 const CATEGORIES: Array<NoteItem['category']> = ['Stratégie', 'Finance', 'Ops', 'Clients', 'Idées', 'Général'];
 
@@ -27,6 +29,8 @@ export default function NotesApp() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNote, setSelectedNote] = useState<NoteItem | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Note edit in modal state
   const [isEditingNote, setIsEditingNote] = useState(false);
@@ -35,6 +39,15 @@ export default function NotesApp() {
   const [editCategory, setEditCategory] = useState<NoteItem['category']>('Stratégie');
   const [editTags, setEditTags] = useState('');
   const [editColor, setEditColor] = useState('emerald');
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    noteId: string | null;
+    noteTitle: string;
+  }>({
+    isOpen: false,
+    noteId: null,
+    noteTitle: ''
+  });
 
   // Quick Capture Form State
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
@@ -44,12 +57,100 @@ export default function NotesApp() {
   const [quickTagInput, setQuickTagInput] = useState('');
   const [quickColor, setQuickColor] = useState('emerald');
 
-  // Load notes on mount and on workspace change
+  const showToast = (msg: string) => {
+    setFeedbackMessage(msg);
+    setTimeout(() => setFeedbackMessage(null), 3000);
+  };
+
+  // Load notes on mount, on workspace change, and listen for external note updates
   useEffect(() => {
-    NotesService.getNotes(workspace).then(data => {
-      setNotes(data);
-    });
+    let isMounted = true;
+    const loadNotes = () => {
+      NotesService.getNotes(workspace).then(data => {
+        if (isMounted) {
+          setNotes(data);
+        }
+      });
+    };
+
+    loadNotes();
+
+    const handleCustomUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.workspace === workspace) {
+        loadNotes();
+      }
+    };
+
+    window.addEventListener('omk:notes_updated', handleCustomUpdate);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('omk:notes_updated', handleCustomUpdate);
+      // Flush any pending storage writes on unmount
+      NotesService.flushPendingSaves(workspace);
+    };
   }, [workspace]);
+
+  const handleExportJSON = async () => {
+    haptics.trigger('selection');
+    try {
+      const jsonStr = await NotesService.exportJSON(workspace);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `omk-notes-${workspace.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Export JSON téléchargé avec succès');
+    } catch {
+      showToast('Erreur lors de l\'export JSON');
+    }
+  };
+
+  const handleExportMarkdown = async () => {
+    haptics.trigger('selection');
+    try {
+      const mdStr = await NotesService.exportMarkdown(workspace);
+      const blob = new Blob([mdStr], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `omk-notes-${workspace.toLowerCase()}-${new Date().toISOString().slice(0, 10)}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Export Markdown téléchargé avec succès');
+    } catch {
+      showToast('Erreur lors de l\'export Markdown');
+    }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    haptics.trigger('medium');
+
+    try {
+      const text = await file.text();
+      let updated: NoteItem[];
+
+      if (file.name.endsWith('.json')) {
+        updated = await NotesService.importNotes(workspace, text, true);
+      } else {
+        // Text or Markdown import as single note
+        const title = file.name.replace(/\.[^/.]+$/, '');
+        const newNote = await NotesService.createQuickNote(title, text, 'Général', ['FichierImporté'], workspace, 'emerald');
+        updated = await NotesService.getNotes(workspace);
+      }
+
+      setNotes(updated);
+      showToast(`Fichier "${file.name}" importé avec succès (${updated.length} notes)`);
+    } catch (err: any) {
+      showToast(err?.message || 'Erreur lors de l\'importation du fichier');
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const handleOpenNoteModal = (note: NoteItem) => {
     setSelectedNote(note);
@@ -111,12 +212,25 @@ export default function NotesApp() {
     if (selectedNote?.id === note.id) setSelectedNote(updated);
   };
 
-  const handleDeleteNote = async (noteId: string, e?: React.MouseEvent) => {
+  const handlePromptDeleteNote = (note: { id: string; title: string }, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    haptics.trigger('light');
+    setDeleteModal({
+      isOpen: true,
+      noteId: note.id,
+      noteTitle: note.title || 'Note sans titre'
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.noteId) return;
+    const noteId = deleteModal.noteId;
     haptics.trigger('warning');
     const list = await NotesService.deleteNote(workspace, noteId);
     setNotes(list);
     if (selectedNote?.id === noteId) setSelectedNote(null);
+    setDeleteModal({ isOpen: false, noteId: null, noteTitle: '' });
+    showToast('Note supprimée');
   };
 
   const handleCopyNote = async (note: NoteItem, e?: React.MouseEvent) => {
@@ -177,18 +291,69 @@ export default function NotesApp() {
       icon={StickyNote}
       kpis={kpis}
       actions={
-        <button
-          onClick={() => {
-            haptics.trigger('selection');
-            setIsQuickCaptureOpen(!isQuickCaptureOpen);
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg active:scale-95 transition-all"
-        >
-          <Plus size={14} strokeWidth={2.5} />
-          <span>Capturer</span>
-        </button>
+        <div className="flex items-center gap-1.5">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImportFile}
+            accept=".json,.md,.txt"
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            title="Importer un fichier (.json, .md, .txt)"
+            className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center gap-1 transition-colors"
+          >
+            <Upload size={13} />
+            <span className="hidden sm:inline">Importer</span>
+          </button>
+
+          <button
+            onClick={handleExportJSON}
+            title="Exporter les notes en JSON"
+            className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center gap-1 transition-colors"
+          >
+            <Download size={13} />
+            <span className="hidden sm:inline">JSON</span>
+          </button>
+
+          <button
+            onClick={handleExportMarkdown}
+            title="Exporter en Markdown"
+            className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center gap-1 transition-colors"
+          >
+            <FileText size={13} />
+            <span className="hidden sm:inline">MD</span>
+          </button>
+
+          <button
+            onClick={() => {
+              haptics.trigger('selection');
+              setIsQuickCaptureOpen(!isQuickCaptureOpen);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg active:scale-95 transition-all"
+          >
+            <Plus size={14} strokeWidth={2.5} />
+            <span>Capturer</span>
+          </button>
+        </div>
       }
     >
+      {/* Toast Feedback Notification */}
+      <AnimatePresence>
+        {feedbackMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="p-2.5 rounded-2xl bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 text-xs font-semibold flex items-center gap-2 shadow-lg"
+          >
+            <Check size={14} className="text-emerald-400 shrink-0" />
+            <span>{feedbackMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* AI Knowledge Insight */}
       <AIInsightCard
         title="Coach AI • Synthèse Mémoire"
@@ -362,7 +527,7 @@ export default function NotesApp() {
                 note={note}
                 onClick={() => handleOpenNoteModal(note)}
                 onTogglePin={e => handleTogglePin(note, e)}
-                onDelete={e => handleDeleteNote(note.id, e)}
+                onDelete={e => handlePromptDeleteNote(note, e)}
                 onCopy={e => handleCopyNote(note, e)}
                 isCopied={copiedId === note.id}
               />
@@ -400,7 +565,7 @@ export default function NotesApp() {
                 note={note}
                 onClick={() => handleOpenNoteModal(note)}
                 onTogglePin={e => handleTogglePin(note, e)}
-                onDelete={e => handleDeleteNote(note.id, e)}
+                onDelete={e => handlePromptDeleteNote(note, e)}
                 onCopy={e => handleCopyNote(note, e)}
                 isCopied={copiedId === note.id}
               />
@@ -465,7 +630,7 @@ export default function NotesApp() {
                     <Pin size={14} />
                   </button>
                   <button
-                    onClick={e => handleDeleteNote(selectedNote.id, e)}
+                    onClick={e => handlePromptDeleteNote(selectedNote, e)}
                     className="p-1.5 rounded-xl bg-slate-800 hover:bg-red-500/20 border border-slate-700 hover:border-red-500/40 text-slate-400 hover:text-red-400 transition-colors"
                     title="Supprimer"
                   >
@@ -591,6 +756,18 @@ export default function NotesApp() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Note Deletion Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        title="Supprimer cette note ?"
+        message={`Êtes-vous sûr de vouloir supprimer définitivement "${deleteModal.noteTitle}" ? Cette action est irréversible.`}
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteModal({ isOpen: false, noteId: null, noteTitle: '' })}
+      />
     </DetailSection>
   );
 }

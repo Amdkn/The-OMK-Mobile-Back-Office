@@ -49,12 +49,15 @@ export type ThemeId = 'dark-oled' | 'warm-paper' | 'cyberpunk' | 'glassmorphism'
 export type ContrastLevel = 'low' | 'medium' | 'high';
 export type WallpaperId = 'minimal-mesh' | 'matrix-grid' | 'warm-studio' | 'aurora-frost' | 'deep-space' | 'cyber-neon';
 
+export type AppCategoryTag = 'all' | 'work' | 'creative' | 'tools';
+
 export interface AppDefinition {
   id: AppId;
   name: string;
   icon: ElementType;
   color: string;
   inDock?: boolean;
+  category?: 'work' | 'creative' | 'tools';
 }
 
 export type OSState = 'locked' | 'unlocked';

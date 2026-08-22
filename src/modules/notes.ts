@@ -82,6 +82,7 @@ const DEFAULT_NOTES: Record<string, NoteItem[]> = {
 export class NotesService {
   private static isInitialized = false;
   private static memoryCache: Record<string, NoteItem[]> = { ...DEFAULT_NOTES };
+  private static pendingFlushPromises: Record<string, Promise<void> | null> = {};
 
   public static async init(): Promise<void> {
     if (this.isInitialized) return;
@@ -91,6 +92,47 @@ export class NotesService {
     } catch (e) {
       console.warn('NotesStore IndexedDB fallback', e);
     }
+  }
+
+  /**
+   * Robust Validation and Sanitization layer to ensure 100% data integrity before IndexedDB write
+   */
+  public static validateAndSanitizeNote(raw: any, defaultWorkspace: string = 'Sandbox'): NoteItem {
+    const validCategories: NoteItem['category'][] = ['Stratégie', 'Finance', 'Clients', 'Ops', 'Idées', 'Général'];
+    const id = typeof raw?.id === 'string' && raw.id.trim().length > 0 
+      ? raw.id.trim() 
+      : `note-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const title = typeof raw?.title === 'string' ? raw.title.trim() : 'Note Sans Titre';
+    const content = typeof raw?.content === 'string' ? raw.content : '';
+    const category = validCategories.includes(raw?.category) ? raw.category : 'Général';
+    const tags = Array.isArray(raw?.tags) 
+      ? raw.tags.filter((t: any) => typeof t === 'string' && t.trim().length > 0).map((t: string) => t.trim()) 
+      : ['Note'];
+    const isPinned = Boolean(raw?.isPinned);
+    const color = typeof raw?.color === 'string' && raw.color.length > 0 ? raw.color : 'emerald';
+    const workspace = typeof raw?.workspace === 'string' && raw.workspace.length > 0 ? raw.workspace : defaultWorkspace;
+    const createdAt = typeof raw?.createdAt === 'number' && !isNaN(raw.createdAt) ? raw.createdAt : Date.now();
+    const updatedAt = typeof raw?.updatedAt === 'number' && !isNaN(raw.updatedAt) ? raw.updatedAt : Date.now();
+
+    return {
+      id,
+      title: title || 'Note Sans Titre',
+      content,
+      category,
+      tags: tags.length > 0 ? tags : ['Note'],
+      isPinned,
+      color,
+      workspace,
+      createdAt,
+      updatedAt
+    };
+  }
+
+  public static validateAndSanitizeList(rawList: unknown, workspace: string): NoteItem[] {
+    if (!Array.isArray(rawList)) return [];
+    return rawList
+      .filter(item => item !== null && typeof item === 'object')
+      .map(item => this.validateAndSanitizeNote(item, workspace));
   }
 
   /**
@@ -106,12 +148,13 @@ export class NotesService {
   public static async getNotes(workspace: string = 'Sandbox'): Promise<NoteItem[]> {
     await this.init();
     try {
-      const stored = await notesStore.getItem<NoteItem[]>(`notes_${workspace}`);
-      if (stored && Array.isArray(stored) && stored.length > 0) {
-        this.memoryCache[workspace] = stored;
-        return stored;
+      const stored = await notesStore.getItem<unknown>(`notes_${workspace}`);
+      if (stored !== null && stored !== undefined && Array.isArray(stored)) {
+        const validated = this.validateAndSanitizeList(stored, workspace);
+        this.memoryCache[workspace] = validated;
+        return validated;
       }
-      // Seed default notes if empty
+      // Seed default notes if completely uninitialized (null/undefined)
       const initial = DEFAULT_NOTES[workspace] || DEFAULT_NOTES['Sandbox'];
       this.memoryCache[workspace] = initial;
       await notesStore.setItem(`notes_${workspace}`, initial);
@@ -123,15 +166,116 @@ export class NotesService {
   }
 
   /**
-   * Save full list of notes for a workspace
+   * Save full list of notes for a workspace with validation and guaranteed serialization
    */
   public static async saveNotes(workspace: string, notes: NoteItem[]): Promise<void> {
     await this.init();
-    this.memoryCache[workspace] = notes;
+    const sanitized = this.validateAndSanitizeList(notes, workspace);
+    this.memoryCache[workspace] = sanitized;
+
+    // Test serialization before committing to persistent storage
     try {
-      await notesStore.setItem(`notes_${workspace}`, notes);
+      const serialized = JSON.parse(JSON.stringify(sanitized));
+      const writePromise = notesStore.setItem(`notes_${workspace}`, serialized).then(() => {
+        this.pendingFlushPromises[workspace] = null;
+      });
+      this.pendingFlushPromises[workspace] = writePromise;
+      await writePromise;
+
+      // Dispatch custom event for immediate cross-component reactivity
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('omk:notes_updated', { detail: { workspace, count: sanitized.length } }));
+      }
     } catch (e) {
-      console.error(`Failed to save notes for ${workspace}:`, e);
+      console.error(`Failed to save validated notes for ${workspace}:`, e);
+      throw e;
+    }
+  }
+
+  /**
+   * Guarantee all pending writes are flushed before closing views
+   */
+  public static async flushPendingSaves(workspace: string): Promise<boolean> {
+    try {
+      const pending = this.pendingFlushPromises[workspace];
+      if (pending) {
+        await pending;
+      }
+      // Ensure memoryCache is flushed to disk
+      if (this.memoryCache[workspace]) {
+        await this.saveNotes(workspace, this.memoryCache[workspace]);
+      }
+      return true;
+    } catch (e) {
+      console.error('Error flushing notes storage:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Export all notes for a workspace as formatted JSON
+   */
+  public static async exportJSON(workspace: string): Promise<string> {
+    const notes = await this.getNotes(workspace);
+    return JSON.stringify(notes, null, 2);
+  }
+
+  /**
+   * Export all notes as a combined Markdown document
+   */
+  public static async exportMarkdown(workspace: string): Promise<string> {
+    const notes = await this.getNotes(workspace);
+    let md = `# OMK Notes & Capture — Workspace: ${workspace}\n`;
+    md += `*Exporté le : ${new Date().toLocaleString('fr-FR')}*\n\n---\n\n`;
+
+    notes.forEach((note, idx) => {
+      md += `## ${idx + 1}. ${note.title}\n`;
+      md += `**Catégorie :** ${note.category} | **Statut :** ${note.isPinned ? 'Épinglée' : 'Standard'} | **Mis à jour :** ${new Date(note.updatedAt).toLocaleString('fr-FR')}\n`;
+      if (note.tags && note.tags.length > 0) {
+        md += `**Tags :** \`${note.tags.join('`, `')}\`\n\n`;
+      }
+      md += `${note.content}\n\n---\n\n`;
+    });
+
+    return md;
+  }
+
+  /**
+   * Import notes from JSON string or array, merging or replacing with valid schema checking
+   */
+  public static async importNotes(workspace: string, jsonString: string, merge: boolean = true): Promise<NoteItem[]> {
+    try {
+      const parsed = JSON.parse(jsonString);
+      const incoming: NoteItem[] = Array.isArray(parsed) ? parsed : [parsed];
+      
+      const validated: NoteItem[] = incoming.map((item, idx) => ({
+        id: item.id || `imported-${Date.now()}-${idx}`,
+        title: item.title || 'Note Importée',
+        content: item.content || '',
+        category: (item.category as any) || 'Général',
+        tags: Array.isArray(item.tags) ? item.tags : ['Importé'],
+        isPinned: Boolean(item.isPinned),
+        color: item.color || 'emerald',
+        workspace,
+        createdAt: item.createdAt || Date.now(),
+        updatedAt: Date.now()
+      }));
+
+      let result: NoteItem[];
+      if (merge) {
+        const existing = await this.getNotes(workspace);
+        const existingIds = new Set(existing.map(n => n.id));
+        const filteredNew = validated.filter(n => !existingIds.has(n.id));
+        result = [...filteredNew, ...existing];
+      } else {
+        result = validated;
+      }
+
+      await this.saveNotes(workspace, result);
+      return result;
+    } catch (e) {
+      console.error('Failed to import notes:', e);
+      throw new Error('Format de fichier invalide. Veuillez importer un fichier JSON valide.');
     }
   }
 

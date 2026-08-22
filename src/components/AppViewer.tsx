@@ -36,6 +36,7 @@ import Cognition from './apps/Cognition';
 import HR from './apps/HR';
 import Security from './apps/Security';
 import Notes from './apps/Notes';
+import { NotesService } from '../modules/notes';
 
 interface AppViewerProps {
   key?: React.Key;
@@ -102,8 +103,11 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
 
   const handleClose = useCallback(() => {
     haptics.trigger('backNav');
+    if (appId === 'notes') {
+      NotesService.flushPendingSaves(workspace);
+    }
     onClose();
-  }, [onClose]);
+  }, [onClose, appId, workspace]);
 
   // Edge-swipe touch listeners
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -144,6 +148,9 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
     // Dismiss if dragged more than 85px to the right
     if (deltaX >= 85) {
       haptics.trigger('appClose');
+      if (appId === 'notes') {
+        NotesService.flushPendingSaves(workspace);
+      }
       onClose();
     }
     

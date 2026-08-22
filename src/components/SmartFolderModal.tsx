@@ -4,7 +4,8 @@ import { SmartFolder, AppId, AppDefinition } from '../types';
 import { APPS } from './HomeScreen';
 import { useOSStore } from '../store/osStore';
 import { haptics } from '../services/haptics';
-import { X, Edit2, Check, Trash2, FolderPlus, Plus, ChevronRight } from 'lucide-react';
+import { X, Edit2, Check, Trash2, FolderPlus, Plus, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import ConfirmationModal from './ConfirmationModal';
 
 interface SmartFolderModalProps {
   folder: SmartFolder;
@@ -17,6 +18,20 @@ export default function SmartFolderModal({ folder, onClose, onOpenApp }: SmartFo
   const [isEditingName, setIsEditingName] = useState(false);
   const [folderName, setFolderName] = useState(folder.name);
   const [isAddingApps, setIsAddingApps] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmLabel: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Confirmer',
+    onConfirm: () => {}
+  });
 
   const folderApps = folder.appIds
     .map(id => APPS.find(a => a.id === id))
@@ -33,25 +48,46 @@ export default function SmartFolderModal({ folder, onClose, onOpenApp }: SmartFo
     haptics.trigger('success');
   };
 
-  const handleDissolveFolder = () => {
-    haptics.trigger('warning');
-    dissolveSmartFolder(folder.id);
-    onClose();
+  const handlePromptDissolveFolder = () => {
+    haptics.trigger('light');
+    setConfirmModal({
+      isOpen: true,
+      title: 'Dissocier ce groupe ?',
+      message: `Toutes les applications de "${folder.name}" seront replacées sur votre écran d'accueil sans perte de données.`,
+      confirmLabel: 'Dissocier',
+      onConfirm: () => {
+        haptics.trigger('warning');
+        dissolveSmartFolder(folder.id);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        onClose();
+      }
+    });
   };
 
   const handleAppLaunch = (appId: AppId) => {
+    if (isEditMode) return;
     haptics.trigger('appLaunch');
     onClose();
     onOpenApp(appId);
   };
 
-  const handleExtractApp = (e: React.MouseEvent, appId: AppId) => {
+  const handlePromptExtractApp = (e: React.MouseEvent, app: AppDefinition) => {
     e.stopPropagation();
-    haptics.trigger('medium');
-    removeAppFromFolder(folder.id, appId);
-    if (folder.appIds.length <= 1) {
-      onClose();
-    }
+    haptics.trigger('light');
+    setConfirmModal({
+      isOpen: true,
+      title: `Retirer ${app.name} ?`,
+      message: `L'application "${app.name}" sera extraite du groupe "${folder.name}" et replacée sur l'écran d'accueil.`,
+      confirmLabel: 'Retirer',
+      onConfirm: () => {
+        haptics.trigger('medium');
+        removeAppFromFolder(folder.id, app.id);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        if (folder.appIds.length <= 1) {
+          onClose();
+        }
+      }
+    });
   };
 
   return (
@@ -67,9 +103,9 @@ export default function SmartFolderModal({ folder, onClose, onOpenApp }: SmartFo
         className="w-full max-w-sm rounded-[2.5rem] bg-slate-900/95 border border-slate-700/80 shadow-2xl p-5 flex flex-col relative overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header with editable title */}
-        <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
-          <div className="flex items-center gap-2 flex-1 mr-2">
+        {/* Header with editable title and mode toggles */}
+        <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+          <div className="flex items-center gap-2 flex-1 mr-2 min-w-0">
             {isEditingName ? (
               <div className="flex items-center gap-1.5 flex-1">
                 <input
@@ -87,23 +123,39 @@ export default function SmartFolderModal({ folder, onClose, onOpenApp }: SmartFo
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingName(true)}>
-                <h3 className="text-base font-bold text-slate-100 tracking-tight">
+              <div className="flex items-center gap-2 group cursor-pointer truncate" onClick={() => setIsEditingName(true)}>
+                <h3 className="text-base font-bold text-slate-100 tracking-tight truncate">
                   {folder.name}
                 </h3>
-                <Edit2 size={12} className="text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                <Edit2 size={12} className="text-slate-500 group-hover:text-emerald-400 transition-colors shrink-0" />
               </div>
             )}
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Explicit Edit Mode Toggle */}
             <button
-              onClick={handleDissolveFolder}
-              title="Dissocier le dossier (replacer les apps sur l'écran)"
-              className="px-2.5 py-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/50 text-rose-300 text-xs font-semibold flex items-center gap-1 transition-colors"
+              onClick={() => {
+                haptics.trigger('selection');
+                setIsEditMode(!isEditMode);
+              }}
+              title={isEditMode ? "Terminer l'édition" : "Mode Édition des groupes"}
+              className={`px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1 transition-all ${
+                isEditMode
+                  ? 'bg-amber-500/20 border-amber-500/60 text-amber-300 ring-2 ring-amber-500/30'
+                  : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
+              }`}
             >
-              <Trash2 size={13} />
-              <span>Dissocier</span>
+              <SlidersHorizontal size={13} className={isEditMode ? 'animate-spin' : ''} />
+              <span>{isEditMode ? 'Terminé' : 'Éditer'}</span>
+            </button>
+
+            <button
+              onClick={handlePromptDissolveFolder}
+              title="Dissocier le dossier (replacer les apps sur l'écran)"
+              className="p-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/50 text-rose-300 text-xs font-semibold flex items-center transition-colors"
+            >
+              <Trash2 size={14} />
             </button>
             <button
               onClick={onClose}
@@ -114,10 +166,11 @@ export default function SmartFolderModal({ folder, onClose, onOpenApp }: SmartFo
           </div>
         </div>
 
-        {/* Instructions / Status */}
-        <p className="text-[11px] text-slate-400 mb-2 flex items-center justify-between">
-          <span>Touchez une app pour l'ouvrir ou la croix rouge pour la sortir :</span>
-        </p>
+        {/* Instructions Banner / Status */}
+        <div className="mb-2.5 flex items-center justify-between text-[11px] text-slate-400">
+          <span>{isEditMode ? 'Mode Édition : touchez la croix pour sortir une app' : 'Touchez une application pour lancer :'}</span>
+          <span className="font-mono text-emerald-400 text-[10px]">{folderApps.length} app{folderApps.length > 1 ? 's' : ''}</span>
+        </div>
 
         {/* Apps Grid */}
         <div className="grid grid-cols-3 gap-3.5 py-2 content-start min-h-[140px]">
@@ -125,23 +178,30 @@ export default function SmartFolderModal({ folder, onClose, onOpenApp }: SmartFo
             <div key={app.id} className="flex flex-col items-center gap-1.5 relative">
               <button
                 onClick={() => handleAppLaunch(app.id)}
-                className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center border ${app.color} shadow-md hover:scale-105 active:scale-95 transition-all relative`}
+                className={`w-14 h-14 rounded-[1.25rem] flex items-center justify-center border ${app.color} shadow-md hover:scale-105 active:scale-95 transition-all relative ${
+                  isEditMode ? 'animate-[wiggle_1.2s_ease-in-out_infinite]' : ''
+                }`}
               >
                 <app.icon size={26} strokeWidth={1.5} />
               </button>
               
-              <span className="text-[11px] font-medium text-slate-200 text-center truncate w-full px-0.5">
-                {app.name}
-              </span>
+              {/* Dark backdrop label for high contrast */}
+              <div className="px-1.5 py-0.5 rounded-md bg-slate-950/80 backdrop-blur-md border border-slate-700/60 shadow-sm max-w-full min-w-0 flex items-center justify-center">
+                <span className="text-[10px] font-semibold text-slate-100 text-center leading-tight truncate w-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                  {app.name}
+                </span>
+              </div>
 
-              {/* Extraction Cross Button - Always visible with crisp red styling */}
+              {/* Extraction Cross Button - Always accessible, prominently emphasized in Edit Mode */}
               <button
-                onClick={e => handleExtractApp(e, app.id)}
-                className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-rose-500 hover:bg-rose-400 text-white shadow-lg flex items-center justify-center text-xs font-bold border-2 border-slate-900 transition-transform hover:scale-110 active:scale-90 z-10"
+                onClick={e => handlePromptExtractApp(e, app)}
+                className={`absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-rose-500 hover:bg-rose-400 text-white shadow-xl flex items-center justify-center text-xs font-bold border-2 border-slate-900 transition-all z-10 ${
+                  isEditMode ? 'scale-110 ring-2 ring-rose-400 animate-pulse' : 'hover:scale-110 active:scale-90'
+                }`}
                 title={`Sortir ${app.name} du groupe`}
                 aria-label={`Sortir ${app.name} du groupe`}
               >
-                <X size={12} strokeWidth={2.5} />
+                <X size={13} strokeWidth={2.8} />
               </button>
             </div>
           ))}
@@ -195,6 +255,16 @@ export default function SmartFolderModal({ folder, onClose, onOpenApp }: SmartFo
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Destructive Action Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmLabel={confirmModal.confirmLabel}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        />
       </motion.div>
     </div>
   );

@@ -241,6 +241,7 @@ interface OSStoreState {
   setWallpaper: (w: WallpaperId) => void;
   setBrightness: (b: number) => void;
   reorderGridApps: (oldIndex: number, newIndex: number) => void;
+  sortGridApps: (mode: 'name' | 'category' | 'default') => void;
   togglePinWidget: (widgetId: string) => void;
   reorderWidgets: (oldIndex: number, newIndex: number) => void;
   setWorkspace: (w: Workspace) => void;
@@ -517,6 +518,80 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
     const newOrder = arrayMove(state.gridAppOrder, oldIndex, newIndex);
     localStorage.setItem('os_grid_order', JSON.stringify(newOrder));
     return { gridAppOrder: newOrder };
+  }),
+  sortGridApps: (mode) => set((state) => {
+    const appNames: Record<string, string> = {
+      'notes': 'Notes',
+      'coach-ai': 'Coach AI',
+      'baas-hub': 'BaaS Hub',
+      'jaas-job': 'JaaS JOB',
+      'paas-pro': 'PaaS PRO',
+      'wallet': 'Wallet',
+      'leads': 'Leads',
+      'terminal': 'Terminal',
+      'dashboard': 'Dashboard',
+      'finance': 'Finance',
+      'operations': 'Operations',
+      'sales': 'Sales OS',
+      'clients': 'Clients',
+      'growth': 'Growth',
+      'product': 'Product',
+      'ontology': 'Ontology',
+      'cognition': 'Cognition',
+      'hr': 'People / HR',
+      'settings': 'Settings',
+      'lock': 'Lock'
+    };
+
+    const appCategories: Record<string, string> = {
+      'notes': '1_Productivite',
+      'coach-ai': '2_IA_Strategie',
+      'cognition': '2_IA_Strategie',
+      'ontology': '2_IA_Strategie',
+      'baas-hub': '3_Finance_Business',
+      'finance': '3_Finance_Business',
+      'wallet': '3_Finance_Business',
+      'sales': '4_Ventes_Croissance',
+      'leads': '4_Ventes_Croissance',
+      'clients': '4_Ventes_Croissance',
+      'growth': '4_Ventes_Croissance',
+      'paas-pro': '5_Dev_Infra',
+      'product': '5_Dev_Infra',
+      'terminal': '5_Dev_Infra',
+      'jaas-job': '6_Operations_RH',
+      'operations': '6_Operations_RH',
+      'hr': '6_Operations_RH',
+      'dashboard': '7_Systeme_Outils',
+      'settings': '7_Systeme_Outils',
+      'lock': '7_Systeme_Outils'
+    };
+
+    let sorted: AppId[];
+    if (mode === 'default') {
+      sorted = [...DEFAULT_GRID_APPS];
+    } else if (mode === 'name') {
+      sorted = [...state.gridAppOrder].sort((a, b) => {
+        const nameA = appNames[a] || a;
+        const nameB = appNames[b] || b;
+        return nameA.localeCompare(nameB);
+      });
+    } else {
+      // category
+      sorted = [...state.gridAppOrder].sort((a, b) => {
+        const catA = appCategories[a] || '9_Other';
+        const catB = appCategories[b] || '9_Other';
+        if (catA === catB) {
+          const nameA = appNames[a] || a;
+          const nameB = appNames[b] || b;
+          return nameA.localeCompare(nameB);
+        }
+        return catA.localeCompare(catB);
+      });
+    }
+
+    localStorage.setItem('os_grid_order', JSON.stringify(sorted));
+    get().emitEvent('GRID_REORDERED', 'system', { mode, order: sorted });
+    return { gridAppOrder: sorted };
   }),
   togglePinWidget: (widgetId) => set((state) => {
     const exists = state.pinnedWidgetIds.includes(widgetId);

@@ -141,16 +141,16 @@ export default function DynamicIsland({ paradigm }: { paradigm: Paradigm }) {
     );
   }
 
-  // Fixed compact width to guarantee zero overlap with status bar icons
+  // Normalized compact dimensions to prevent jitter and maintain constant optical balance
   const compactWidth = isFaceIdActive 
-    ? 140 
+    ? 156 
     : activeCall 
-      ? 165 
+      ? 168 
       : transientToast 
-        ? 160 
-        : 124;
+        ? 164 
+        : 148; // Constant stable width for standard/pomodoro/audio states
 
-  const compactHeight = isFaceIdActive ? 40 : 30;
+  const compactHeight = 32;
 
   const expandedHeight = activeTab === 'call' && activeCall 
     ? 330 
@@ -191,8 +191,8 @@ export default function DynamicIsland({ paradigm }: { paradigm: Paradigm }) {
           }}
           transition={{
             type: 'spring',
-            stiffness: 450,
-            damping: 35,
+            stiffness: 420,
+            damping: 34,
             mass: 0.5
           }}
           onClick={() => {
@@ -243,17 +243,17 @@ export default function DynamicIsland({ paradigm }: { paradigm: Paradigm }) {
                       {activeCall.callerName.split(' ')[0]}
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono text-emerald-400 font-bold">
+                  <span className="text-[10px] font-mono text-emerald-400 font-bold tabular-nums">
                     {activeCall.status === 'connected' ? formatTimer(callDuration) : 'Appel...'}
                   </span>
                 </div>
               ) : (
-                /* Case D: Standard Idle / Pomodoro / Audio Compact Pill (Constant Width) */
+                /* Case D: Standard Idle / Pomodoro / Audio Compact Pill (Stable Tabular Metrics) */
                 <div className="w-full h-full flex items-center justify-between cursor-pointer">
-                  {/* Left: Indicator */}
-                  <div className="flex items-center gap-1.5">
+                  {/* Left: Indicator with fixed container width to avoid reflow */}
+                  <div className="flex items-center gap-1.5 min-w-0 w-[54px]">
                     {isPlayingAudio ? (
-                      <div className="flex items-end gap-0.5 h-2.5">
+                      <div className="flex items-end gap-0.5 h-2.5 shrink-0">
                         <span className="w-0.5 bg-cyan-400 rounded-full animate-[pulse_0.6s_ease-in-out_infinite] h-2.5" />
                         <span className="w-0.5 bg-blue-400 rounded-full animate-[pulse_0.4s_ease-in-out_infinite_0.1s] h-1.5" />
                         <span className="w-0.5 bg-indigo-400 rounded-full animate-[pulse_0.7s_ease-in-out_infinite_0.2s] h-3" />
@@ -261,20 +261,20 @@ export default function DynamicIsland({ paradigm }: { paradigm: Paradigm }) {
                     ) : isPomodoroRunning ? (
                       <Clock size={11} className="text-rose-400 shrink-0" />
                     ) : (
-                      <span className={`w-1.5 h-1.5 rounded-full ${workspace === 'Production' ? 'bg-emerald-400 shadow-[0_0_6px_#10b981]' : workspace === 'Development' ? 'bg-blue-400 shadow-[0_0_6px_#3b82f6]' : 'bg-amber-400 shadow-[0_0_6px_#f59e0b]'}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${workspace === 'Production' ? 'bg-emerald-400 shadow-[0_0_6px_#10b981]' : workspace === 'Development' ? 'bg-blue-400 shadow-[0_0_6px_#3b82f6]' : 'bg-amber-400 shadow-[0_0_6px_#f59e0b]'}`} />
                     )}
-                    <span className="text-[10px] font-bold tracking-tight text-white font-mono uppercase">
+                    <span className="text-[10px] font-bold tracking-tight text-white font-mono uppercase tabular-nums truncate">
                       {isPlayingAudio ? '432Hz' : isPomodoroRunning ? formatTimer(pomodoroSeconds) : activeWsConfig.badge}
                     </span>
                   </div>
 
                   {/* Center: Simulated Optical Lens Pinhole */}
-                  <div className="w-2 h-2 rounded-full bg-black border border-slate-800 shadow-inner flex items-center justify-center">
+                  <div className="w-2 h-2 rounded-full bg-black border border-slate-800 shadow-inner flex items-center justify-center shrink-0 mx-0.5">
                     <div className="w-0.5 h-0.5 rounded-full bg-slate-800" />
                   </div>
 
-                  {/* Right: Status Icon */}
-                  <div className="flex items-center gap-1">
+                  {/* Right: Status Icon with fixed container width */}
+                  <div className="flex items-center justify-end gap-1 shrink-0 w-[42px]">
                     {isAiProcessing ? (
                       <Sparkles size={11} className="text-amber-400 animate-spin" />
                     ) : isPlayingAudio ? (
