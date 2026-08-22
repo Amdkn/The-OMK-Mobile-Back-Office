@@ -70,8 +70,10 @@ export default function GlobalSearch({ onOpenApp }: Props) {
     }
   }, [isOpen]);
 
-  // Build centralized search catalog
+  // Build centralized search catalog lazily only when search modal is active.
+  // Optimization: Avoids synchronous storage reads and indexing work during idle OS usage.
   const catalog = useMemo(() => {
+    if (!isOpen) return [];
     return SearchIndexingService.getCatalog({
       workspace,
       theme,
@@ -119,7 +121,7 @@ export default function GlobalSearch({ onOpenApp }: Props) {
         openNotificationCenter();
       }
     });
-  }, [workspace, theme, contrast, paradigm, onOpenApp, setTheme, setContrast, setWorkspace, setParadigm, lock, openNotificationCenter, simulateIncomingAlert]);
+  }, [isOpen, workspace, theme, contrast, paradigm, onOpenApp, setTheme, setContrast, setWorkspace, setParadigm, lock, openNotificationCenter, simulateIncomingAlert]);
 
   // Perform search using SearchIndexingService
   const filteredResults = useMemo(() => {

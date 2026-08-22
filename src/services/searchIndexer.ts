@@ -427,6 +427,14 @@ export class SearchIndexingService {
     ];
     catalog.push(...actionItems);
 
+    // Optimization: Pre-normalize all keywords to lowercase during catalog construction.
+    // This avoids thousands of redundant .toLowerCase() string allocations per keystroke during search scoring.
+    catalog.forEach(item => {
+      if (item.keywords) {
+        item.keywords = item.keywords.map(k => k.toLowerCase());
+      }
+    });
+
     return catalog;
   }
 
@@ -473,11 +481,11 @@ export class SearchIndexingService {
       // Subtitle match
       if (subLower.includes(cleanQuery)) score += 20;
 
-      // Token matches
+      // Token matches using pre-normalized keywords (avoids allocation in loop)
       for (const token of queryTokens) {
         if (titleLower.includes(token)) score += 15;
         if (subLower.includes(token)) score += 8;
-        if (keywords.some(k => k.toLowerCase().includes(token))) score += 12;
+        if (keywords.some(k => k.includes(token))) score += 12;
       }
 
       return { item, score };
