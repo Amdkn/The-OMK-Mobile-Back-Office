@@ -217,4 +217,26 @@
   --color-slate-100: #ffffff;
 }
 
+/* =========================================================================
+   5. LOW POWER MODE THROTTLING & OPTIMIZATIONS
+   ========================================================================= */
+[data-low-power="true"] * {
+  transition-duration: 50ms !important;
+}
+
+[data-low-power="true"] .backdrop-blur-md,
+[data-low-power="true"] .backdrop-blur-lg,
+[data-low-power="true"] .backdrop-blur-xl,
+[data-low-power="true"] .backdrop-blur-2xl {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+[data-low-power="true"] .animate-pulse,
+[data-low-power="true"] .animate-spin,
+[data-low-power="true"] .animate-bounce {
+  animation: none !important;
+}
+
+
 

@@ -126,6 +126,112 @@ export default function GlobalSearch({ onOpenApp }: Props) {
     return SearchIndexingService.search(catalog, query, activeTab);
   }, [catalog, query, activeTab]);
 
+  // Build theme-specific transparency and styling configuration
+  const styleConfig = useMemo(() => {
+    const isHighContrast = contrast === 'high';
+    const isLowContrast = contrast === 'low';
+
+    switch (theme) {
+      case 'glassmorphism':
+        return {
+          triggerBg: isHighContrast 
+            ? 'bg-white/20 hover:bg-white/30 border-white/40 text-white' 
+            : isLowContrast 
+            ? 'bg-white/10 hover:bg-white/15 border-white/20 text-white/90' 
+            : 'bg-white/15 hover:bg-white/20 border-white/25 text-white',
+          triggerBackdrop: 'backdrop-blur-2xl shadow-xl',
+          placeholderText: 'text-white/60',
+          searchIconColor: 'text-sky-300',
+          modalBg: isHighContrast 
+            ? 'bg-slate-900/90 border-white/30 text-white' 
+            : isLowContrast 
+            ? 'bg-slate-900/60 border-white/15 text-white' 
+            : 'bg-slate-900/75 border-white/20 text-white',
+          modalBackdrop: 'backdrop-blur-3xl shadow-2xl',
+          headerBg: 'bg-white/10 border-white/15',
+          tabActive: 'bg-white/20 border-white/30 text-white shadow-sm',
+          tabInactive: 'text-white/70 hover:text-white',
+          itemActive: 'bg-white/20 border-white/30 text-white shadow-sm',
+          itemInactive: 'text-white/80 hover:bg-white/10',
+          footerBg: 'bg-white/5 border-white/10 text-white/60',
+          accentBadge: 'bg-sky-500/20 text-sky-300 border-sky-400/30'
+        };
+      case 'warm-paper':
+        return {
+          triggerBg: isHighContrast 
+            ? 'bg-amber-50/95 hover:bg-amber-50 border-amber-900/40 text-stone-950' 
+            : isLowContrast 
+            ? 'bg-amber-50/75 hover:bg-amber-50/90 border-amber-900/15 text-stone-800' 
+            : 'bg-amber-50/85 hover:bg-amber-50/95 border-amber-900/25 text-stone-900',
+          triggerBackdrop: 'backdrop-blur-lg shadow-md',
+          placeholderText: 'text-stone-500',
+          searchIconColor: 'text-amber-700',
+          modalBg: isHighContrast 
+            ? 'bg-amber-50/98 border-amber-900/40 text-stone-950' 
+            : isLowContrast 
+            ? 'bg-amber-50/85 border-amber-900/20 text-stone-900' 
+            : 'bg-amber-50/92 border-amber-900/30 text-stone-900',
+          modalBackdrop: 'backdrop-blur-xl shadow-2xl',
+          headerBg: 'bg-amber-100/60 border-amber-900/15',
+          tabActive: 'bg-amber-200/80 border-amber-900/30 text-stone-950 font-bold',
+          tabInactive: 'text-stone-600 hover:text-stone-900',
+          itemActive: 'bg-amber-200/70 border-amber-900/25 text-stone-950 shadow-sm',
+          itemInactive: 'text-stone-700 hover:bg-amber-100/50',
+          footerBg: 'bg-amber-100/40 border-amber-900/15 text-stone-600',
+          accentBadge: 'bg-amber-600/15 text-amber-800 border-amber-600/30'
+        };
+      case 'cyberpunk':
+        return {
+          triggerBg: isHighContrast 
+            ? 'bg-black hover:bg-slate-950 border-yellow-400 text-yellow-300' 
+            : isLowContrast 
+            ? 'bg-slate-950/75 hover:bg-slate-900/85 border-yellow-500/30 text-yellow-400' 
+            : 'bg-slate-950/90 hover:bg-slate-900/95 border-yellow-500/50 text-yellow-400',
+          triggerBackdrop: 'backdrop-blur-xl shadow-[0_0_15px_rgba(234,179,8,0.15)]',
+          placeholderText: 'text-yellow-500/60',
+          searchIconColor: 'text-yellow-400',
+          modalBg: isHighContrast 
+            ? 'bg-black border-yellow-400 text-yellow-300' 
+            : isLowContrast 
+            ? 'bg-slate-950/85 border-yellow-500/40 text-yellow-400' 
+            : 'bg-slate-950/95 border-yellow-500/60 text-yellow-400',
+          modalBackdrop: 'backdrop-blur-2xl shadow-[0_0_30px_rgba(234,179,8,0.25)]',
+          headerBg: 'bg-slate-900/80 border-yellow-500/30',
+          tabActive: 'bg-yellow-400/20 border-yellow-400 text-yellow-300 font-bold',
+          tabInactive: 'text-yellow-500/70 hover:text-yellow-300',
+          itemActive: 'bg-yellow-400/15 border-yellow-500/50 text-yellow-300 shadow-sm',
+          itemInactive: 'text-yellow-400/80 hover:bg-slate-900/70',
+          footerBg: 'bg-slate-900/80 border-yellow-500/30 text-yellow-500/70',
+          accentBadge: 'bg-yellow-400/20 text-yellow-300 border-yellow-400/40'
+        };
+      case 'dark-oled':
+      default:
+        return {
+          triggerBg: isHighContrast 
+            ? 'bg-black hover:bg-slate-950 border-slate-700 text-slate-100' 
+            : isLowContrast 
+            ? 'bg-slate-900/70 hover:bg-slate-900/85 border-slate-800/60 text-slate-300' 
+            : 'bg-slate-900/80 hover:bg-slate-900 border-slate-800 text-slate-200',
+          triggerBackdrop: 'backdrop-blur-xl shadow-lg',
+          placeholderText: 'text-slate-400',
+          searchIconColor: 'text-emerald-400',
+          modalBg: isHighContrast 
+            ? 'bg-black border-slate-700 text-slate-100' 
+            : isLowContrast 
+            ? 'bg-slate-950/85 border-slate-800/80 text-slate-200' 
+            : 'bg-slate-950/95 border-slate-800/90 text-slate-100',
+          modalBackdrop: 'backdrop-blur-2xl shadow-2xl',
+          headerBg: 'bg-slate-900/70 border-slate-800',
+          tabActive: 'bg-slate-800 border-slate-700 text-slate-100 shadow-sm',
+          tabInactive: 'text-slate-400 hover:text-slate-200',
+          itemActive: 'bg-slate-800/90 border-slate-700 text-slate-100 shadow-sm',
+          itemInactive: 'text-slate-300 hover:bg-slate-900/60',
+          footerBg: 'bg-slate-900/50 border-slate-800/70 text-slate-400',
+          accentBadge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+        };
+    }
+  }, [theme, contrast]);
+
   // Voice Command Interpreter using Web Speech API
   const handleVoiceCommand = (rawTranscript: string) => {
     const text = rawTranscript.trim().toLowerCase();
@@ -205,6 +311,15 @@ export default function GlobalSearch({ onOpenApp }: Props) {
       speakFeedback(msg);
       executeVoiceAction(msg, () => {
         onOpenApp('security');
+      });
+      return;
+    }
+
+    if (text.includes('note') || text.includes('mémo') || text.includes('capture') || text.includes('brouillon') || text.includes('rédiger')) {
+      const msg = 'Ouverture du carnet de notes et capture rapide...';
+      speakFeedback(msg);
+      executeVoiceAction(msg, () => {
+        onOpenApp('notes');
       });
       return;
     }
@@ -439,20 +554,20 @@ export default function GlobalSearch({ onOpenApp }: Props) {
             haptics.trigger('light');
             setIsOpen(true);
           }}
-          className="flex-1 h-11 px-3.5 bg-slate-900/80 hover:bg-slate-900 backdrop-blur-xl border border-slate-800 hover:border-slate-700 rounded-2xl flex items-center justify-between shadow-lg text-slate-400 group transition-all theme-transition"
+          className={`flex-1 h-11 px-3.5 border rounded-2xl flex items-center justify-between group transition-all theme-transition ${styleConfig.triggerBg} ${styleConfig.triggerBackdrop}`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            <Search size={15} className="text-slate-400 group-hover:text-emerald-400 transition-colors shrink-0" />
-            <span className="text-xs text-slate-400 group-hover:text-slate-200 truncate">
+            <Search size={15} className={`transition-colors shrink-0 ${styleConfig.searchIconColor}`} />
+            <span className={`text-xs truncate ${styleConfig.placeholderText}`}>
               Rechercher ou commande vocale...
             </span>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0 pl-2">
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-800 border border-slate-700/80 rounded-md">
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono opacity-80 bg-black/20 border border-white/10 rounded-md">
               <Command size={10} /> K
             </kbd>
-            <kbd className="sm:hidden inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-800 border border-slate-700/80 rounded-md">
+            <kbd className="sm:hidden inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono opacity-80 bg-black/20 border border-white/10 rounded-md">
               /
             </kbd>
           </div>
@@ -462,13 +577,13 @@ export default function GlobalSearch({ onOpenApp }: Props) {
         <button
           onClick={toggleVoice}
           title="Commande vocale IA"
-          className={`h-11 w-11 rounded-2xl border backdrop-blur-xl flex items-center justify-center transition-all shadow-lg shrink-0 ${
+          className={`h-11 w-11 rounded-2xl border flex items-center justify-center transition-all shrink-0 ${
             isListening 
               ? 'bg-red-500/20 border-red-500 text-red-400 animate-pulse' 
-              : 'bg-slate-900/80 hover:bg-slate-900 border-slate-800 text-emerald-400 hover:border-emerald-500/40 active:scale-95'
+              : `${styleConfig.triggerBg} ${styleConfig.triggerBackdrop} active:scale-95`
           }`}
         >
-          {isListening ? <Mic size={17} /> : <Mic size={17} />}
+          <Mic size={17} className={isListening ? 'text-red-400' : styleConfig.searchIconColor} />
         </button>
       </div>
 
@@ -494,11 +609,11 @@ export default function GlobalSearch({ onOpenApp }: Props) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -50, scale: 0.96 }}
               transition={{ type: 'spring', damping: 24, stiffness: 320 }}
-              className="relative z-10 w-full max-w-sm bg-slate-950/95 backdrop-blur-2xl border border-slate-800/90 rounded-3xl shadow-2xl overflow-hidden flex flex-col theme-transition max-h-[580px]"
+              className={`relative z-10 w-full max-w-sm rounded-3xl overflow-hidden flex flex-col theme-transition max-h-[580px] border ${styleConfig.modalBg} ${styleConfig.modalBackdrop}`}
             >
               {/* Search Input Header */}
-              <div className="p-3.5 border-b border-slate-800 flex items-center gap-2.5 bg-slate-900/70">
-                <Search size={17} className="text-emerald-400 shrink-0" />
+              <div className={`p-3.5 border-b flex items-center gap-2.5 ${styleConfig.headerBg}`}>
+                <Search size={17} className={`shrink-0 ${styleConfig.searchIconColor}`} />
                 <input
                   ref={inputRef}
                   value={query}
@@ -508,7 +623,7 @@ export default function GlobalSearch({ onOpenApp }: Props) {
                   }}
                   onKeyDown={handleKeyDown}
                   placeholder="Tapez ou dictez une commande..."
-                  className="w-full bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
+                  className="w-full bg-transparent text-sm text-inherit placeholder:opacity-50 focus:outline-none"
                 />
 
                 {/* Microphone inside search bar */}
@@ -518,7 +633,7 @@ export default function GlobalSearch({ onOpenApp }: Props) {
                   className={`p-1.5 rounded-xl border transition-all shrink-0 ${
                     isListening
                       ? 'bg-red-500/20 border-red-500/60 text-red-400 animate-pulse'
-                      : 'bg-slate-950/60 border-slate-800 text-emerald-400 hover:border-slate-700'
+                      : 'bg-black/20 border-white/10 hover:border-white/20'
                   }`}
                 >
                   <Mic size={15} />
@@ -530,7 +645,7 @@ export default function GlobalSearch({ onOpenApp }: Props) {
                       haptics.trigger('light');
                       setQuery('');
                     }}
-                    className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors shrink-0"
+                    className="p-1 rounded-lg opacity-70 hover:opacity-100 hover:bg-white/10 transition-colors shrink-0"
                   >
                     <X size={15} />
                   </button>
@@ -540,7 +655,7 @@ export default function GlobalSearch({ onOpenApp }: Props) {
                       stopVoiceRecognition();
                       setIsOpen(false);
                     }}
-                    className="px-2 py-0.5 rounded-md text-[10px] font-mono text-slate-400 bg-slate-900 border border-slate-800 hover:text-slate-200 shrink-0"
+                    className="px-2 py-0.5 rounded-md text-[10px] font-mono opacity-80 bg-black/30 border border-white/10 hover:opacity-100 shrink-0"
                   >
                     ESC
                   </button>
@@ -564,7 +679,7 @@ export default function GlobalSearch({ onOpenApp }: Props) {
                         <div className="text-xs font-semibold text-emerald-300 truncate">
                           {voiceFeedback || (speechTranscript ? `"${speechTranscript}"` : 'Écoute vocale active... Parlez maintenant')}
                         </div>
-                        <div className="text-[10px] text-slate-400 truncate">
+                        <div className="text-[10px] opacity-70 truncate">
                           Ex: "Ouvre Finance", "Passe en Production", "Mode Cyberpunk"
                         </div>
                       </div>
@@ -590,10 +705,11 @@ export default function GlobalSearch({ onOpenApp }: Props) {
               )}
 
               {/* Category Filter Tabs */}
-              <div className="px-3.5 py-2 border-b border-slate-800/60 flex items-center gap-1.5 bg-slate-900/30 overflow-x-auto scrollbar-hide shrink-0">
+              <div className={`px-3.5 py-2 border-b flex items-center gap-1.5 overflow-x-auto scrollbar-hide shrink-0 ${styleConfig.headerBg}`}>
                 {[
                   { id: 'all', label: 'Tous' },
                   { id: 'apps', label: 'Applications' },
+                  { id: 'notes', label: 'Notes' },
                   { id: 'clients', label: 'Clients & CRM' },
                   { id: 'files', label: 'Fichiers & Docs' },
                   { id: 'settings', label: 'Paramètres' },
@@ -606,10 +722,10 @@ export default function GlobalSearch({ onOpenApp }: Props) {
                       setActiveTab(tab.id);
                       setSelectedIndex(0);
                     }}
-                    className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition-all shrink-0 border ${
+                    className={`px-2.5 py-1 rounded-xl text-[11px] transition-all shrink-0 border ${
                       activeTab === tab.id
-                        ? 'bg-slate-800 border-slate-700 text-slate-100 shadow-sm'
-                        : 'bg-transparent border-transparent text-slate-400 hover:text-slate-200'
+                        ? styleConfig.tabActive
+                        : `border-transparent ${styleConfig.tabInactive}`
                     }`}
                   >
                     {tab.label}
@@ -620,10 +736,10 @@ export default function GlobalSearch({ onOpenApp }: Props) {
               {/* Results List */}
               <div ref={listRef} className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-hide max-h-[380px]">
                 {filteredResults.length === 0 ? (
-                  <div className="py-12 text-center text-slate-500">
-                    <Search size={22} className="mx-auto mb-2 text-slate-600" />
-                    <p className="text-xs font-medium text-slate-400">Aucun résultat pour "{query}"</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Essayez un autre mot-clé ou la commande vocale</p>
+                  <div className="py-12 text-center opacity-60">
+                    <Search size={22} className="mx-auto mb-2 opacity-50" />
+                    <p className="text-xs font-medium">Aucun résultat pour "{query}"</p>
+                    <p className="text-[11px] opacity-70 mt-0.5">Essayez un autre mot-clé ou la commande vocale</p>
                   </div>
                 ) : (
                   filteredResults.map((item, idx) => {
@@ -640,33 +756,33 @@ export default function GlobalSearch({ onOpenApp }: Props) {
                         onMouseEnter={() => setSelectedIndex(idx)}
                         className={`w-full p-2.5 rounded-2xl flex items-center justify-between text-left transition-all border ${
                           isSelected
-                            ? 'bg-slate-800/90 border-slate-700 text-slate-100 shadow-sm'
-                            : 'bg-transparent border-transparent text-slate-300 hover:bg-slate-900/60'
+                            ? styleConfig.itemActive
+                            : `border-transparent ${styleConfig.itemInactive}`
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
-                            item.color || 'bg-slate-900 text-slate-300 border-slate-800'
+                            item.color || 'bg-black/20 text-inherit border-white/10'
                           }`}>
                             <ItemIcon size={16} strokeWidth={1.5} />
                           </div>
 
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-semibold text-slate-100 truncate">
+                              <span className="text-xs font-semibold truncate">
                                 {item.title}
                               </span>
                               {item.badge && (
                                 <span className={`px-1.5 py-0.2 rounded-md text-[9px] font-medium border ${
                                   item.badge === 'Actif'
-                                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                                    : 'bg-slate-900 text-slate-400 border-slate-800'
+                                    ? styleConfig.accentBadge
+                                    : 'bg-black/20 opacity-80 border-white/10'
                                 }`}>
                                   {item.badge}
                                 </span>
                               )}
                             </div>
-                            <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                            <p className="text-[11px] opacity-70 truncate mt-0.5">
                               {item.subtitle}
                             </p>
                           </div>
@@ -674,7 +790,7 @@ export default function GlobalSearch({ onOpenApp }: Props) {
 
                         <div className="flex items-center gap-1 shrink-0 pl-2">
                           {isSelected && (
-                            <ChevronRight size={15} className="text-emerald-400 animate-pulse" />
+                            <ChevronRight size={15} className={`${styleConfig.searchIconColor} animate-pulse`} />
                           )}
                         </div>
                       </button>
@@ -684,10 +800,10 @@ export default function GlobalSearch({ onOpenApp }: Props) {
               </div>
 
               {/* Modal Footer Key Hints */}
-              <div className="px-4 py-2 border-t border-slate-800/70 bg-slate-900/50 flex items-center justify-between text-[10px] text-slate-400 shrink-0">
+              <div className={`px-4 py-2 border-t flex items-center justify-between text-[10px] shrink-0 ${styleConfig.footerBg}`}>
                 <div className="flex items-center gap-3">
-                  <span><kbd className="font-mono bg-slate-800 px-1 rounded">↑↓</kbd> Naviguer</span>
-                  <span><kbd className="font-mono bg-slate-800 px-1 rounded">↵</kbd> Exécuter</span>
+                  <span><kbd className="font-mono bg-black/20 px-1 rounded border border-white/10">↑↓</kbd> Naviguer</span>
+                  <span><kbd className="font-mono bg-black/20 px-1 rounded border border-white/10">↵</kbd> Exécuter</span>
                 </div>
                 <span>{filteredResults.length} indexés ({workspace})</span>
               </div>

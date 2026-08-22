@@ -21,7 +21,29 @@ export type AppId =
   | 'cognition'
   | 'hr'
   | 'security'
+  | 'notes'
   | 'lock';
+
+export interface SmartFolder {
+  id: string;
+  name: string;
+  appIds: AppId[];
+  color?: string;
+  createdAt?: number;
+}
+
+export interface NoteItem {
+  id: string;
+  title: string;
+  content: string;
+  category: 'Stratégie' | 'Finance' | 'Ops' | 'Clients' | 'Idées' | 'Général';
+  tags: string[];
+  isPinned?: boolean;
+  color?: string;
+  workspace: string;
+  createdAt: number;
+  updatedAt: number;
+}
 
 export type ThemeId = 'dark-oled' | 'warm-paper' | 'cyberpunk' | 'glassmorphism';
 export type ContrastLevel = 'low' | 'medium' | 'high';
@@ -96,6 +118,27 @@ export interface AppEvent<T = any> {
   sender: AppId | 'system' | 'tasks' | 'calendar' | 'clients' | 'finance';
   payload?: T;
   timestamp: number;
+}
+
+export type AppLifecycleState = 'inactive' | 'active' | 'paused' | 'background';
+
+export interface RecentActivityItem {
+  id: string;
+  appId: AppId;
+  title: string;
+  subtitle: string;
+  timestamp: number;
+  type: 'action' | 'edit' | 'view' | 'command' | 'sync';
+  badge?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface PowerState {
+  isLowPowerMode: boolean;
+  batteryLevel: number;
+  isCharging: boolean;
+  syncIntervalMs: number;
+  throttleFactor: number;
 }
 
 export type DeviceOrientation = 'portrait' | 'landscape';

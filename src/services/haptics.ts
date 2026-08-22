@@ -10,6 +10,7 @@ export type HapticType =
   | 'warning'
   | 'error'
   | 'appLaunch'
+  | 'appClose'
   | 'backNav'
   | 'dragStart'
   | 'dragDrop';
@@ -83,6 +84,9 @@ class HapticsService {
           case 'appLaunch':
             navigator.vibrate([15, 30, 20]);
             break;
+          case 'appClose':
+            navigator.vibrate([18, 25]);
+            break;
           case 'backNav':
             navigator.vibrate(14);
             break;
@@ -123,6 +127,9 @@ class HapticsService {
         break;
       case 'appLaunch':
         this.playSyntheticHapticTone(160, 0.035, 0.05);
+        break;
+      case 'appClose':
+        this.playSyntheticHapticTone(100, 0.03, 0.04);
         break;
       case 'backNav':
         this.playSyntheticHapticTone(130, 0.025, 0.04);

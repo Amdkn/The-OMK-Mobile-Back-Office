@@ -1,17 +1,18 @@
 // Centralized Search Indexing Service for OMK Mobile OS
-// Catalogs Applications, System Settings, Files/Documents, Client Records, and System Actions
-import { SearchResultItem, SearchResultCategory, AppId } from '../types';
+// Catalogs Applications, In-App Notes, Client Records, System Settings, Files/Documents, and System Actions
+import { SearchResultItem, SearchResultCategory, AppId, NoteItem } from '../types';
 import { APPS } from '../components/HomeScreen';
 import { ClientStorageService, Client } from './clientStorage';
+import { NotesService } from '../modules/notes';
 import { Workspace } from '../store/osStore';
 import { 
   FileText, FileCode, FileSpreadsheet, FileCheck, Database,
   Palette, Sliders, Layers, Settings, Bell, Sparkles, Lock, DollarSign,
-  Building2, Users
+  Building2, Users, StickyNote
 } from 'lucide-react';
 
 export interface IndexerSearchOptions {
-  category?: 'all' | 'apps' | 'files' | 'settings' | 'actions' | 'clients';
+  category?: 'all' | 'apps' | 'notes' | 'clients' | 'files' | 'settings' | 'actions';
   workspace: Workspace;
   theme: string;
   contrast: string;
@@ -50,6 +51,7 @@ export class SearchIndexingService {
 
     // 1. APPLICATIONS CATALOG
     const appKeywords: Record<string, string[]> = {
+      'notes': ['notes', 'capture', 'mémo', 'texte', 'idées', 'todo', 'brouillon', 'document'],
       'coach-ai': ['ia', 'intelligence', 'briefing', 'assistant', 'recommandations', 'automatisation', 'ai'],
       'baas-hub': ['blockchain', 'smart contracts', 'conformité', 'audit', 'légal', 'fintech', 'baas'],
       'jaas-job': ['recrutement', 'talents', 'rh', 'hiring', 'candidats', 'carrière', 'job', 'jaas'],
@@ -92,7 +94,38 @@ export class SearchIndexingService {
       });
     });
 
-    // 2. CLIENT RECORDS (Dynamic from ClientStorageService isolated to current workspace)
+    // 2. IN-APP NOTES CONTENT (Indexed from Notes module & IndexedDB)
+    try {
+      const notes = NotesService.getNotesSync(workspace);
+      notes.forEach((note: NoteItem) => {
+        const snippet = note.content.slice(0, 90).replace(/\n/g, ' ') + (note.content.length > 90 ? '...' : '');
+        catalog.push({
+          id: `note-item-${note.id}`,
+          title: note.title,
+          subtitle: snippet || `Note dans ${note.category}`,
+          category: 'notes' as any,
+          icon: StickyNote,
+          color: 'bg-emerald-950/60 text-emerald-300 border-emerald-900',
+          badge: note.category,
+          keywords: [
+            note.title,
+            note.category,
+            ...note.tags,
+            'note',
+            'capture',
+            'in-app',
+            ...note.content.split(/\s+/).slice(0, 20)
+          ],
+          action: () => {
+            onOpenApp('notes');
+          }
+        });
+      });
+    } catch (e) {
+      console.warn('Failed to index notes for search:', e);
+    }
+
+    // 3. IN-APP CLIENT RECORDS (Dynamic from ClientStorageService isolated to current workspace)
     try {
       const clientRecords = ClientStorageService.loadClients(workspace);
       clientRecords.forEach((client: Client) => {
@@ -104,7 +137,7 @@ export class SearchIndexingService {
           subtitle: `${client.tier} · MRR $${client.mrr.toLocaleString()} · Santé ${client.healthScore}% · SLA ${client.sla}`,
           category: 'clients' as any,
           icon: Building2,
-          color: client.status === 'at-risk' ? 'bg-amber-950/60 text-amber-400 border-amber-900' : 'bg-emerald-950/60 text-emerald-400 border-emerald-900',
+          color: client.status === 'at-risk' ? 'bg-amber-950/60 text-amber-400 border-amber-900' : 'bg-blue-950/60 text-blue-400 border-blue-900',
           badge: client.tier,
           keywords: [
             client.name, 
@@ -126,7 +159,7 @@ export class SearchIndexingService {
       console.warn('Failed to index client records for search:', e);
     }
 
-    // 3. FILES & DOCUMENTS
+    // 4. FILES & DOCUMENTS
     const files = [
       {
         id: 'file-financial-model',
@@ -197,7 +230,7 @@ export class SearchIndexingService {
     ];
     catalog.push(...files);
 
-    // 4. WORKSPACE & SYSTEM SETTINGS
+    // 5. WORKSPACE & SYSTEM SETTINGS
     const settingsItems: SearchResultItem[] = [
       // Themes
       {
@@ -326,7 +359,7 @@ export class SearchIndexingService {
     ];
     catalog.push(...settingsItems);
 
-    // 5. SYSTEM ACTIONS
+    // 6. SYSTEM ACTIONS
     const actionItems: SearchResultItem[] = [
       {
         id: 'action-notif-center',
@@ -360,6 +393,16 @@ export class SearchIndexingService {
         badge: 'Sécurité',
         action: lock,
         keywords: ['verrouiller', 'lock', 'quitter', 'sécurité', 'session']
+      },
+      {
+        id: 'action-new-note',
+        title: 'Créer une Nouvelle Note Rapide',
+        subtitle: 'Ouvrir le carnet de notes et capturer une idée',
+        category: 'actions',
+        icon: StickyNote,
+        badge: 'Notes',
+        action: () => onOpenApp('notes'),
+        keywords: ['note', 'capturer', 'écrire', 'texte', 'mémo', 'idée']
       },
       {
         id: 'action-briefing-coach',
@@ -399,6 +442,7 @@ export class SearchIndexingService {
     if (categoryTab !== 'all') {
       pool = catalog.filter(item => {
         if (categoryTab === 'apps') return item.category === 'apps';
+        if (categoryTab === 'notes') return (item as any).category === 'notes';
         if (categoryTab === 'clients') return (item as any).category === 'clients';
         if (categoryTab === 'files') return (item as any).category === 'files';
         if (categoryTab === 'settings') return item.category === 'settings';

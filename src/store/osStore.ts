@@ -1,14 +1,75 @@
 import { create } from 'zustand';
-import { AppId, Paradigm, ThemeId, ContrastLevel, WallpaperId, OSNotification, AppEvent } from '../types';
+import { 
+  AppId, Paradigm, ThemeId, ContrastLevel, WallpaperId, 
+  OSNotification, AppEvent, RecentActivityItem, AppLifecycleState, SmartFolder 
+} from '../types';
 import { arrayMove } from '@dnd-kit/sortable';
 
 export type Workspace = 'Sandbox' | 'Development' | 'Production';
 export type DeviceViewMode = 'auto' | 'portrait' | 'landscape' | 'tablet';
 
+const INITIAL_ACTIVITIES: RecentActivityItem[] = [
+  {
+    id: 'act-1',
+    appId: 'clients',
+    title: 'Apex Quantum Corp',
+    subtitle: 'Contrat Entreprise renouvelé ($42k MRR)',
+    timestamp: Date.now() - 1000 * 60 * 12,
+    type: 'edit',
+    badge: 'Santé 98%'
+  },
+  {
+    id: 'act-2',
+    appId: 'finance',
+    title: 'Clôture Stripe & Rapprochement',
+    subtitle: 'Règlement #INV-2026-94 validé ($42,000)',
+    timestamp: Date.now() - 1000 * 60 * 35,
+    type: 'action',
+    badge: '+14.2% MoM'
+  },
+  {
+    id: 'act-3',
+    appId: 'notes',
+    title: 'Cadrage IA & Gouvernance',
+    subtitle: 'Note sauvegardée dans IndexedDB',
+    timestamp: Date.now() - 1000 * 60 * 48,
+    type: 'edit',
+    badge: 'Capture'
+  },
+  {
+    id: 'act-4',
+    appId: 'operations',
+    title: 'Sprint S34 - Audit SOC2 Type II',
+    subtitle: '18 tâches finalisées, 2 bloquants levés',
+    timestamp: Date.now() - 1000 * 60 * 75,
+    type: 'action',
+    badge: '92% complété'
+  },
+  {
+    id: 'act-5',
+    appId: 'hr',
+    title: 'Agenda Direction & Board Sync',
+    subtitle: 'Réunion Apex Corp préparée pour 14h00',
+    timestamp: Date.now() - 1000 * 60 * 130,
+    type: 'view',
+    badge: 'C-Level'
+  }
+];
+
 const DEFAULT_GRID_APPS: AppId[] = [
-  'baas-hub', 'jaas-job', 'paas-pro', 'dashboard', 'finance', 
+  'notes', 'baas-hub', 'jaas-job', 'paas-pro', 'dashboard', 'finance', 
   'operations', 'sales', 'clients', 'growth', 'product', 
   'ontology', 'cognition', 'hr', 'terminal', 'settings'
+];
+
+const DEFAULT_SMART_FOLDERS: SmartFolder[] = [
+  {
+    id: 'folder-core-fintech',
+    name: 'Fintech & Deals',
+    appIds: ['baas-hub', 'sales'],
+    color: 'emerald',
+    createdAt: Date.now() - 100000
+  }
 ];
 
 const INITIAL_NOTIFICATIONS: OSNotification[] = [
@@ -132,10 +193,27 @@ interface OSStoreState {
   wallpaper: WallpaperId;
   brightness: number;
   gridAppOrder: AppId[];
+  smartFolders: SmartFolder[];
   pinnedWidgetIds: string[];
   widgetOrder: string[];
   workspace: Workspace;
   deviceViewMode: DeviceViewMode;
+  
+  // Smart Folders Actions
+  createSmartFolder: (name: string, appIds: AppId[]) => string;
+  deleteSmartFolder: (folderId: string) => void;
+  renameSmartFolder: (folderId: string, newName: string) => void;
+  addAppToFolder: (folderId: string, appId: AppId) => void;
+  removeAppFromFolder: (folderId: string, appId: AppId) => void;
+  
+  // Power Management & Battery Throttling
+  isLowPowerMode: boolean;
+  
+  // Recent Activity Feed
+  recentActivities: RecentActivityItem[];
+  
+  // App Lifecycle States
+  appLifecycleStates: Record<string, AppLifecycleState>;
   
   // AppEventBus - Cross-module Communication
   events: AppEvent[];
@@ -166,6 +244,17 @@ interface OSStoreState {
   reorderWidgets: (oldIndex: number, newIndex: number) => void;
   setWorkspace: (w: Workspace) => void;
   setDeviceViewMode: (mode: DeviceViewMode) => void;
+  
+  // Power Management Actions
+  toggleLowPowerMode: () => void;
+  setLowPowerMode: (enabled: boolean) => void;
+  
+  // Recent Activities Actions
+  addRecentActivity: (activity: Omit<RecentActivityItem, 'id' | 'timestamp'>) => void;
+  clearRecentActivities: () => void;
+  
+  // App Lifecycle Actions
+  setAppLifecycleState: (appId: string, state: AppLifecycleState) => void;
   
   // AppEventBus Actions
   emitEvent: (type: string, sender: AppId | 'system' | 'tasks' | 'calendar' | 'clients' | 'finance', payload?: any) => void;
@@ -296,6 +385,37 @@ const getInitialWidgetOrder = (): string[] => {
   ];
 };
 
+const getInitialSmartFolders = (): SmartFolder[] => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('os_smart_folders');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+  }
+  return DEFAULT_SMART_FOLDERS;
+};
+
+const getInitialLowPowerMode = (): boolean => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('os_low_power_mode') === 'true';
+  }
+  return false;
+};
+
+const getInitialActivities = (): RecentActivityItem[] => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('os_recent_activities');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+  }
+  return INITIAL_ACTIVITIES;
+};
+
 export const useOSStore = create<OSStoreState>((set, get) => ({
   isLocked: getInitialLockState(),
   paradigm: 'ios',
@@ -305,10 +425,20 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
   wallpaper: getInitialWallpaper(),
   brightness: getInitialBrightness(),
   gridAppOrder: getInitialGridAppOrder(),
+  smartFolders: getInitialSmartFolders(),
   pinnedWidgetIds: getInitialPinnedWidgets(),
   widgetOrder: getInitialWidgetOrder(),
   workspace: getInitialWorkspace(),
   deviceViewMode: 'auto',
+  
+  // Power Management
+  isLowPowerMode: getInitialLowPowerMode(),
+  
+  // Recent Activities
+  recentActivities: getInitialActivities(),
+  
+  // App Lifecycle States
+  appLifecycleStates: {},
   
   // AppEventBus
   events: [],
@@ -334,8 +464,38 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
     set({ isLocked: true, activeApp: null, isNotificationCenterOpen: false });
   },
   setParadigm: (paradigm) => set({ paradigm }),
-  openApp: (id) => set({ activeApp: id, isNotificationCenterOpen: false }),
-  closeApp: () => set({ activeApp: null }),
+  openApp: (id) => {
+    const prevApp = get().activeApp;
+    set((state) => {
+      const updatedStates = { ...state.appLifecycleStates };
+      if (prevApp && prevApp !== id) {
+        updatedStates[prevApp] = 'background';
+      }
+      updatedStates[id] = 'active';
+      return { 
+        activeApp: id, 
+        isNotificationCenterOpen: false,
+        appLifecycleStates: updatedStates
+      };
+    });
+    get().emitEvent('APP_OPENED', id, { appId: id, prevApp });
+  },
+  closeApp: () => {
+    const currentApp = get().activeApp;
+    set((state) => {
+      const updatedStates = { ...state.appLifecycleStates };
+      if (currentApp) {
+        updatedStates[currentApp] = 'inactive';
+      }
+      return { 
+        activeApp: null,
+        appLifecycleStates: updatedStates
+      };
+    });
+    if (currentApp) {
+      get().emitEvent('APP_CLOSED', currentApp, { appId: currentApp });
+    }
+  },
   setTheme: (theme) => {
     localStorage.setItem('os_theme', theme);
     set({ theme });
@@ -370,6 +530,57 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
     localStorage.setItem('os_widget_order', JSON.stringify(newOrder));
     return { widgetOrder: newOrder };
   }),
+  createSmartFolder: (name, appIds) => {
+    const folderId = `folder-${Date.now()}`;
+    const newFolder: SmartFolder = {
+      id: folderId,
+      name: name.trim() || 'Dossier',
+      appIds: [...new Set(appIds)],
+      color: 'emerald',
+      createdAt: Date.now()
+    };
+    set((state) => {
+      const updated = [...state.smartFolders, newFolder];
+      localStorage.setItem('os_smart_folders', JSON.stringify(updated));
+      return { smartFolders: updated };
+    });
+    get().emitEvent('FOLDER_CREATED', 'system', { folder: newFolder });
+    return folderId;
+  },
+  deleteSmartFolder: (folderId) => set((state) => {
+    const updated = state.smartFolders.filter(f => f.id !== folderId);
+    localStorage.setItem('os_smart_folders', JSON.stringify(updated));
+    get().emitEvent('FOLDER_DELETED', 'system', { folderId });
+    return { smartFolders: updated };
+  }),
+  renameSmartFolder: (folderId, newName) => set((state) => {
+    const updated = state.smartFolders.map(f => 
+      f.id === folderId ? { ...f, name: newName.trim() || 'Dossier' } : f
+    );
+    localStorage.setItem('os_smart_folders', JSON.stringify(updated));
+    return { smartFolders: updated };
+  }),
+  addAppToFolder: (folderId, appId) => set((state) => {
+    const updated = state.smartFolders.map(f => {
+      if (f.id === folderId) {
+        return { ...f, appIds: [...new Set([...f.appIds, appId])] };
+      }
+      return f;
+    });
+    localStorage.setItem('os_smart_folders', JSON.stringify(updated));
+    get().emitEvent('APP_ADDED_TO_FOLDER', appId, { folderId, appId });
+    return { smartFolders: updated };
+  }),
+  removeAppFromFolder: (folderId, appId) => set((state) => {
+    const updated = state.smartFolders.map(f => {
+      if (f.id === folderId) {
+        return { ...f, appIds: f.appIds.filter(id => id !== appId) };
+      }
+      return f;
+    }).filter(f => f.appIds.length > 0); // remove empty folder if wanted
+    localStorage.setItem('os_smart_folders', JSON.stringify(updated));
+    return { smartFolders: updated };
+  }),
   toggleDevOverlay: () => set((state) => ({ isDevOverlayOpen: !state.isDevOverlayOpen })),
   setDevOverlayOpen: (open) => set({ isDevOverlayOpen: open }),
   setWorkspace: (w) => {
@@ -378,6 +589,43 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
     get().emitEvent('WORKSPACE_CHANGED', 'system', { workspace: w });
   },
   setDeviceViewMode: (mode) => set({ deviceViewMode: mode }),
+  
+  // Power Management Actions
+  toggleLowPowerMode: () => set((state) => {
+    const nextVal = !state.isLowPowerMode;
+    localStorage.setItem('os_low_power_mode', nextVal.toString());
+    get().emitEvent('POWER_STATE_CHANGED', 'system', { isLowPowerMode: nextVal });
+    return { isLowPowerMode: nextVal };
+  }),
+  setLowPowerMode: (enabled) => {
+    localStorage.setItem('os_low_power_mode', enabled.toString());
+    set({ isLowPowerMode: enabled });
+    get().emitEvent('POWER_STATE_CHANGED', 'system', { isLowPowerMode: enabled });
+  },
+  
+  // Recent Activities Actions
+  addRecentActivity: (activity) => set((state) => {
+    const newAct: RecentActivityItem = {
+      ...activity,
+      id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      timestamp: Date.now()
+    };
+    // Keep max 20, deduplicate consecutive identical items
+    const filtered = state.recentActivities.filter(a => !(a.appId === newAct.appId && a.title === newAct.title));
+    const nextActivities = [newAct, ...filtered].slice(0, 20);
+    localStorage.setItem('os_recent_activities', JSON.stringify(nextActivities));
+    return { recentActivities: nextActivities };
+  }),
+  clearRecentActivities: () => {
+    localStorage.removeItem('os_recent_activities');
+    set({ recentActivities: [] });
+  },
+  
+  // App Lifecycle Actions
+  setAppLifecycleState: (appId, lifecycleState) => set((state) => {
+    const updated = { ...state.appLifecycleStates, [appId]: lifecycleState };
+    return { appLifecycleStates: updated };
+  }),
   
   // AppEventBus Action Implementation
   emitEvent: (type, sender, payload) => {

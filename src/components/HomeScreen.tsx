@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { AppId, AppDefinition } from '../types';
+import { AppId, AppDefinition, SmartFolder } from '../types';
 import { useOSStore } from '../store/osStore';
 import { haptics } from '../services/haptics';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
@@ -21,15 +21,18 @@ import {
   rectSortingStrategy 
 } from '@dnd-kit/sortable';
 import { SortableAppIcon, AppIconView } from './SortableAppIcon';
+import SmartFolderIcon, { SmartFolderIconView } from './SmartFolderIcon';
+import SmartFolderModal from './SmartFolderModal';
 import GlobalSearch from './GlobalSearch';
 import DynamicWidgetsGrid from './widgets/DynamicWidgetsGrid';
 import { 
   Bot, Scale, Users, Server, WalletCards, PhoneCall, TerminalSquare, 
   LockKeyhole, Settings, LayoutDashboard, Landmark, HardHat, PieChart,
-  Users2, LineChart, Cpu, Network, Lightbulb, UserCog
+  Users2, LineChart, Cpu, Network, Lightbulb, UserCog, StickyNote, FolderPlus
 } from 'lucide-react';
 
 export const APPS: AppDefinition[] = [
+  { id: 'notes', name: 'Notes', icon: StickyNote, color: 'bg-emerald-950 text-emerald-400 border-emerald-900' },
   { id: 'coach-ai', name: 'Coach AI', icon: Bot, color: 'bg-emerald-950 text-emerald-400 border-emerald-900', inDock: true },
   { id: 'baas-hub', name: 'BaaS Hub', icon: Scale, color: 'bg-slate-900 text-slate-300 border-slate-800' },
   { id: 'jaas-job', name: 'JaaS JOB', icon: Users, color: 'bg-slate-900 text-slate-300 border-slate-800' },
@@ -52,10 +55,11 @@ export const APPS: AppDefinition[] = [
 ];
 
 export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => void }) {
-  const { lock, gridAppOrder, reorderGridApps } = useOSStore();
+  const { lock, gridAppOrder, reorderGridApps, smartFolders, createSmartFolder, addAppToFolder } = useOSStore();
   const layout = useResponsiveLayout();
   const [currentPage, setCurrentPage] = useState(0);
   const [activeDragId, setActiveDragId] = useState<AppId | null>(null);
+  const [activeFolderModal, setActiveFolderModal] = useState<SmartFolder | null>(null);
 
   // Configure touch sensor with 250ms long-press delay for mobile tactile feel
   const sensors = useSensors(
@@ -76,12 +80,18 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
   // Dock apps
   const dockApps = APPS.filter(a => a.inDock);
 
+  // App IDs that are placed inside folders (don't duplicate in root grid)
+  const appIdsInFolders = useMemo(() => {
+    return new Set(smartFolders.flatMap(f => f.appIds));
+  }, [smartFolders]);
+
   // Map the ordered IDs back to actual AppDefinitions
   const orderedGridApps = useMemo(() => {
     return gridAppOrder
+      .filter(id => !appIdsInFolders.has(id))
       .map(id => APPS.find(a => a.id === id))
       .filter((a): a is AppDefinition => a !== undefined);
-  }, [gridAppOrder]);
+  }, [gridAppOrder, appIdsInFolders]);
 
   const activeAppDef = useMemo(() => {
     return activeDragId ? APPS.find(a => a.id === activeDragId) : null;
@@ -127,8 +137,33 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = gridAppOrder.indexOf(active.id as AppId);
-      const newIndex = gridAppOrder.indexOf(over.id as AppId);
+      const activeId = active.id as AppId;
+      const overId = over.id as string;
+
+      // Check if dropped onto a smart folder
+      const targetFolder = smartFolders.find(f => f.id === overId);
+      if (targetFolder) {
+        haptics.trigger('success');
+        addAppToFolder(targetFolder.id, activeId);
+        setActiveDragId(null);
+        return;
+      }
+
+      // Check if dropped onto another app to create a Smart Folder
+      const overApp = APPS.find(a => a.id === overId);
+      const activeApp = APPS.find(a => a.id === activeId);
+
+      if (overApp && activeApp && overId !== activeId) {
+        const folderName = `${activeApp.name.split(' ')[0]} & ${overApp.name.split(' ')[0]}`;
+        haptics.trigger('success');
+        createSmartFolder(folderName, [activeId, overId as AppId]);
+        setActiveDragId(null);
+        return;
+      }
+
+      // Otherwise, standard reordering
+      const oldIndex = gridAppOrder.indexOf(activeId);
+      const newIndex = gridAppOrder.indexOf(overId as AppId);
       if (oldIndex !== -1 && newIndex !== -1) {
         haptics.trigger('dragDrop');
         reorderGridApps(oldIndex, newIndex);
@@ -174,7 +209,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
             items={gridAppOrder}
             strategy={rectSortingStrategy}
           >
-            {/* Page 1: Dynamic OMK AppWidgets Dashboard + First Page Apps */}
+            {/* Page 1: Dynamic OMK AppWidgets Dashboard + Smart Folders + First Page Apps */}
             <div className={`w-full h-full flex-shrink-0 snap-center flex flex-col ${
               layout.isLandscape ? 'px-4' : 'px-6'
             }`}>
@@ -187,6 +222,19 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
 
               {/* Responsive Aligned Application Grid */}
               <div className={`grid ${gridColsClass} gap-x-3 gap-y-3.5 content-start flex-1 overflow-y-auto scrollbar-hide`}>
+                {/* Smart Folders first in Grid */}
+                {smartFolders.map(folder => (
+                  <SmartFolderIcon
+                    key={folder.id}
+                    folder={folder}
+                    onClick={() => {
+                      haptics.trigger('selection');
+                      setActiveFolderModal(folder);
+                    }}
+                  />
+                ))}
+
+                {/* Applications */}
                 {page1Apps.map(app => (
                   <SortableAppIcon 
                     key={app.id} 
@@ -215,7 +263,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
             ))}
           </SortableContext>
 
-          {/* Smooth Drag Overlay to avoid layout collapse */}
+          {/* Smooth Drag Overlay */}
           <DragOverlay dropAnimation={{
             duration: 200,
             easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
@@ -226,6 +274,15 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
           </DragOverlay>
         </DndContext>
       </div>
+
+      {/* Smart Folder Modal View */}
+      {activeFolderModal && (
+        <SmartFolderModal
+          folder={activeFolderModal}
+          onClose={() => setActiveFolderModal(null)}
+          onOpenApp={onOpenApp}
+        />
+      )}
 
       {/* Page Indicators */}
       {totalPages > 1 && (
@@ -261,3 +318,4 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     </div>
   );
 }
+

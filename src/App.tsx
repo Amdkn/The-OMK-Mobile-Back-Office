@@ -3,10 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { useEffect } from 'react';
 import { useOSStore } from './store/osStore';
 import { AnimatePresence } from 'motion/react';
-import { Smartphone, Tablet, RotateCw, Sparkles, Radio } from 'lucide-react';
+import { Smartphone, Tablet, RotateCw, Sparkles, Radio, Zap } from 'lucide-react';
 import { haptics } from './services/haptics';
+import { usePowerManager } from './hooks/usePowerManager';
+import { OfflineStorageService } from './services/offlineStorage';
 import PhoneChassis from './components/PhoneChassis';
 import LockScreen from './components/LockScreen';
 import HomeScreen from './components/HomeScreen';
@@ -25,13 +28,46 @@ export default function App() {
     contrast, 
     brightness, 
     deviceViewMode,
+    workspace,
     unlock, 
     closeApp, 
     openApp, 
     setParadigm,
     setDeviceViewMode,
-    emitEvent
+    emitEvent,
+    simulateIncomingAlert
   } = useOSStore();
+
+  const power = usePowerManager();
+
+  // Initialize IndexedDB offline cache on mount
+  useEffect(() => {
+    OfflineStorageService.init().then(() => {
+      OfflineStorageService.seedDefaultOfflineCache(workspace);
+    });
+  }, [workspace]);
+
+  // Automated background sync loop throttled by power manager (30s in Low Power vs 5s normal)
+  useEffect(() => {
+    let syncCount = 0;
+    const interval = setInterval(() => {
+      syncCount++;
+      // Dispatch background telemetry sync pulse
+      emitEvent('OMK_TELEMETRY_SYNC', 'system', { 
+        timestamp: Date.now(), 
+        batteryLevel: power.batteryLevel,
+        isLowPowerMode: power.isLowPowerMode,
+        syncIntervalMs: power.syncIntervalMs
+      });
+
+      // Periodically trigger a live business notification alert (every 4 sync cycles)
+      if (syncCount % 4 === 0 && !isLocked) {
+        simulateIncomingAlert();
+      }
+    }, power.syncIntervalMs);
+
+    return () => clearInterval(interval);
+  }, [power.syncIntervalMs, power.isLowPowerMode, power.batteryLevel, isLocked, emitEvent, simulateIncomingAlert]);
 
   return (
     <div className="fixed inset-0 bg-slate-950 flex items-center justify-center md:p-8 font-sans text-slate-100 selection:bg-emerald-500/30">
@@ -125,6 +161,24 @@ export default function App() {
           </div>
         </div>
 
+        {/* Power Management Mode */}
+        <div>
+          <h2 className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-2 flex items-center gap-1">
+            <Zap size={11} className={power.isLowPowerMode ? 'text-amber-400' : 'text-slate-400'} /> Énergie
+          </h2>
+          <button
+            onClick={power.toggleLowPowerMode}
+            className={`w-full px-3 py-1.5 rounded-xl text-xs font-medium transition-all border text-left flex items-center justify-between ${
+              power.isLowPowerMode
+                ? 'bg-amber-950/60 border-amber-500/50 text-amber-300 shadow-md'
+                : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <span>{power.isLowPowerMode ? 'Économie Active' : 'Mode Normal'}</span>
+            <span className={`w-2 h-2 rounded-full ${power.isLowPowerMode ? 'bg-amber-400 animate-pulse' : 'bg-slate-600'}`} />
+          </button>
+        </div>
+
         {/* Cross-App Event Bus Live Trigger */}
         <div className="pt-2 border-t border-slate-800/60">
           <h2 className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-2 flex items-center gap-1">
@@ -147,6 +201,7 @@ export default function App() {
         <div 
           data-theme={theme} 
           data-contrast={contrast} 
+          data-low-power={power.isLowPowerMode ? 'true' : 'false'}
           className="relative w-full h-full bg-slate-950 overflow-hidden text-slate-100 flex flex-col theme-transition"
           style={{
             filter: `brightness(${brightness}%)`

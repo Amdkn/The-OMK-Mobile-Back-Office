@@ -5,7 +5,7 @@ import { Workspace } from '../store/osStore';
 import { ClientStorageService } from './clientStorage';
 import { 
   Bot, Landmark, Users2, PhoneCall, Server, Shield, 
-  Bell, HardHat, Calendar, CheckSquare, LineChart, Sparkles
+  Bell, HardHat, Calendar, CheckSquare, LineChart, Sparkles, Activity, StickyNote
 } from 'lucide-react';
 
 export class AppWidgetRegistry {
@@ -27,6 +27,23 @@ export class AppWidgetRegistry {
     }
 
     const widgets: AppWidget[] = [
+      // Recent Activity Widget
+      {
+        id: 'widget-recent-activity',
+        appId: 'dashboard',
+        title: 'Activité Récente',
+        category: 'Système',
+        size: 'medium',
+        value: '5 Actions',
+        subValue: 'Clients, Finance, Ops',
+        icon: Activity,
+        accentColor: 'emerald',
+        badge: 'Temps Réel',
+        updatedAt: 'Live',
+        trend: 'up',
+        trendValue: 'Sync',
+        isPinned: true
+      },
       // Coach AI Strategic Widget
       {
         id: 'widget-coach-ai',
@@ -76,6 +93,23 @@ export class AppWidgetRegistry {
         updatedAt: 'À jour',
         trend: 'up',
         trendValue: '+2 ce mois',
+        isPinned: true
+      },
+      // Notes Quick Capture Widget
+      {
+        id: 'widget-notes',
+        appId: 'notes',
+        title: 'Notes & Capture',
+        category: 'Productivité',
+        size: 'small',
+        value: 'Quick Capture',
+        subValue: 'Persistance IndexedDB',
+        icon: StickyNote,
+        accentColor: 'emerald',
+        badge: 'Offline-first',
+        updatedAt: 'Prêt',
+        trend: 'up',
+        trendValue: 'Sync locale',
         isPinned: true
       },
       // Tasks / Operations Widget

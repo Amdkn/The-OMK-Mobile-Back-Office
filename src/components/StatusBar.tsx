@@ -1,20 +1,22 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  Wifi, Signal, Bell, Zap, Battery, BatteryCharging, 
-  BatteryFull, BatteryMedium, BatteryLow, BatteryWarning 
+  Wifi, WifiOff, Signal, Bell, Zap, Battery, BatteryCharging, 
+  BatteryFull, BatteryMedium, BatteryLow, BatteryWarning, Leaf
 } from 'lucide-react';
 import { Paradigm } from '../types';
 import { useOSStore } from '../store/osStore';
+import { usePowerManager } from '../hooks/usePowerManager';
+import { OfflineStorageService } from '../services/offlineStorage';
 import DynamicIsland from './DynamicIsland';
 
 export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
   const [time, setTime] = useState(new Date());
+  const [isOnline, setIsOnline] = useState<boolean>(OfflineStorageService.isOnline());
+  const power = usePowerManager();
+  
   const { 
     theme, 
     contrast, 
-    batteryLevel, 
-    isCharging, 
-    toggleCharging, 
     networkType, 
     signalStrength, 
     notifications, 
@@ -24,6 +26,13 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const unsub = OfflineStorageService.listenNetworkStatus(online => {
+      setIsOnline(online);
+    });
+    return unsub;
   }, []);
 
   const unreadCount = useMemo(() => {
@@ -42,7 +51,7 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
           iconColor: contrast === 'high' ? 'text-stone-900' : 'text-stone-700',
           accentColor: 'text-amber-700',
           badgeBg: 'bg-amber-600 text-white',
-          batteryFill: isCharging ? 'text-amber-600' : batteryLevel < 20 ? 'text-red-600' : 'text-stone-800',
+          batteryFill: power.isLowPowerMode ? 'text-amber-600' : power.isCharging ? 'text-amber-600' : power.batteryLevel < 20 ? 'text-red-600' : 'text-stone-800',
           containerClass: `${contrastOpacity} theme-transition`,
         };
       case 'cyberpunk':
@@ -51,7 +60,7 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
           iconColor: 'text-yellow-400',
           accentColor: 'text-cyan-400',
           badgeBg: 'bg-yellow-400 text-black',
-          batteryFill: isCharging ? 'text-cyan-400' : batteryLevel < 20 ? 'text-red-400' : 'text-yellow-400',
+          batteryFill: power.isLowPowerMode ? 'text-amber-400' : power.isCharging ? 'text-cyan-400' : power.batteryLevel < 20 ? 'text-red-400' : 'text-yellow-400',
           containerClass: `${contrastOpacity} theme-transition`,
         };
       case 'glassmorphism':
@@ -60,7 +69,7 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
           iconColor: contrast === 'high' ? 'text-white' : 'text-white/80',
           accentColor: 'text-sky-400',
           badgeBg: 'bg-sky-500 text-white',
-          batteryFill: isCharging ? 'text-sky-400' : batteryLevel < 20 ? 'text-rose-400' : 'text-white',
+          batteryFill: power.isLowPowerMode ? 'text-amber-400' : power.isCharging ? 'text-sky-400' : power.batteryLevel < 20 ? 'text-rose-400' : 'text-white',
           containerClass: `${contrastOpacity} theme-transition`,
         };
       case 'dark-oled':
@@ -70,20 +79,20 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
           iconColor: contrast === 'high' ? 'text-slate-100' : 'text-slate-400',
           accentColor: 'text-emerald-400',
           badgeBg: 'bg-emerald-500 text-slate-950',
-          batteryFill: isCharging ? 'text-emerald-400' : batteryLevel < 20 ? 'text-red-400' : 'text-slate-200',
+          batteryFill: power.isLowPowerMode ? 'text-amber-400' : power.isCharging ? 'text-emerald-400' : power.batteryLevel < 20 ? 'text-red-400' : 'text-slate-200',
           containerClass: `${contrastOpacity} theme-transition`,
         };
     }
-  }, [theme, contrast, isCharging, batteryLevel]);
+  }, [theme, contrast, power.isCharging, power.batteryLevel, power.isLowPowerMode]);
 
   // Battery Icon selector
   const BatteryIcon = useMemo(() => {
-    if (isCharging) return BatteryCharging;
-    if (batteryLevel >= 80) return BatteryFull;
-    if (batteryLevel >= 40) return BatteryMedium;
-    if (batteryLevel >= 20) return BatteryLow;
+    if (power.isCharging) return BatteryCharging;
+    if (power.batteryLevel >= 80) return BatteryFull;
+    if (power.batteryLevel >= 40) return BatteryMedium;
+    if (power.batteryLevel >= 20) return BatteryLow;
     return BatteryWarning;
-  }, [isCharging, batteryLevel]);
+  }, [power.isCharging, power.batteryLevel]);
 
   return (
     <div className={`absolute top-0 left-0 right-0 h-14 z-40 flex items-center justify-between px-5 pointer-events-none select-none ${styleConfig.containerClass}`}>
@@ -117,8 +126,20 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
         <DynamicIsland paradigm={paradigm} />
       </div>
 
-      {/* Right: Network Signal & Battery */}
+      {/* Right: Network Signal, Low Power Mode & Battery */}
       <div className="flex-1 flex justify-end items-center gap-1.5 pr-1 pointer-events-auto">
+        {/* Low Power Mode Badge toggle */}
+        {power.isLowPowerMode && (
+          <button
+            onClick={power.toggleLowPowerMode}
+            title={power.powerStatusLabel}
+            className="p-1 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-0.5 text-[10px] font-mono hover:scale-105 transition-all"
+          >
+            <Zap size={10} className="fill-amber-400" />
+            <span className="hidden sm:inline text-[9px]">Eco</span>
+          </button>
+        )}
+
         {/* Network Signal Indicator with 5G/LTE tag */}
         <div className="flex items-center gap-0.5" title={`Signal réseau: ${signalStrength}/4 · ${networkType}`}>
           <div className="flex items-end gap-0.5 h-3 px-0.5">
@@ -142,23 +163,27 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
           </span>
         </div>
 
-        {/* Wi-Fi Icon */}
-        <div title="Wi-Fi Connecté">
-          <Wifi size={14} strokeWidth={2.5} className={styleConfig.iconColor} />
+        {/* Wi-Fi Icon / Offline */}
+        <div title={isOnline ? "Wi-Fi Connecté (En ligne)" : "Mode Hors-ligne (IndexedDB Cache)"}>
+          {isOnline ? (
+            <Wifi size={14} strokeWidth={2.5} className={styleConfig.iconColor} />
+          ) : (
+            <WifiOff size={14} strokeWidth={2.5} className="text-rose-400" />
+          )}
         </div>
 
         {/* Battery with dynamic % and toggleable charging */}
         <button 
-          onClick={toggleCharging}
-          title={`${batteryLevel}% - ${isCharging ? 'En charge (cliquer pour basculer)' : 'Sur batterie (cliquer pour brancher)'}`}
+          onClick={power.toggleLowPowerMode}
+          title={`${power.batteryLevel}% - ${power.isCharging ? 'En charge' : 'Sur batterie'} • ${power.powerStatusLabel}`}
           className="flex items-center gap-1 hover:opacity-80 transition-opacity pl-0.5"
         >
           <span className={`text-[10px] font-medium font-mono ${styleConfig.textColor}`}>
-            {batteryLevel}%
+            {power.batteryLevel}%
           </span>
           <div className="relative flex items-center">
             <BatteryIcon size={18} strokeWidth={2} className={styleConfig.batteryFill} />
-            {isCharging && (
+            {power.isCharging && (
               <Zap size={9} className="absolute left-1 text-amber-400 fill-amber-400 animate-pulse" />
             )}
           </div>

@@ -4,9 +4,10 @@ import { useOSStore } from '../../store/osStore';
 import { AppWidgetRegistry } from '../../services/widgetRegistry';
 import { SortableWidgetCard } from './SortableWidgetCard';
 import AppWidgetCard from './AppWidgetCard';
+import RecentActivityWidget from './RecentActivityWidget';
 import { 
   Sparkles, Settings2, Check, Plus, Pin, PinOff, 
-  RotateCcw, GripVertical, SlidersHorizontal, X 
+  RotateCcw, GripVertical, SlidersHorizontal, X, Activity, LayoutGrid 
 } from 'lucide-react';
 import { haptics } from '../../services/haptics';
 import { useAppEventListener } from '../../hooks/useAppEventBus';
@@ -48,6 +49,7 @@ export default function DynamicWidgetsGrid({
     reorderWidgets 
   } = useOSStore();
 
+  const [activeTab, setActiveTab] = useState<'metrics' | 'activity'>('metrics');
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [showManagerModal, setShowManagerModal] = useState(false);
@@ -127,92 +129,128 @@ export default function DynamicWidgetsGrid({
 
   return (
     <div className={`shrink-0 ${className}`}>
-      {/* Header bar with Customize Toggle */}
+      {/* Header bar with View Toggle & Customize Toggle */}
       <div className="flex items-center justify-between px-1 mb-2">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-            Dashboard Live
-          </span>
-          <span className="px-1.5 py-0.2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full text-[9px] font-mono">
-            {pinnedWidgets.length} épinglés
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1">
+        {/* Tab switch between Live Metrics & Recent Activity */}
+        <div className="flex items-center gap-1 bg-slate-900/80 p-0.5 rounded-xl border border-slate-800/80">
           <button
             onClick={() => {
               haptics.trigger('selection');
-              setShowManagerModal(true);
+              setActiveTab('metrics');
             }}
-            title="Gérer les widgets"
-            className="p-1 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 text-[10px] flex items-center gap-1 px-2 transition-colors"
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+              activeTab === 'metrics'
+                ? 'bg-slate-800 text-slate-100 shadow-sm border border-slate-700/60'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
           >
-            <SlidersHorizontal size={11} />
-            <span>Gérer</span>
+            <LayoutGrid size={11} />
+            <span>Widgets</span>
           </button>
           
           <button
             onClick={() => {
               haptics.trigger('selection');
-              setIsCustomizing(prev => !prev);
+              setActiveTab('activity');
             }}
-            title={isCustomizing ? "Terminer" : "Réorganiser"}
-            className={`p-1 rounded-lg border text-[10px] flex items-center gap-1 px-2 transition-colors ${
-              isCustomizing 
-                ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-bold' 
-                : 'bg-slate-900/60 hover:bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+              activeTab === 'activity'
+                ? 'bg-slate-800 text-emerald-400 shadow-sm border border-slate-700/60'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            {isCustomizing ? <Check size={11} /> : <Settings2 size={11} />}
-            <span>{isCustomizing ? 'Terminé' : 'Organiser'}</span>
+            <Activity size={11} />
+            <span>Activité</span>
           </button>
         </div>
+
+        {activeTab === 'metrics' ? (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                haptics.trigger('selection');
+                setShowManagerModal(true);
+              }}
+              title="Gérer les widgets"
+              className="p-1 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 text-[10px] flex items-center gap-1 px-2 transition-colors"
+            >
+              <SlidersHorizontal size={11} />
+              <span>Gérer</span>
+            </button>
+            
+            <button
+              onClick={() => {
+                haptics.trigger('selection');
+                setIsCustomizing(prev => !prev);
+              }}
+              title={isCustomizing ? "Terminer" : "Réorganiser"}
+              className={`p-1 rounded-lg border text-[10px] flex items-center gap-1 px-2 transition-colors ${
+                isCustomizing 
+                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-bold' 
+                  : 'bg-slate-900/60 hover:bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {isCustomizing ? <Check size={11} /> : <Settings2 size={11} />}
+              <span>{isCustomizing ? 'Terminé' : 'Organiser'}</span>
+            </button>
+          </div>
+        ) : (
+          <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Sync live
+          </span>
+        )}
       </div>
 
-      {/* Grid of sortable and pinnable widgets */}
-      {visibleWidgets.length === 0 ? (
-        <div 
-          onClick={() => setShowManagerModal(true)}
-          className="p-4 rounded-3xl border border-dashed border-slate-800 bg-slate-900/40 text-center cursor-pointer hover:border-emerald-500/40 transition-colors"
-        >
-          <Sparkles size={16} className="mx-auto mb-1 text-slate-500" />
-          <p className="text-xs font-semibold text-slate-400">Aucun widget épinglé</p>
-          <p className="text-[10px] text-slate-500 mt-0.5">Cliquez sur Gérer pour afficher des métriques clés</p>
-        </div>
+      {/* Main Content Area: Tab Dependent */}
+      {activeTab === 'activity' ? (
+        <RecentActivityWidget onOpenApp={onOpenApp} maxItems={5} />
       ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={visibleWidgets.map(w => w.id)}
-            strategy={rectSortingStrategy}
+        /* Grid of sortable and pinnable widgets */
+        visibleWidgets.length === 0 ? (
+          <div 
+            onClick={() => setShowManagerModal(true)}
+            className="p-4 rounded-3xl border border-dashed border-slate-800 bg-slate-900/40 text-center cursor-pointer hover:border-emerald-500/40 transition-colors"
           >
-            <div className={`grid ${gridColsClass} gap-2.5`}>
-              {visibleWidgets.map(widget => (
-                <SortableWidgetCard
-                  key={widget.id}
-                  widget={widget}
-                  onClick={onOpenApp}
-                  isCustomizing={isCustomizing}
-                  onTogglePin={togglePinWidget}
-                />
-              ))}
-            </div>
-          </SortableContext>
+            <Sparkles size={16} className="mx-auto mb-1 text-slate-500" />
+            <p className="text-xs font-semibold text-slate-400">Aucun widget épinglé</p>
+            <p className="text-[10px] text-slate-500 mt-0.5">Cliquez sur Gérer pour afficher des métriques clés</p>
+          </div>
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={visibleWidgets.map(w => w.id)}
+              strategy={rectSortingStrategy}
+            >
+              <div className={`grid ${gridColsClass} gap-2.5`}>
+                {visibleWidgets.map(widget => (
+                  <SortableWidgetCard
+                    key={widget.id}
+                    widget={widget}
+                    onClick={onOpenApp}
+                    isCustomizing={isCustomizing}
+                    onTogglePin={togglePinWidget}
+                  />
+                ))}
+              </div>
+            </SortableContext>
 
-          <DragOverlay dropAnimation={{ duration: 180, easing: 'ease' }}>
-            {activeWidgetDef ? (
-              <AppWidgetCard
-                widget={activeWidgetDef}
-                onClick={() => {}}
-                isCustomizing
-              />
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+            <DragOverlay dropAnimation={{ duration: 180, easing: 'ease' }}>
+              {activeWidgetDef ? (
+                <AppWidgetCard
+                  widget={activeWidgetDef}
+                  onClick={() => {}}
+                  isCustomizing
+                />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        )
       )}
 
       {/* Modal / Drawer for Full Widget Library Management */}

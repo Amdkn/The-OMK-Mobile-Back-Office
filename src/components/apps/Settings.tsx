@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Palette, 
@@ -13,9 +13,17 @@ import {
   Eye,
   Contrast,
   Layers,
-  Cpu
+  Cpu,
+  Zap,
+  HardDrive,
+  RefreshCw,
+  Trash2,
+  Database
 } from 'lucide-react';
 import { useOSStore } from '../../store/osStore';
+import { usePowerManager } from '../../hooks/usePowerManager';
+import { OfflineStorageService } from '../../services/offlineStorage';
+import { haptics } from '../../services/haptics';
 import { ThemeId, ContrastLevel, WallpaperId } from '../../types';
 import { WALLPAPERS } from '../WallpaperBackground';
 import DetailSection, { DetailCard, AIInsightCard } from '../layout/DetailSection';
@@ -41,7 +49,17 @@ export default function Settings() {
     workspace 
   } = useOSStore();
 
+  const power = usePowerManager();
   const [activeTab, setActiveTab] = useState('display');
+  const [cacheMessage, setCacheMessage] = useState<string | null>(null);
+
+  const handleClearCache = async () => {
+    haptics.trigger('medium');
+    await OfflineStorageService.clearAppCache();
+    await OfflineStorageService.seedDefaultOfflineCache(workspace);
+    setCacheMessage('Cache IndexedDB réinitialisé avec succès');
+    setTimeout(() => setCacheMessage(null), 3000);
+  };
 
   const themes: { id: ThemeId; name: string; desc: string; sampleBg: string; sampleBorder: string; sampleText: string; accent: string }[] = [
     { 
@@ -284,7 +302,7 @@ export default function Settings() {
             </motion.div>
           )}
 
-          {/* TAB 4: SYSTEM INFO */}
+          {/* TAB 4: SYSTEM INFO, POWER & OFFLINE CACHE */}
           {activeTab === 'system' && (
             <motion.div
               key="system"
@@ -292,7 +310,87 @@ export default function Settings() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.18 }}
+              className="space-y-4"
             >
+              {/* Power Management Section */}
+              <DetailSection
+                title="Gestion de l'Énergie & Batterie"
+                subtitle="Contrôle automatique du throttling des synchronisations d'arrière-plan"
+                icon={Zap}
+                badge={power.isLowPowerMode ? "Mode Eco Actif" : "Normal"}
+              >
+                <div className="bg-slate-900/80 rounded-3xl border border-slate-800 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                        <Zap size={14} className={power.isLowPowerMode ? "text-amber-400 fill-amber-400" : "text-slate-400"} />
+                        <span>Mode Économie d'Énergie</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5 max-w-xs">
+                        Réduit la fréquence de synchronisation des modules OMK (5s → 30s) pour préserver la batterie.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={power.toggleLowPowerMode}
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${
+                        power.isLowPowerMode
+                          ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md'
+                          : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                      }`}
+                    >
+                      {power.isLowPowerMode ? 'Activé' : 'Désactivé'}
+                    </button>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                    <span>État de la batterie: <strong className="text-slate-200 font-mono">{power.batteryLevel}% {power.isCharging ? '(En charge)' : ''}</strong></span>
+                    <span>Intervalle sync: <strong className="text-emerald-400 font-mono">{power.syncIntervalMs / 1000}s</strong></span>
+                  </div>
+                </div>
+              </DetailSection>
+
+              {/* IndexedDB Offline Cache Section */}
+              <DetailSection
+                title="Cache Hors-ligne IndexedDB"
+                subtitle="Stockage local haute performance pour fonctionnement sans connexion"
+                icon={Database}
+                badge="localForage"
+              >
+                <div className="bg-slate-900/80 rounded-3xl border border-slate-800 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                        <HardDrive size={14} className="text-emerald-400" />
+                        <span>Cache AppViewer Local</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5 max-w-xs">
+                        Données des modules pré-chargées dans IndexedDB pour une réactivité instantanée.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleClearCache}
+                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    >
+                      <RefreshCw size={12} />
+                      <span>Recharger Cache</span>
+                    </button>
+                  </div>
+
+                  {cacheMessage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] text-center"
+                    >
+                      {cacheMessage}
+                    </motion.div>
+                  )}
+                </div>
+              </DetailSection>
+
+              {/* System info */}
               <DetailSection
                 title="Informations Système & Noyau"
                 subtitle="Spécifications techniques de la couche runtime OMK OS"
@@ -318,7 +416,7 @@ export default function Settings() {
                   </div>
                   <div className="p-4 flex justify-between items-center">
                     <span className="text-slate-400">Pile Visuelle</span>
-                    <span className="font-mono text-slate-300">Framer Motion + Tailwind CSS</span>
+                    <span className="font-mono text-slate-300">Motion + Tailwind CSS</span>
                   </div>
                 </div>
               </DetailSection>

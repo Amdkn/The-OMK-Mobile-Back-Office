@@ -1,11 +1,18 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { AppId } from '../types';
-import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, Code, Database, Server, ChevronDown, Check, Layers, BarChart3, Layout, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'motion/react';
+import { 
+  ChevronLeft, Code, Database, Server, ChevronDown, Check, 
+  Layers, BarChart3, Layout, Sparkles, WifiOff, Zap, BatteryLow 
+} from 'lucide-react';
 import { useOSStore, Workspace } from '../store/osStore';
 import { haptics } from '../services/haptics';
 import { useDeviceLayout } from '../hooks/useDeviceLayout';
 import { useAppEventListener } from '../hooks/useAppEventBus';
+import { useAppLifecycle } from '../hooks/useAppLifecycle';
+import { usePowerManager } from '../hooks/usePowerManager';
+import { OfflineStorageService } from '../services/offlineStorage';
+import { ActivityService } from '../services/activityService';
 import LoadingSkeleton from './layout/LoadingSkeleton';
 import BusinessModuleDashboard from './layout/BusinessModuleDashboard';
 import CoachAI from './apps/CoachAI';
@@ -28,6 +35,7 @@ import Ontology from './apps/Ontology';
 import Cognition from './apps/Cognition';
 import HR from './apps/HR';
 import Security from './apps/Security';
+import Notes from './apps/Notes';
 
 interface AppViewerProps {
   key?: React.Key;
@@ -38,29 +46,110 @@ interface AppViewerProps {
 export default function AppViewer({ appId, onClose }: AppViewerProps) {
   const { workspace, setWorkspace } = useOSStore();
   const layout = useDeviceLayout();
+  const power = usePowerManager();
+  
   const [showWorkspace, setShowWorkspace] = useState(false);
   const [viewMode, setViewMode] = useState<'app' | 'dashboard'>('app');
   const [isLoading, setIsLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState<boolean>(OfflineStorageService.isOnline());
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Swipe-to-go-back gesture handling
+  const [isEdgeDragging, setIsEdgeDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const touchStartXRef = useRef<number>(0);
+  const touchCurrentXRef = useRef<number>(0);
+  const isLeftEdgeSwipeRef = useRef<boolean>(false);
+
+  // Register AppLifecycle
+  const { lifecycleState } = useAppLifecycle(appId, {
+    onOpen: () => {
+      // Log activity when app opens
+      ActivityService.log(
+        appId,
+        getAppName(),
+        `Session active dans l'environnement ${workspace}`,
+        'view'
+      );
+    },
+    onClose: () => {},
+    onPause: () => {},
+    onResume: () => {}
+  });
+
+  // Listen to network status for offline badge
+  useEffect(() => {
+    const unsub = OfflineStorageService.listenNetworkStatus(online => {
+      setIsOnline(online);
+    });
+    return unsub;
+  }, []);
 
   // Trigger brief themed pulse loading animation when opening an app or switching workspace
   useEffect(() => {
     setIsLoading(true);
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 280);
+    }, 250);
     return () => clearTimeout(timer);
   }, [appId, workspace, viewMode]);
 
   // Listen to cross-app events (e.g. WORKSPACE_CHANGED) to sync UI without full page refresh
   useAppEventListener('WORKSPACE_CHANGED', () => {
     setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 200);
+    setTimeout(() => setIsLoading(false), 180);
   });
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     haptics.trigger('backNav');
     onClose();
+  }, [onClose]);
+
+  // Edge-swipe touch listeners
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartXRef.current = touch.clientX;
+    touchCurrentXRef.current = touch.clientX;
+
+    // Only initiate swipe-to-back if touch starts in left edge zone (within 44px of left edge)
+    if (touch.clientX <= 44) {
+      isLeftEdgeSwipeRef.current = true;
+      setIsEdgeDragging(true);
+      setDragOffset(0);
+    } else {
+      isLeftEdgeSwipeRef.current = false;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isLeftEdgeSwipeRef.current) return;
+    const touch = e.touches[0];
+    touchCurrentXRef.current = touch.clientX;
+    const deltaX = Math.max(0, touch.clientX - touchStartXRef.current);
+    
+    // Apply rubber-banding resistance
+    const dampedDelta = deltaX > 160 ? 160 + (deltaX - 160) * 0.3 : deltaX;
+    setDragOffset(dampedDelta);
+
+    if (deltaX > 90) {
+      // Haptic threshold pulse
+      haptics.trigger('selection');
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isLeftEdgeSwipeRef.current) return;
+    const deltaX = touchCurrentXRef.current - touchStartXRef.current;
+    
+    // Dismiss if dragged more than 85px to the right
+    if (deltaX >= 85) {
+      haptics.trigger('appClose');
+      onClose();
+    }
+    
+    isLeftEdgeSwipeRef.current = false;
+    setIsEdgeDragging(false);
+    setDragOffset(0);
   };
 
   useEffect(() => {
@@ -82,6 +171,37 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
   ];
 
   const currentWorkspace = workspaces.find(w => w.name === workspace) || workspaces[0];
+
+  const getAppName = () => {
+    switch (appId) {
+      case 'coach-ai': return 'Coach AI';
+      case 'baas-hub': return 'BaaS Hub';
+      case 'jaas-job': return 'JaaS JOB';
+      case 'paas-pro': return 'PaaS PRO';
+      case 'wallet': return 'Wallet';
+      case 'leads': return 'Leads';
+      case 'terminal': return 'Terminal';
+      case 'settings': return 'Réglages';
+      case 'clients': return 'Clients OS';
+      case 'product': return 'Product OS';
+      case 'dashboard': return 'Dashboard OS';
+      case 'finance': return 'Finance OS';
+      case 'legal': return 'Legal OS';
+      case 'operations': return 'Operations OS';
+      case 'sales': return 'Sales OS';
+      case 'growth': return 'Growth OS';
+      case 'ontology': return 'Ontology OS';
+      case 'cognition': return 'Cognition OS';
+      case 'hr': return 'People & HR';
+      case 'security': return 'Security OS';
+      case 'notes': return 'Notes & Capture';
+      default: return appId.charAt(0).toUpperCase() + appId.slice(1);
+    }
+  };
+
+  const isBusinessModule = ![
+    'terminal', 'settings'
+  ].includes(appId);
 
   const renderApp = () => {
     if (isLoading) {
@@ -119,6 +239,7 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
       case 'cognition': return <Cognition />;
       case 'hr': return <HR />;
       case 'security': return <Security />;
+      case 'notes': return <Notes />;
       default: return (
         <div className="p-6 pt-24 text-center opacity-50 font-medium">
           L'application {appId} est en cours de développement.
@@ -127,45 +248,45 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
     }
   };
 
-  const getAppName = () => {
-    switch (appId) {
-      case 'coach-ai': return 'Coach AI';
-      case 'baas-hub': return 'BaaS Hub';
-      case 'jaas-job': return 'JaaS JOB';
-      case 'paas-pro': return 'PaaS PRO';
-      case 'wallet': return 'Wallet';
-      case 'leads': return 'Leads';
-      case 'terminal': return 'Terminal';
-      case 'settings': return 'Réglages';
-      case 'clients': return 'Clients OS';
-      case 'product': return 'Product OS';
-      case 'dashboard': return 'Dashboard OS';
-      case 'finance': return 'Finance OS';
-      case 'legal': return 'Legal OS';
-      case 'operations': return 'Operations OS';
-      case 'sales': return 'Sales OS';
-      case 'growth': return 'Growth OS';
-      case 'ontology': return 'Ontology OS';
-      case 'cognition': return 'Cognition OS';
-      case 'hr': return 'People & HR';
-      case 'security': return 'Security OS';
-      default: return appId.charAt(0).toUpperCase() + appId.slice(1);
-    }
-  };
-
-  // Check if current app is a business module suited for Dashboard view
-  const isBusinessModule = ![
-    'terminal', 'settings'
-  ].includes(appId);
+  const swipeProgress = Math.min(1, dragOffset / 90);
 
   return (
     <motion.div 
       initial={{ x: '100%', opacity: 0.5 }}
-      animate={{ x: 0, opacity: 1 }}
+      animate={{ 
+        x: isEdgeDragging ? dragOffset : 0, 
+        opacity: isEdgeDragging ? 1 - swipeProgress * 0.15 : 1 
+      }}
       exit={{ x: '100%', opacity: 0.5 }}
-      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-      className="absolute inset-0 z-20 flex flex-col bg-slate-950/80 backdrop-blur-xl text-slate-100 shadow-[-10px_0_30px_rgba(0,0,0,0.5)] theme-transition"
+      transition={isEdgeDragging ? { duration: 0 } : { type: 'spring', damping: 26, stiffness: 320 }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+      className="absolute inset-0 z-20 flex flex-col bg-slate-950/80 backdrop-blur-xl text-slate-100 shadow-[-10px_0_30px_rgba(0,0,0,0.5)] theme-transition select-none"
     >
+      {/* Visual Edge Gesture Overlay Cue */}
+      <AnimatePresence>
+        {isEdgeDragging && dragOffset > 10 && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            style={{ left: Math.min(dragOffset * 0.5, 45) }}
+            className={`absolute top-1/2 -translate-y-1/2 z-50 flex items-center gap-1.5 px-3 py-2 rounded-full shadow-2xl backdrop-blur-xl pointer-events-none transition-colors ${
+              dragOffset >= 85 
+                ? 'bg-emerald-500 text-slate-950 font-bold border border-emerald-400 scale-105' 
+                : 'bg-slate-900/90 text-slate-200 border border-slate-700'
+            }`}
+          >
+            <ChevronLeft size={16} className={dragOffset >= 85 ? 'animate-pulse' : ''} />
+            <span className="text-[11px] uppercase tracking-wider font-semibold">
+              {dragOffset >= 85 ? 'Relâcher' : 'Retour'}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Top OS Header Bar */}
       <div className={`${layout.appViewerPadding.headerHeight} ${layout.appViewerPadding.headerMarginTop} ${layout.appViewerPadding.headerPadding} flex items-center justify-between border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl z-30 theme-transition`}>
         <button 
@@ -180,6 +301,28 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
           <span className="font-semibold text-xs sm:text-sm tracking-tight text-slate-100 truncate">
             {getAppName()}
           </span>
+
+          {/* Low Power indicator in header */}
+          {power.isLowPowerMode && (
+            <span 
+              title="Mode Économie d'Énergie actif"
+              className="px-1.5 py-0.2 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[9px] font-mono flex items-center gap-0.5"
+            >
+              <Zap size={9} />
+              <span>Eco</span>
+            </span>
+          )}
+
+          {/* Offline indicator in header */}
+          {!isOnline && (
+            <span 
+              title="Hors-ligne • Données IndexedDB"
+              className="px-1.5 py-0.2 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-[9px] font-mono flex items-center gap-0.5"
+            >
+              <WifiOff size={9} />
+              <span>Offline</span>
+            </span>
+          )}
         </div>
 
         <div className={`flex items-center gap-1.5 justify-end ${layout.appViewerPadding.actionsWidth}`}>
@@ -260,3 +403,4 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
     </motion.div>
   );
 }
+
