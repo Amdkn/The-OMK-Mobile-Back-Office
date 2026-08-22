@@ -50,8 +50,8 @@ export function useDeviceLayout(containerRef?: React.RefObject<HTMLElement | nul
         contentCols: 2,
         containerPadding: 'px-4 pt-10 pb-3',
         appViewerPadding: {
-          headerHeight: 'h-11',
-          headerMarginTop: 'mt-7',
+          headerHeight: 'pt-11 pb-2',
+          headerMarginTop: '',
           headerPadding: 'px-3.5',
           bodyPadding: 'p-3',
           backBtnWidth: 'w-[68px]',
@@ -75,8 +75,8 @@ export function useDeviceLayout(containerRef?: React.RefObject<HTMLElement | nul
         contentCols: 3,
         containerPadding: 'px-6 pt-12 pb-5',
         appViewerPadding: {
-          headerHeight: 'h-13',
-          headerMarginTop: 'mt-8',
+          headerHeight: 'pt-12 pb-2.5',
+          headerMarginTop: '',
           headerPadding: 'px-5',
           bodyPadding: 'p-5',
           backBtnWidth: 'w-[80px]',
@@ -100,8 +100,8 @@ export function useDeviceLayout(containerRef?: React.RefObject<HTMLElement | nul
         contentCols: 1,
         containerPadding: 'px-6 pt-14 pb-5',
         appViewerPadding: {
-          headerHeight: 'h-14',
-          headerMarginTop: 'mt-10',
+          headerHeight: 'pt-14 pb-2.5',
+          headerMarginTop: '',
           headerPadding: 'px-4',
           bodyPadding: 'p-4',
           backBtnWidth: 'w-[70px]',
@@ -155,8 +155,8 @@ export function useDeviceLayout(containerRef?: React.RefObject<HTMLElement | nul
       contentCols,
       containerPadding: isLandscape ? 'px-4 pt-10 pb-3' : 'px-6 pt-14 pb-5',
       appViewerPadding: {
-        headerHeight: isLandscape ? 'h-11' : 'h-14',
-        headerMarginTop: isLandscape ? 'mt-7' : 'mt-10',
+        headerHeight: isLandscape ? 'pt-11 pb-2' : 'pt-14 pb-2.5',
+        headerMarginTop: '',
         headerPadding: isLandscape ? 'px-3.5' : 'px-4',
         bodyPadding: isLandscape ? 'p-3' : 'p-4',
         backBtnWidth: isLandscape ? 'w-[68px]' : 'w-[70px]',

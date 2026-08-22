@@ -58,21 +58,21 @@ export default function AppTabBar({
                     transition={{ type: 'spring', damping: 25, stiffness: 350 }}
                   />
                 )}
+
+                {/* Discrete Top-Right Notification Badge */}
+                {tab.badge !== undefined && tab.badge !== '' && tab.badge !== 0 && (
+                  <span
+                    className={`absolute top-1 right-2 z-20 min-w-[15px] h-[15px] px-1 flex items-center justify-center rounded-full text-[8.5px] font-black leading-none shadow-xs whitespace-nowrap border border-slate-950/20 ${
+                      tab.badgeColor || (isActive ? 'bg-emerald-500 text-slate-950' : 'bg-slate-700 text-slate-200')
+                    }`}
+                  >
+                    {tab.badge}
+                  </span>
+                )}
                 
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="relative">
-                    <Icon size={16} className={isActive ? 'text-emerald-400' : 'text-slate-400'} />
-                    {tab.badge !== undefined && (
-                      <span
-                        className={`absolute -top-1 -right-2 min-w-[14px] h-[14px] px-0.5 flex items-center justify-center rounded-full text-[9px] font-bold ${
-                          tab.badgeColor || 'bg-emerald-500 text-slate-950'
-                        }`}
-                      >
-                        {tab.badge}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[10px] tracking-tight mt-0.5 truncate max-w-[65px]">
+                <div className="relative z-10 flex flex-col items-center w-full">
+                  <Icon size={16} className={`mb-0.5 shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+                  <span className="text-[10px] tracking-tight mt-0.5 truncate max-w-[65px] text-center">
                     {tab.label}
                   </span>
                 </div>
@@ -131,20 +131,20 @@ export function AppTopNav({
                 />
               )}
 
-              <div className="relative z-10 flex flex-col items-center">
-                <div className="relative">
-                  <Icon size={14} className={`mb-0.5 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
-                  {tab.badge !== undefined && (
-                    <span
-                      className={`absolute -top-1 -right-2 min-w-[12px] h-[12px] px-0.5 flex items-center justify-center rounded-full text-[8px] font-bold ${
-                        tab.badgeColor || 'bg-emerald-500 text-slate-950'
-                      }`}
-                    >
-                      {tab.badge}
-                    </span>
-                  )}
-                </div>
-                <span className="text-[10px] leading-tight truncate max-w-[70px]">
+              {/* Discrete Top-Right Notification Badge */}
+              {tab.badge !== undefined && tab.badge !== '' && tab.badge !== 0 && (
+                <span
+                  className={`absolute top-1 right-1.5 z-20 min-w-[15px] h-[15px] px-1 flex items-center justify-center rounded-full text-[8.5px] font-black leading-none shadow-xs whitespace-nowrap border border-slate-950/20 ${
+                    tab.badgeColor || (isActive ? 'bg-emerald-500 text-slate-950' : 'bg-slate-700 text-slate-200')
+                  }`}
+                >
+                  {tab.badge}
+                </span>
+              )}
+
+              <div className="relative z-10 flex flex-col items-center w-full">
+                <Icon size={15} className={`mb-0.5 shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-400'}`} />
+                <span className="text-[10px] leading-tight truncate w-full text-center px-0.5">
                   {tab.label}
                 </span>
               </div>

@@ -328,6 +328,11 @@ export default function Operations() {
         badge={selectedIncident?.status === 'active' ? 'Incident En Cours' : 'Résolu'}
         badgeColor={selectedIncident?.status === 'active' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'}
         icon={selectedIncident?.status === 'active' ? AlertOctagon : CheckCircle2}
+        breadcrumbs={[
+          { label: 'Operations', onClick: () => setSelectedIncident(null) },
+          { label: 'Incidents', onClick: () => setSelectedIncident(null) },
+          { label: selectedIncident?.title || 'Incident' }
+        ]}
         actions={[
           {
             id: 'resolve',

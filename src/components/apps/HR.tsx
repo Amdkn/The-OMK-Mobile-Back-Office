@@ -330,6 +330,11 @@ export default function HR() {
         badge={selectedEmployee?.status}
         badgeColor="bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
         avatarText={selectedEmployee?.name.charAt(0)}
+        breadcrumbs={[
+          { label: 'RH OS', onClick: () => setSelectedEmployee(null) },
+          { label: 'Effectifs', onClick: () => setSelectedEmployee(null) },
+          { label: selectedEmployee?.name || 'Collaborateur' }
+        ]}
         actions={[
           {
             id: 'call',

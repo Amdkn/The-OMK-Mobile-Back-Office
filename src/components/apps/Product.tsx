@@ -94,9 +94,9 @@ const FEEDBACKS = [
 
 const PRODUCT_TABS = [
   { id: 'roadmap', label: 'Roadmap', icon: Compass },
-  { id: 'sprints', label: 'Sprints', icon: Flame, badge: 'Active' },
+  { id: 'sprints', label: 'Sprints', icon: Flame, badge: 'Actif' },
   { id: 'feedback', label: 'Feedback', icon: MessageSquare, badge: 3 },
-  { id: 'releases', label: 'Releases', icon: Tag, badge: 'v4.2' }
+  { id: 'releases', label: 'Releases', icon: Tag, badge: 'v4' }
 ];
 
 export default function Product() {
@@ -318,6 +318,11 @@ export default function Product() {
         badge={selectedItem?.status}
         badgeColor="bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
         icon={Compass}
+        breadcrumbs={[
+          { label: 'Product OS', onClick: () => setSelectedItem(null) },
+          { label: 'Roadmap', onClick: () => setSelectedItem(null) },
+          { label: selectedItem?.title || 'Feature' }
+        ]}
         actions={[
           {
             id: 'spec',

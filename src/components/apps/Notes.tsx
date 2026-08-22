@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   StickyNote, Plus, Search, Pin, Trash2, Tag, Sparkles, 
-  Check, Filter, Calendar, Folder, ArrowRight, Share2, Edit3, X
+  Check, Filter, Calendar, Folder, ArrowRight, Share2, Edit3, X, Copy, Save
 } from 'lucide-react';
 import DetailSection, { DetailCard, AIInsightCard, KPIItem } from '../layout/DetailSection';
 import { useOSStore } from '../../store/osStore';
@@ -26,7 +26,16 @@ export default function NotesApp() {
   const [selectedCategory, setSelectedCategory] = useState<string>('Tous');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNote, setSelectedNote] = useState<NoteItem | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   
+  // Note edit in modal state
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editCategory, setEditCategory] = useState<NoteItem['category']>('Stratégie');
+  const [editTags, setEditTags] = useState('');
+  const [editColor, setEditColor] = useState('emerald');
+
   // Quick Capture Form State
   const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
   const [quickTitle, setQuickTitle] = useState('');
@@ -41,6 +50,35 @@ export default function NotesApp() {
       setNotes(data);
     });
   }, [workspace]);
+
+  const handleOpenNoteModal = (note: NoteItem) => {
+    setSelectedNote(note);
+    setIsEditingNote(false);
+    setEditTitle(note.title);
+    setEditContent(note.content);
+    setEditCategory(note.category);
+    setEditTags(note.tags.join(', '));
+    setEditColor(note.color || 'emerald');
+  };
+
+  const handleSaveEditedNote = async () => {
+    if (!selectedNote) return;
+    haptics.trigger('success');
+    const tags = editTags.split(',').map(t => t.trim()).filter(Boolean);
+    const updatedNote: NoteItem = {
+      ...selectedNote,
+      title: editTitle.trim() || 'Sans titre',
+      content: editContent.trim(),
+      category: editCategory,
+      tags: tags.length ? tags : ['Note'],
+      color: editColor,
+      updatedAt: Date.now()
+    };
+    const updatedList = await NotesService.updateNote(workspace, updatedNote);
+    setNotes(updatedList);
+    setSelectedNote(updatedNote);
+    setIsEditingNote(false);
+  };
 
   const handleSaveQuickNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +119,18 @@ export default function NotesApp() {
     if (selectedNote?.id === noteId) setSelectedNote(null);
   };
 
+  const handleCopyNote = async (note: NoteItem, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    haptics.trigger('selection');
+    try {
+      await navigator.clipboard.writeText(`${note.title}\n\n${note.content}`);
+      setCopiedId(note.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      // Fallback
+    }
+  };
+
   const filteredNotes = notes.filter(note => {
     const matchesCategory = selectedCategory === 'Tous' || note.category === selectedCategory;
     const matchesSearch = !searchQuery.trim() || 
@@ -105,7 +155,7 @@ export default function NotesApp() {
     {
       label: 'Épinglées',
       value: notes.filter(n => n.isPinned).length,
-      sub: 'Priorité',
+      sub: 'Prioritaires',
       trend: 'neutral',
       icon: Pin
     },
@@ -157,7 +207,7 @@ export default function NotesApp() {
             initial={{ opacity: 0, y: -15, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -15, scale: 0.98 }}
-            className="p-4 rounded-3xl bg-slate-900/90 border border-emerald-500/40 backdrop-blur-2xl shadow-2xl relative"
+            className="p-4 rounded-3xl bg-slate-900 border border-emerald-500/40 shadow-2xl relative"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
@@ -178,7 +228,7 @@ export default function NotesApp() {
                 value={quickTitle}
                 onChange={e => setQuickTitle(e.target.value)}
                 placeholder="Titre de la note ou idée clé..."
-                className="w-full px-3.5 py-2 rounded-xl bg-slate-950/70 border border-slate-800 text-xs font-semibold text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/60"
+                className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-semibold text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/60"
                 autoFocus
               />
 
@@ -187,7 +237,7 @@ export default function NotesApp() {
                 onChange={e => setQuickContent(e.target.value)}
                 placeholder="Rédigez ou collez vos notes, décisions, extraits de code ou mémo..."
                 rows={3}
-                className="w-full px-3.5 py-2 rounded-xl bg-slate-950/70 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/60 resize-none"
+                className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/60 resize-none"
               />
 
               <div className="grid grid-cols-2 gap-2">
@@ -196,7 +246,7 @@ export default function NotesApp() {
                   <select
                     value={quickCategory}
                     onChange={e => setQuickCategory(e.target.value as any)}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-200 focus:outline-none"
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none"
                   >
                     {CATEGORIES.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
@@ -211,7 +261,7 @@ export default function NotesApp() {
                     value={quickTagInput}
                     onChange={e => setQuickTagInput(e.target.value)}
                     placeholder="ex: Deal, Urgent, IA"
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none"
+                    className="w-full px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -261,7 +311,7 @@ export default function NotesApp() {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Rechercher par titre, contenu, tag..."
-            className="w-full pl-9 pr-4 py-2 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-slate-700"
+            className="w-full pl-9 pr-8 py-2 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-slate-700"
           />
           {searchQuery && (
             <button
@@ -274,22 +324,26 @@ export default function NotesApp() {
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1">
-          {['Tous', ...CATEGORIES].map(cat => (
-            <button
-              key={cat}
-              onClick={() => {
-                haptics.trigger('selection');
-                setSelectedCategory(cat);
-              }}
-              className={`px-3 py-1 rounded-xl text-xs font-medium whitespace-nowrap transition-all border ${
-                selectedCategory === cat
-                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-sm'
-                  : 'bg-slate-900/50 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+          {['Tous', ...CATEGORIES].map(cat => {
+            const count = cat === 'Tous' ? notes.length : notes.filter(n => n.category === cat).length;
+            return (
+              <button
+                key={cat}
+                onClick={() => {
+                  haptics.trigger('selection');
+                  setSelectedCategory(cat);
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-medium whitespace-nowrap transition-all border flex items-center gap-1.5 ${
+                  selectedCategory === cat
+                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-sm'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                }`}
+              >
+                <span>{cat}</span>
+                <span className="text-[10px] opacity-60 font-mono">({count})</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -306,9 +360,11 @@ export default function NotesApp() {
               <NoteCard
                 key={note.id}
                 note={note}
-                onClick={() => setSelectedNote(note)}
+                onClick={() => handleOpenNoteModal(note)}
                 onTogglePin={e => handleTogglePin(note, e)}
                 onDelete={e => handleDeleteNote(note.id, e)}
+                onCopy={e => handleCopyNote(note, e)}
+                isCopied={copiedId === note.id}
               />
             ))}
           </div>
@@ -325,13 +381,13 @@ export default function NotesApp() {
         )}
 
         {filteredNotes.length === 0 ? (
-          <div className="p-8 text-center rounded-3xl bg-slate-900/40 border border-slate-800/60">
-            <StickyNote size={28} className="mx-auto mb-2 text-slate-600 opacity-60" />
-            <p className="text-xs font-medium text-slate-400">Aucune note trouvée</p>
+          <div className="p-8 text-center rounded-3xl bg-slate-900 border border-slate-800">
+            <StickyNote size={28} className="mx-auto mb-2 text-slate-500 opacity-60" />
+            <p className="text-xs font-medium text-slate-300">Aucune note trouvée</p>
             <p className="text-[11px] text-slate-500 mt-1">Créez votre première note avec Quick Capture</p>
             <button
               onClick={() => setIsQuickCaptureOpen(true)}
-              className="mt-3 px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold"
+              className="mt-3 px-3 py-1.5 rounded-xl bg-emerald-500 text-slate-950 text-xs font-bold shadow-md hover:bg-emerald-400"
             >
               + Nouvelle Note
             </button>
@@ -342,26 +398,33 @@ export default function NotesApp() {
               <NoteCard
                 key={note.id}
                 note={note}
-                onClick={() => setSelectedNote(note)}
+                onClick={() => handleOpenNoteModal(note)}
                 onTogglePin={e => handleTogglePin(note, e)}
                 onDelete={e => handleDeleteNote(note.id, e)}
+                onCopy={e => handleCopyNote(note, e)}
+                isCopied={copiedId === note.id}
               />
             ))}
           </div>
         )}
       </div>
 
-      {/* Note Detail Modal */}
+      {/* Note Detail & Edit Modal */}
       <AnimatePresence>
         {selectedNote && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-16 bg-black/80 backdrop-blur-md animate-fade-in"
+            onClick={() => setSelectedNote(null)}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="w-full max-w-lg max-h-[85vh] rounded-3xl bg-slate-900 border border-slate-700 shadow-2xl overflow-hidden flex flex-col"
+              className="w-full max-w-lg max-h-[85vh] rounded-3xl bg-slate-900 border border-slate-700 shadow-2xl overflow-hidden flex flex-col relative"
+              onClick={e => e.stopPropagation()}
             >
-              <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+              {/* Header */}
+              <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
                 <div className="flex items-center gap-2">
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase border ${COLOR_MAP[selectedNote.color || 'emerald']?.badge}`}>
                     {selectedNote.category}
@@ -372,6 +435,24 @@ export default function NotesApp() {
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setIsEditingNote(!isEditingNote)}
+                    className={`p-1.5 rounded-xl border transition-colors ${
+                      isEditingNote
+                        ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                        : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+                    }`}
+                    title={isEditingNote ? 'Annuler modification' : 'Modifier la note'}
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                  <button
+                    onClick={e => handleCopyNote(selectedNote, e)}
+                    className="p-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition-colors"
+                    title="Copier le texte"
+                  >
+                    {copiedId === selectedNote.id ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                  </button>
                   <button
                     onClick={e => handleTogglePin(selectedNote, e)}
                     className={`p-1.5 rounded-xl border transition-colors ${
@@ -399,38 +480,112 @@ export default function NotesApp() {
                 </div>
               </div>
 
+              {/* Body */}
               <div className="p-4.5 overflow-y-auto space-y-3.5 flex-1">
-                <h3 className="text-base font-bold text-slate-100 leading-snug">
-                  {selectedNote.title}
-                </h3>
+                {isEditingNote ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">Titre</label>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={e => setEditTitle(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
 
-                <div className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed bg-slate-950/40 p-3.5 rounded-2xl border border-slate-800/80 font-mono">
-                  {selectedNote.content}
-                </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">Contenu</label>
+                      <textarea
+                        value={editContent}
+                        onChange={e => setEditContent(e.target.value)}
+                        rows={6}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono leading-relaxed"
+                      />
+                    </div>
 
-                {selectedNote.tags && selectedNote.tags.length > 0 && (
-                  <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                    {selectedNote.tags.map((tag, idx) => (
-                      <span key={idx} className="px-2 py-0.5 rounded-lg bg-slate-800 border border-slate-700 text-[10px] text-slate-300 flex items-center gap-1">
-                        <Tag size={9} className="opacity-60" />
-                        <span>{tag}</span>
-                      </span>
-                    ))}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">Catégorie</label>
+                        <select
+                          value={editCategory}
+                          onChange={e => setEditCategory(e.target.value as any)}
+                          className="w-full px-2.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none"
+                        >
+                          {CATEGORIES.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-slate-400 block mb-1 font-semibold uppercase">Tags</label>
+                        <input
+                          type="text"
+                          value={editTags}
+                          onChange={e => setEditTags(e.target.value)}
+                          placeholder="Séparés par virgule"
+                          className="w-full px-2.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none"
+                        />
+                      </div>
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    <h3 className="text-base font-bold text-slate-100 leading-snug">
+                      {selectedNote.title}
+                    </h3>
+
+                    <div className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed bg-slate-950 p-4 rounded-2xl border border-slate-800 font-mono">
+                      {selectedNote.content}
+                    </div>
+
+                    {selectedNote.tags && selectedNote.tags.length > 0 && (
+                      <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                        {selectedNote.tags.map((tag, idx) => (
+                          <span key={idx} className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-slate-300 flex items-center gap-1 font-medium">
+                            <Tag size={10} className="opacity-60 text-emerald-400" />
+                            <span>{tag}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
-              <div className="p-3 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between text-[11px] text-slate-400">
-                <span>Environnement : {selectedNote.workspace}</span>
-                <button
-                  onClick={() => {
-                    haptics.trigger('success');
-                    setSelectedNote(null);
-                  }}
-                  className="px-3 py-1 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs"
-                >
-                  Fermer
-                </button>
+              {/* Footer */}
+              <div className="p-3.5 border-t border-slate-800 bg-slate-950 flex items-center justify-between text-[11px] text-slate-400">
+                <span>Environnement : <strong className="text-slate-300">{selectedNote.workspace}</strong></span>
+                <div className="flex items-center gap-2">
+                  {isEditingNote ? (
+                    <>
+                      <button
+                        onClick={() => setIsEditingNote(false)}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        onClick={handleSaveEditedNote}
+                        className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1 shadow-md"
+                      >
+                        <Save size={13} />
+                        <span>Enregistrer</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        haptics.trigger('selection');
+                        setSelectedNote(null);
+                      }}
+                      className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl text-xs"
+                    >
+                      Fermer
+                    </button>
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>
@@ -444,13 +599,17 @@ function NoteCard({
   note,
   onClick,
   onTogglePin,
-  onDelete
+  onDelete,
+  onCopy,
+  isCopied
 }: {
   key?: React.Key;
   note: NoteItem;
   onClick: () => void;
   onTogglePin: (e: React.MouseEvent) => void | Promise<void>;
   onDelete: (e: React.MouseEvent) => void | Promise<void>;
+  onCopy: (e: React.MouseEvent) => void;
+  isCopied?: boolean;
 }) {
   const colorStyle = COLOR_MAP[note.color || 'emerald'] || COLOR_MAP.emerald;
 
@@ -459,7 +618,7 @@ function NoteCard({
       onClick={onClick}
       whileHover={{ scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
-      className={`p-3.5 rounded-3xl bg-slate-900/70 border border-slate-800/80 hover:border-slate-700 backdrop-blur-xl shadow-lg cursor-pointer transition-all flex flex-col justify-between group text-left relative overflow-hidden`}
+      className="p-3.5 rounded-3xl bg-slate-900 border border-slate-800 hover:border-slate-700 shadow-lg cursor-pointer transition-all flex flex-col justify-between group text-left relative overflow-hidden"
     >
       <div>
         <div className="flex items-center justify-between gap-2 mb-2">
@@ -467,6 +626,13 @@ function NoteCard({
             {note.category}
           </span>
           <div className="flex items-center gap-1">
+            <button
+              onClick={onCopy}
+              title="Copier le contenu"
+              className="p-1 rounded-lg text-slate-500 hover:text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              {isCopied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+            </button>
             <button
               onClick={onTogglePin}
               title={note.isPinned ? 'Détacher' : 'Épingler'}
@@ -483,12 +649,12 @@ function NoteCard({
           {note.title}
         </h4>
 
-        <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+        <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed font-mono">
           {note.content}
         </p>
       </div>
 
-      <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-800/50 text-[10px] text-slate-500">
+      <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-800/80 text-[10px] text-slate-500">
         <span className="truncate max-w-[120px]">
           {note.tags.join(' · ')}
         </span>

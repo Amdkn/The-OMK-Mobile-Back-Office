@@ -126,7 +126,7 @@ const FINANCE_TABS = [
   { id: 'treasury', label: 'Trésorerie', icon: Landmark },
   { id: 'expenses', label: 'Dépenses', icon: Receipt, badge: 4 },
   { id: 'budgets', label: 'Budgets', icon: PieChartIcon },
-  { id: 'tax', label: 'Fiscalité', icon: FileCheck2, badge: 'À jour' }
+  { id: 'tax', label: 'Fiscalité', icon: FileCheck2, badge: 'OK' }
 ];
 
 export default function Finance() {
@@ -354,6 +354,11 @@ export default function Finance() {
         badge={selectedTx?.status === 'completed' ? 'Validé & Rapproché' : 'En Attente'}
         badgeColor={selectedTx?.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}
         avatarText={selectedTx?.title.charAt(0)}
+        breadcrumbs={[
+          { label: 'Finance OS', onClick: () => setSelectedTx(null) },
+          { label: 'Dépenses', onClick: () => setSelectedTx(null) },
+          { label: selectedTx?.title || 'Transaction' }
+        ]}
         actions={[
           {
             id: 'download',

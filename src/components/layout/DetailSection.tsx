@@ -101,7 +101,7 @@ export default function DetailSection({
                     </h2>
                   )}
                   {badge && (
-                    <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${badgeColor}`}>
+                    <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border whitespace-nowrap shrink-0 ${badgeColor}`}>
                       {badge}
                     </span>
                   )}
@@ -114,7 +114,9 @@ export default function DetailSection({
 
           {/* KPI Mini-Grid inside header */}
           {kpis && kpis.length > 0 && (
-            <div className={`grid grid-cols-${Math.min(kpis.length, 3)} gap-2.5 mt-4 pt-3.5 border-t border-slate-800/80`}>
+            <div className={`grid ${
+              kpis.length === 1 ? 'grid-cols-1' : kpis.length === 2 ? 'grid-cols-2' : 'grid-cols-3'
+            } gap-2.5 mt-3 pt-3 border-t border-slate-800/80`}>
               {kpis.map((kpi, idx) => (
                 <div key={idx} className="flex flex-col bg-slate-950/50 rounded-2xl p-2.5 border border-slate-800/60">
                   <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium">

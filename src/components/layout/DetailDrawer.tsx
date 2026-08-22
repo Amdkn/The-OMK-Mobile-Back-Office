@@ -1,6 +1,11 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, ChevronLeft, Bot, Sparkles, Check, ArrowRight } from 'lucide-react';
+import { X, ChevronRight, Bot, Sparkles, Check, ArrowRight } from 'lucide-react';
+
+export interface DetailDrawerBreadcrumb {
+  label: string;
+  onClick?: () => void;
+}
 
 export interface DetailDrawerProps {
   isOpen: boolean;
@@ -11,6 +16,7 @@ export interface DetailDrawerProps {
   badgeColor?: string;
   avatarText?: string;
   icon?: React.ElementType;
+  breadcrumbs?: DetailDrawerBreadcrumb[];
   actions?: {
     id: string;
     label: string;
@@ -47,6 +53,7 @@ export default function DetailDrawer({
   badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
   avatarText,
   icon: Icon,
+  breadcrumbs,
   actions = [],
   kpis = [],
   aiInsight,
@@ -61,10 +68,17 @@ export default function DetailDrawer({
     }
   }, [tabs]);
 
+  const breadcrumbItems: DetailDrawerBreadcrumb[] = breadcrumbs && breadcrumbs.length > 0
+    ? breadcrumbs
+    : [
+        { label: 'Détail', onClick: onClose },
+        { label: title || 'Fiche' }
+      ];
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="absolute inset-0 z-50 flex justify-end overflow-hidden">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -82,27 +96,45 @@ export default function DetailDrawer({
             transition={{ type: 'spring', damping: 28, stiffness: 280 }}
             className="relative w-full max-w-lg bg-slate-950/95 border-l border-slate-800 text-slate-100 shadow-2xl flex flex-col h-full z-10 backdrop-blur-2xl theme-transition overflow-hidden"
           >
-            {/* Top Bar Header */}
-            <div className="p-4 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/60 sticky top-0 z-20 backdrop-blur-md">
-              <button
-                onClick={onClose}
-                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors bg-slate-800/60 px-2.5 py-1.5 rounded-xl border border-slate-700/50"
-              >
-                <ChevronLeft size={14} />
-                <span>Retour</span>
-              </button>
+            {/* Top Bar Header with Breadcrumb (Fil d'Ariane) */}
+            <div className="py-2.5 px-3.5 border-b border-slate-800/80 flex items-center justify-between bg-slate-900/90 sticky top-0 z-20 backdrop-blur-md shrink-0 gap-2">
+              {/* Breadcrumb Trail */}
+              <nav aria-label="Fil d'Ariane" className="flex items-center gap-1 text-xs min-w-0 flex-1 overflow-x-auto scrollbar-hide py-0.5">
+                {breadcrumbItems.map((item, index) => {
+                  const isLast = index === breadcrumbItems.length - 1;
+                  return (
+                    <React.Fragment key={index}>
+                      {index > 0 && <ChevronRight size={12} className="text-slate-500 shrink-0 mx-0.5" />}
+                      {isLast ? (
+                        <span className="font-semibold text-emerald-400 truncate max-w-[140px] sm:max-w-[200px]">
+                          {item.label}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={item.onClick || onClose}
+                          className="text-slate-400 hover:text-slate-200 transition-colors truncate max-w-[100px] shrink-0 font-medium hover:underline"
+                        >
+                          {item.label}
+                        </button>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </nav>
 
-              <div className="flex items-center gap-2">
+              {/* Status Badge & Close Button */}
+              <div className="flex items-center gap-2 shrink-0">
                 {badge && (
-                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border ${badgeColor}`}>
+                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border whitespace-nowrap ${badgeColor}`}>
                     {badge}
                   </span>
                 )}
                 <button
                   onClick={onClose}
-                  className="w-8 h-8 rounded-xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+                  title="Fermer"
+                  className="w-7 h-7 rounded-lg bg-slate-800/70 border border-slate-700/60 flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-slate-700 transition-colors"
                 >
-                  <X size={15} />
+                  <X size={14} />
                 </button>
               </div>
             </div>

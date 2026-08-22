@@ -343,6 +343,11 @@ export default function Sales() {
         badge={selectedDeal?.stage}
         badgeColor="bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
         avatarText={selectedDeal?.company.charAt(0)}
+        breadcrumbs={[
+          { label: 'Sales OS', onClick: () => setSelectedDeal(null) },
+          { label: 'Pipeline', onClick: () => setSelectedDeal(null) },
+          { label: selectedDeal?.company || 'Deal' }
+        ]}
         actions={[
           {
             id: 'sign',

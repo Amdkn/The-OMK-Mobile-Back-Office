@@ -324,6 +324,11 @@ export default function BaaSHub() {
         badge={selectedDoc?.status === 'verified' ? 'Certifié Conforme' : 'En Attente'}
         badgeColor="bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
         icon={FileText}
+        breadcrumbs={[
+          { label: 'BaaS Hub', onClick: () => setSelectedDoc(null) },
+          { label: 'Gouvernance', onClick: () => setSelectedDoc(null) },
+          { label: selectedDoc?.title || 'Document' }
+        ]}
         actions={[
           {
             id: 'download',

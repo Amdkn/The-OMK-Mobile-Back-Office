@@ -59,7 +59,15 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
   const layout = useResponsiveLayout();
   const [currentPage, setCurrentPage] = useState(0);
   const [activeDragId, setActiveDragId] = useState<AppId | null>(null);
-  const [activeFolderModal, setActiveFolderModal] = useState<SmartFolder | null>(null);
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
+  const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [selectedAppIdsForNewFolder, setSelectedAppIdsForNewFolder] = useState<AppId[]>([]);
+
+  // Dynamically resolve the active folder object so edits/removals immediately update
+  const activeFolderModal = useMemo(() => {
+    return activeFolderId ? smartFolders.find(f => f.id === activeFolderId) || null : null;
+  }, [activeFolderId, smartFolders]);
 
   // Configure touch sensor with 250ms long-press delay for mobile tactile feel
   const sensors = useSensors(
@@ -149,22 +157,10 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
         return;
       }
 
-      // Check if dropped onto another app to create a Smart Folder
-      const overApp = APPS.find(a => a.id === overId);
-      const activeApp = APPS.find(a => a.id === activeId);
-
-      if (overApp && activeApp && overId !== activeId) {
-        const folderName = `${activeApp.name.split(' ')[0]} & ${overApp.name.split(' ')[0]}`;
-        haptics.trigger('success');
-        createSmartFolder(folderName, [activeId, overId as AppId]);
-        setActiveDragId(null);
-        return;
-      }
-
-      // Otherwise, standard reordering
+      // Otherwise, standard natural reordering
       const oldIndex = gridAppOrder.indexOf(activeId);
       const newIndex = gridAppOrder.indexOf(overId as AppId);
-      if (oldIndex !== -1 && newIndex !== -1) {
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
         haptics.trigger('dragDrop');
         reorderGridApps(oldIndex, newIndex);
       }
@@ -229,7 +225,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
                     folder={folder}
                     onClick={() => {
                       haptics.trigger('selection');
-                      setActiveFolderModal(folder);
+                      setActiveFolderId(folder.id);
                     }}
                   />
                 ))}
@@ -279,7 +275,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
       {activeFolderModal && (
         <SmartFolderModal
           folder={activeFolderModal}
-          onClose={() => setActiveFolderModal(null)}
+          onClose={() => setActiveFolderId(null)}
           onOpenApp={onOpenApp}
         />
       )}

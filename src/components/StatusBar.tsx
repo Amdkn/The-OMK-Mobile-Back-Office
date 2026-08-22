@@ -110,19 +110,19 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
         <button
           onClick={toggleNotificationCenter}
           title="Centre de Notifications"
-          className="relative p-1 rounded-lg hover:bg-slate-800/40 transition-colors pointer-events-auto group"
+          className="relative p-1.5 rounded-lg hover:bg-slate-800/40 transition-colors pointer-events-auto flex items-center justify-center group"
         >
-          <Bell size={14} className={`${styleConfig.iconColor} group-hover:${styleConfig.accentColor} transition-colors`} />
+          <Bell size={14} className={`${styleConfig.iconColor} group-hover:${styleConfig.accentColor} transition-colors shrink-0`} />
           {unreadCount > 0 && (
-            <span className={`absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-0.5 rounded-full text-[9px] font-bold flex items-center justify-center ${styleConfig.badgeBg} shadow-sm animate-pulse`}>
-              {unreadCount}
+            <span className={`absolute -top-1 -right-1.5 min-w-[15px] h-[15px] px-1 rounded-full text-[8.5px] font-black leading-none flex items-center justify-center ${styleConfig.badgeBg} shadow-md border border-slate-950/20 whitespace-nowrap z-10 animate-pulse`}>
+              {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
         </button>
       </div>
       
       {/* Center: Dynamic Island or Notch */}
-      <div className="flex-1 flex justify-center">
+      <div className="absolute left-1/2 -translate-x-1/2 top-2 z-50 pointer-events-auto">
         <DynamicIsland paradigm={paradigm} />
       </div>
 

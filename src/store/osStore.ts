@@ -202,6 +202,7 @@ interface OSStoreState {
   // Smart Folders Actions
   createSmartFolder: (name: string, appIds: AppId[]) => string;
   deleteSmartFolder: (folderId: string) => void;
+  dissolveSmartFolder: (folderId: string) => void;
   renameSmartFolder: (folderId: string, newName: string) => void;
   addAppToFolder: (folderId: string, appId: AppId) => void;
   removeAppFromFolder: (folderId: string, appId: AppId) => void;
@@ -572,14 +573,50 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
     return { smartFolders: updated };
   }),
   removeAppFromFolder: (folderId, appId) => set((state) => {
-    const updated = state.smartFolders.map(f => {
-      if (f.id === folderId) {
-        return { ...f, appIds: f.appIds.filter(id => id !== appId) };
+    // 1. Ensure the app is in gridAppOrder so it re-appears on the desktop grid
+    const existsInGrid = state.gridAppOrder.includes(appId);
+    const updatedGrid = existsInGrid ? state.gridAppOrder : [...state.gridAppOrder, appId];
+
+    // 2. Remove app from the folder, delete folder if empty or only 1 item remaining (dissolve)
+    const updatedFolders = state.smartFolders
+      .map(f => {
+        if (f.id === folderId) {
+          return { ...f, appIds: f.appIds.filter(id => id !== appId) };
+        }
+        return f;
+      })
+      .filter(f => f.appIds.length > 0);
+
+    localStorage.setItem('os_smart_folders', JSON.stringify(updatedFolders));
+    localStorage.setItem('os_grid_order', JSON.stringify(updatedGrid));
+    get().emitEvent('APP_REMOVED_FROM_FOLDER', appId, { folderId, appId });
+
+    return { 
+      smartFolders: updatedFolders,
+      gridAppOrder: updatedGrid 
+    };
+  }),
+  dissolveSmartFolder: (folderId: string) => set((state) => {
+    const folder = state.smartFolders.find(f => f.id === folderId);
+    if (!folder) return state;
+
+    // Restore all apps from the folder back into the root grid order if missing
+    let updatedGrid = [...state.gridAppOrder];
+    folder.appIds.forEach(id => {
+      if (!updatedGrid.includes(id)) {
+        updatedGrid.push(id);
       }
-      return f;
-    }).filter(f => f.appIds.length > 0); // remove empty folder if wanted
-    localStorage.setItem('os_smart_folders', JSON.stringify(updated));
-    return { smartFolders: updated };
+    });
+
+    const updatedFolders = state.smartFolders.filter(f => f.id !== folderId);
+    localStorage.setItem('os_smart_folders', JSON.stringify(updatedFolders));
+    localStorage.setItem('os_grid_order', JSON.stringify(updatedGrid));
+    get().emitEvent('FOLDER_DISSOLVED', 'system', { folderId });
+
+    return {
+      smartFolders: updatedFolders,
+      gridAppOrder: updatedGrid
+    };
   }),
   toggleDevOverlay: () => set((state) => ({ isDevOverlayOpen: !state.isDevOverlayOpen })),
   setDevOverlayOpen: (open) => set({ isDevOverlayOpen: open }),

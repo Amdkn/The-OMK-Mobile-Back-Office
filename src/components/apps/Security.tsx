@@ -300,6 +300,11 @@ export default function Security() {
         badge={selectedKey?.status}
         badgeColor="bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
         icon={Key}
+        breadcrumbs={[
+          { label: 'Security OS', onClick: () => setSelectedKey(null) },
+          { label: 'Gestion Clés', onClick: () => setSelectedKey(null) },
+          { label: selectedKey?.name || 'Secret' }
+        ]}
         actions={[
           {
             id: 'rotate',

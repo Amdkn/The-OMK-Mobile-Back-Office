@@ -30,7 +30,10 @@ import {
   Download,
   Upload,
   RotateCcw,
-  X
+  ChevronRight,
+  X,
+  ShieldCheck,
+  Briefcase
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import DetailSection, { DetailCard, AIInsightCard } from '../layout/DetailSection';
@@ -40,13 +43,16 @@ import { ClientStorageService, Client, Contact, Project } from '../../services/c
 import { useOSStore } from '../../store/osStore';
 import { haptics } from '../../services/haptics';
 import { AppEventBus } from '../../services/eventBus';
+import ContactDetailModal from './clients/ContactDetailModal';
+import ProjectDetailModal from './clients/ProjectDetailModal';
+import ClientMetricsTab from './clients/ClientMetricsTab';
 
 const CLIENTS_TABS = [
   { id: 'portefeuille', label: 'Portefeuille', icon: Users, badge: 4 },
-  { id: 'pipeline', label: 'Pipeline & Onboarding', icon: TrendingUp, badge: '3 Actifs' },
-  { id: 'sante', label: 'Santé & Risques', icon: Activity, badge: '1 Alerte', badgeColor: 'bg-amber-500 text-slate-950' },
+  { id: 'pipeline', label: 'Pipeline & Onboarding', icon: TrendingUp, badge: 3 },
+  { id: 'sante', label: 'Santé & Risques', icon: Activity, badge: 1, badgeColor: 'bg-amber-500 text-slate-950' },
   { id: 'support', label: 'SLA & Support', icon: ShieldAlert, badge: 3 },
-  { id: 'contrats', label: 'Contrats', icon: FileCheck, badge: '$38k/m' }
+  { id: 'contrats', label: 'Contrats', icon: FileCheck, badge: '$38k' }
 ];
 
 export default function Clients() {
@@ -63,6 +69,14 @@ export default function Clients() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
   const [jsonInput, setJsonInput] = useState('');
+
+  // Selected Detail Modal states for Contacts and Projects
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+  const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
+  const [newContactData, setNewContactData] = useState({ name: '', role: '', email: '', phone: '', decisionMaker: true });
+  const [newProjectData, setNewProjectData] = useState({ name: '', status: 'in-progress' as Project['status'], progress: 15, dueDate: '30 Nov 2026', budget: 35000, lead: 'Lead Consultant' });
 
   // Form State for Create/Edit
   const [formData, setFormData] = useState<Partial<Client>>({
@@ -174,6 +188,82 @@ export default function Clients() {
     }
   };
 
+  const handleAddContactToClient = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClient || !newContactData.name.trim()) return;
+
+    const newContact: Contact = {
+      id: `c-${Date.now()}`,
+      name: newContactData.name.trim(),
+      role: newContactData.role.trim() || 'Directeur Projet & Stratégie',
+      email: newContactData.email.trim() || 'contact@client.com',
+      phone: newContactData.phone.trim() || '+33 1 00 00 00 00',
+      decisionMaker: newContactData.decisionMaker,
+      lastInteraction: "À l'instant",
+      location: 'Paris, France (UTC+1)',
+      preferredChannel: 'Slack Connect',
+      interactions: [
+        {
+          id: `int-${Date.now()}`,
+          type: 'meeting',
+          date: "Aujourd'hui",
+          summary: 'Prise de contact initiale et intégration au registre des interlocuteurs clés.',
+          author: 'Équipe Compte'
+        }
+      ]
+    };
+
+    const updatedContacts = [...(selectedClient.contacts || []), newContact];
+    const updatedClient = ClientStorageService.updateClient(selectedClient.id, { contacts: updatedContacts }, workspace);
+    if (updatedClient) {
+      setClients(ClientStorageService.loadClients(workspace));
+      setSelectedClient(updatedClient);
+    }
+
+    haptics.trigger('success');
+    showToast(`Contact ${newContact.name} ajouté au compte`);
+    setNewContactData({ name: '', role: '', email: '', phone: '', decisionMaker: true });
+    setIsAddContactOpen(false);
+  };
+
+  const handleAddProjectToClient = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClient || !newProjectData.name.trim()) return;
+
+    const newProj: Project = {
+      id: `p-${Date.now()}`,
+      name: newProjectData.name.trim(),
+      status: newProjectData.status,
+      progress: newProjectData.progress,
+      dueDate: newProjectData.dueDate.trim() || 'Fin de trimestre',
+      budget: newProjectData.budget,
+      lead: newProjectData.lead,
+      priority: 'Haute',
+      description: 'Projet d\'intégration et déploiement stratégique sur infrastructure sécurisée.',
+      milestones: [
+        { id: `m1-${Date.now()}`, title: 'Cadrage & Spécifications d\'architecture', dueDate: 'J+10', completed: true, owner: newProjectData.lead },
+        { id: `m2-${Date.now()}`, title: 'Déploiement en pré-production & Tests de charge', dueDate: 'J+30', completed: false, owner: newProjectData.lead },
+        { id: `m3-${Date.now()}`, title: 'Recette finale & Mise en production', dueDate: newProjectData.dueDate, completed: false, owner: newProjectData.lead }
+      ],
+      deliverables: [
+        { name: 'Architecture_System_Specs.pdf', type: 'Spécification technique', status: 'ready' },
+        { name: 'Security_Audit_Report.pdf', type: 'Rapport d\'audit', status: 'ready' }
+      ]
+    };
+
+    const updatedProjects = [...(selectedClient.projects || []), newProj];
+    const updatedClient = ClientStorageService.updateClient(selectedClient.id, { projects: updatedProjects }, workspace);
+    if (updatedClient) {
+      setClients(ClientStorageService.loadClients(workspace));
+      setSelectedClient(updatedClient);
+    }
+
+    haptics.trigger('success');
+    showToast(`Projet ${newProj.name} initialisé avec jalons`);
+    setNewProjectData({ name: '', status: 'in-progress', progress: 15, dueDate: '30 Nov 2026', budget: 35000, lead: 'Lead Consultant' });
+    setIsAddProjectOpen(false);
+  };
+
   const handleOpenJsonManager = () => {
     haptics.trigger('selection');
     const jsonStr = ClientStorageService.exportJSON(workspace);
@@ -232,28 +322,43 @@ export default function Clients() {
         }} 
       />
 
-      {/* Action Sub-Bar */}
-      <div className="px-4 py-2 bg-slate-900/60 border-b border-slate-800/80 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-1.5 text-xs text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>Stockage persistant : <strong className="text-slate-200">{workspace} DB</strong></span>
-        </div>
+      {/* Contextual Sub-Bar with Breadcrumbs (Fil d'Ariane) */}
+      <div className="px-3.5 py-2 bg-slate-900/70 border-b border-slate-800/80 flex items-center justify-between shrink-0 gap-2">
+        <nav aria-label="Fil d'Ariane Clients" className="flex items-center gap-1.5 text-xs text-slate-400 min-w-0 flex-1 overflow-x-auto scrollbar-hide">
+          <button 
+            onClick={() => {
+              setActiveTab('portefeuille');
+              setSelectedClient(null);
+            }}
+            className="hover:text-emerald-400 text-slate-400 transition-colors font-medium shrink-0 flex items-center gap-1"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Clients</span>
+          </button>
+          <ChevronRight size={12} className="text-slate-500 shrink-0" />
+          <span className="text-slate-200 font-semibold truncate">
+            {CLIENTS_TABS.find(t => t.id === activeTab)?.label || 'Portefeuille'}
+          </span>
+          <span className="hidden sm:inline-block text-[10px] text-slate-500 font-mono ml-1 px-1.5 py-0.5 rounded bg-slate-800/60 border border-slate-700/40">
+            {workspace} DB
+          </span>
+        </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={handleOpenJsonManager}
-            className="px-2.5 py-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-slate-100 text-[11px] font-medium flex items-center gap-1.5 transition-colors"
+            className="px-2 py-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-slate-100 text-[11px] font-medium flex items-center gap-1 transition-colors"
           >
-            <Download size={12} />
-            <span>JSON Sync</span>
+            <Download size={11} />
+            <span className="hidden xs:inline">JSON</span>
           </button>
 
           <button
             onClick={handleOpenAdd}
             className="px-2.5 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] flex items-center gap-1 shadow-md transition-all active:scale-95"
           >
-            <Plus size={13} strokeWidth={2.5} />
-            <span>Nouveau Compte</span>
+            <Plus size={12} strokeWidth={2.5} />
+            <span>Nouveau</span>
           </button>
         </div>
       </div>
@@ -642,6 +747,14 @@ export default function Clients() {
         badge={selectedClient?.status === 'at-risk' ? 'À Risque' : selectedClient?.status === 'onboarding' ? 'Onboarding' : 'Actif'}
         badgeColor={selectedClient?.status === 'at-risk' ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'}
         avatarText={selectedClient?.name.charAt(0)}
+        breadcrumbs={[
+          { label: 'Clients', onClick: () => setSelectedClient(null) },
+          { 
+            label: CLIENTS_TABS.find(t => t.id === activeTab)?.label || 'Portefeuille', 
+            onClick: () => setSelectedClient(null) 
+          },
+          { label: selectedClient?.name || 'Fiche Client' }
+        ]}
         actions={[
           {
             id: 'edit',
@@ -685,77 +798,79 @@ export default function Clients() {
           {
             id: 'analytics',
             label: 'MRR & Métriques',
-            content: (
-              <div className="space-y-4">
-                <div className="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-xs font-semibold text-slate-300">Évolution Historique MRR ($)</span>
-                    <span className="text-[10px] text-emerald-400 font-mono font-bold">+24% Q1-Q2</span>
-                  </div>
-                  
-                  <div className="h-44 w-full">
-                    {selectedClient && selectedClient.revenueHistory && selectedClient.revenueHistory.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={selectedClient.revenueHistory}>
-                          <defs>
-                            <linearGradient id="clientMrrGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
-                              <stop offset="95%" stopColor="#10b981" stopOpacity={0.0}/>
-                            </linearGradient>
-                          </defs>
-                          <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
-                          <Tooltip contentStyle={{ backgroundColor: '#090d16', borderColor: '#334155', borderRadius: 12, fontSize: 12 }} />
-                          <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#clientMrrGrad)" />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-xs text-slate-500">Aucune donnée historique</div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 text-xs space-y-2">
-                  <div className="font-semibold text-slate-200">Notes Stratégiques du Compte</div>
-                  <p className="text-slate-400 leading-relaxed">{selectedClient?.notes || 'Aucune note spécifique renseignée.'}</p>
-                </div>
-              </div>
-            )
+            content: selectedClient ? (
+              <ClientMetricsTab client={selectedClient} onToast={showToast} />
+            ) : null
           },
           {
             id: 'contacts',
             label: `Contacts (${selectedClient?.contacts?.length || 0})`,
             content: (
-              <div className="space-y-2.5">
-                {selectedClient?.contacts?.map((contact) => (
-                  <div key={contact.id} className="p-3 bg-slate-900/80 rounded-2xl border border-slate-800 flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-slate-100 text-xs">{contact.name}</div>
-                      <div className="text-[11px] text-slate-400">{contact.role}</div>
-                      <div className="text-[10px] text-slate-500 font-mono mt-0.5">{contact.email}</div>
+              <div className="space-y-3 text-xs">
+                <div className="flex justify-between items-center px-0.5">
+                  <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                    Interlocuteurs Clés ({selectedClient?.contacts?.length || 0})
+                  </span>
+                  <button
+                    onClick={() => {
+                      haptics.trigger('light');
+                      setIsAddContactOpen(true);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                  >
+                    <Plus size={12} />
+                    <span>Nouveau Contact</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {selectedClient?.contacts?.map((contact) => (
+                    <div 
+                      key={contact.id} 
+                      onClick={() => {
+                        haptics.trigger('selection');
+                        setSelectedContact(contact);
+                      }}
+                      className="p-3 bg-slate-900/90 hover:bg-slate-800/80 rounded-2xl border border-slate-800 hover:border-slate-700/80 cursor-pointer transition-all duration-150 group space-y-2"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-xs shrink-0 group-hover:scale-105 transition-transform">
+                            {contact.name.charAt(0)}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-slate-100 text-xs truncate group-hover:text-emerald-400 transition-colors">
+                                {contact.name}
+                              </span>
+                              {contact.decisionMaker && (
+                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded shrink-0">
+                                  <ShieldCheck size={9} />
+                                  Décisionnaire
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-400">{contact.role}</div>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            {contact.lastInteraction || 'Récent'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[11px]">
+                        <span className="text-slate-500 font-mono text-[10px] truncate max-w-[180px]">{contact.email}</span>
+                        <span className="text-emerald-400 font-medium group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-0.5 text-[11px]">
+                          Fiche & Échanges ({contact.interactions?.length || 0})
+                          <ChevronRight size={12} />
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <button 
-                        onClick={() => {
-                          haptics.trigger('light');
-                          showToast(`Appel vers ${contact.phone}...`);
-                        }}
-                        className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-emerald-400 transition-colors"
-                      >
-                        <Phone size={13} />
-                      </button>
-                      <button 
-                        onClick={() => {
-                          haptics.trigger('light');
-                          showToast(`Email envoyé à ${contact.email}`);
-                        }}
-                        className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors"
-                      >
-                        <Mail size={13} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )
           },
@@ -763,61 +878,317 @@ export default function Clients() {
             id: 'projects',
             label: `Projets (${selectedClient?.projects?.length || 0})`,
             content: (
-              <div className="space-y-2.5">
-                {selectedClient?.projects?.map((proj) => (
-                  <div key={proj.id} className="p-3 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-slate-200 text-xs">{proj.name}</span>
-                      <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-md ${
-                        proj.status === 'completed' 
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                          : proj.status === 'on-hold'
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                          : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
-                      }`}>
-                        {proj.status}
-                      </span>
-                    </div>
+              <div className="space-y-3 text-xs">
+                <div className="flex justify-between items-center px-0.5">
+                  <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                    Livrables & Déploiements ({selectedClient?.projects?.length || 0})
+                  </span>
+                  <button
+                    onClick={() => {
+                      haptics.trigger('light');
+                      setIsAddProjectOpen(true);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 text-[11px] font-semibold flex items-center gap-1 transition-colors"
+                  >
+                    <Plus size={12} />
+                    <span>Nouveau Projet</span>
+                  </button>
+                </div>
 
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[10px] text-slate-400">
-                        <span>Progression</span>
-                        <span className="font-mono font-bold text-slate-200">{proj.progress}%</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${proj.progress}%` }} />
-                      </div>
-                    </div>
+                <div className="space-y-2">
+                  {selectedClient?.projects?.map((proj) => (
+                    <div 
+                      key={proj.id} 
+                      onClick={() => {
+                        haptics.trigger('selection');
+                        setSelectedProject(proj);
+                      }}
+                      className="p-3 bg-slate-900/90 hover:bg-slate-800/80 rounded-2xl border border-slate-800 hover:border-slate-700/80 cursor-pointer transition-all duration-150 group space-y-2.5"
+                    >
+                      <div className="flex justify-between items-center gap-2">
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-100 text-xs truncate group-hover:text-sky-400 transition-colors">
+                            {proj.name}
+                          </div>
+                          <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Briefcase size={10} className="text-slate-500" />
+                            <span>Lead: {proj.lead || 'Équipe Technique'}</span>
+                          </div>
+                        </div>
 
-                    <div className="flex justify-between text-[10px] text-slate-500">
-                      <span>Échéance: {proj.dueDate}</span>
-                      <button 
-                        onClick={() => {
-                          haptics.trigger('light');
-                          showToast(`Jalon pour ${proj.name} validé`);
-                        }}
-                        className="text-emerald-400 hover:underline"
-                      >
-                        Marquer jalon validé
-                      </button>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-md ${
+                            proj.status === 'completed' 
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                              : proj.status === 'on-hold'
+                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
+                          }`}>
+                            {proj.status === 'completed' ? 'Terminé' : proj.status === 'on-hold' ? 'En Pause' : 'En Cours'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[10px] text-slate-400">
+                          <span>Avancement ({proj.milestones?.filter(m => m.completed).length || 0}/{proj.milestones?.length || 0} jalons)</span>
+                          <span className="font-mono font-bold text-slate-200">{proj.progress}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                          <div 
+                            className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-300" 
+                            style={{ width: `${proj.progress}%` }} 
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center text-[10px] text-slate-500 pt-0.5">
+                        <span>Échéance: {proj.dueDate}</span>
+                        <span className="text-sky-400 font-medium group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-0.5 text-[11px]">
+                          Inspecter jalons & budget
+                          <ChevronRight size={12} />
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )
           }
         ]}
       />
 
+      {/* MODAL FICHE DÉTAILLÉE CONTACT */}
+      <ContactDetailModal
+        isOpen={!!selectedContact}
+        onClose={() => setSelectedContact(null)}
+        contact={selectedContact}
+        client={selectedClient}
+        workspace={workspace}
+        onUpdateContact={(updatedContact) => {
+          setSelectedContact(updatedContact);
+          if (selectedClient) {
+            const updatedContacts = selectedClient.contacts.map(c => c.id === updatedContact.id ? updatedContact : c);
+            setSelectedClient({ ...selectedClient, contacts: updatedContacts });
+            setClients(ClientStorageService.loadClients(workspace));
+          }
+        }}
+        onToast={showToast}
+      />
+
+      {/* MODAL FICHE DÉTAILLÉE PROJET */}
+      <ProjectDetailModal
+        isOpen={!!selectedProject}
+        onClose={() => setSelectedProject(null)}
+        project={selectedProject}
+        client={selectedClient}
+        workspace={workspace}
+        onUpdateProject={(updatedProject) => {
+          setSelectedProject(updatedProject);
+          if (selectedClient) {
+            const updatedProjects = selectedClient.projects.map(p => p.id === updatedProject.id ? updatedProject : p);
+            setSelectedClient({ ...selectedClient, projects: updatedProjects });
+            setClients(ClientStorageService.loadClients(workspace));
+          }
+        }}
+        onToast={showToast}
+      />
+
+      {/* MODAL AJOUT CONTACT RAPIDE */}
+      <AnimatePresence>
+        {isAddContactOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm overflow-y-auto shadow-2xl space-y-4 text-slate-100 text-xs"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Plus size={16} className="text-emerald-400" />
+                  <h3 className="font-bold text-sm">Nouveau Contact Client</h3>
+                </div>
+                <button onClick={() => setIsAddContactOpen(false)} className="text-slate-400 hover:text-slate-100">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddContactToClient} className="space-y-3">
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-1">Nom & Prénom</label>
+                  <input
+                    type="text"
+                    value={newContactData.name}
+                    onChange={e => setNewContactData({ ...newContactData, name: e.target.value })}
+                    placeholder="Ex: Sophie Martin"
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-1">Rôle / Titre</label>
+                  <input
+                    type="text"
+                    value={newContactData.role}
+                    onChange={e => setNewContactData({ ...newContactData, role: e.target.value })}
+                    placeholder="Ex: VP Engineering, CTO, Sponsor"
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={newContactData.email}
+                      onChange={e => setNewContactData({ ...newContactData, email: e.target.value })}
+                      placeholder="sophie@client.com"
+                      className="w-full px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Téléphone</label>
+                    <input
+                      type="tel"
+                      value={newContactData.phone}
+                      onChange={e => setNewContactData({ ...newContactData, phone: e.target.value })}
+                      placeholder="+33 6 12 34 56 78"
+                      className="w-full px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <label className="flex items-center gap-2 p-2.5 bg-slate-950/60 rounded-xl border border-slate-800 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newContactData.decisionMaker}
+                    onChange={e => setNewContactData({ ...newContactData, decisionMaker: e.target.checked })}
+                    className="rounded bg-slate-800 border-slate-700 text-emerald-500"
+                  />
+                  <span className="text-[11px] text-slate-300">Marquer comme décideur clé (Sponsor/Signataire)</span>
+                </label>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddContactOpen(false)}
+                    className="px-3 py-1.5 text-slate-400 hover:text-slate-200"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl shadow-md transition-all active:scale-95"
+                  >
+                    Enregistrer le contact
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* MODAL AJOUT PROJET RAPIDE */}
+      <AnimatePresence>
+        {isAddProjectOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm overflow-y-auto shadow-2xl space-y-4 text-slate-100 text-xs"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Plus size={16} className="text-sky-400" />
+                  <h3 className="font-bold text-sm">Nouveau Projet Client</h3>
+                </div>
+                <button onClick={() => setIsAddProjectOpen(false)} className="text-slate-400 hover:text-slate-100">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddProjectToClient} className="space-y-3">
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-1">Nom du Projet</label>
+                  <input
+                    type="text"
+                    value={newProjectData.name}
+                    onChange={e => setNewProjectData({ ...newProjectData, name: e.target.value })}
+                    placeholder="Ex: Migration BaaS & Cloud Pod"
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-sky-500"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Lead Responsable</label>
+                    <input
+                      type="text"
+                      value={newProjectData.lead}
+                      onChange={e => setNewProjectData({ ...newProjectData, lead: e.target.value })}
+                      placeholder="Ex: Thomas L."
+                      className="w-full px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Échéance Cible</label>
+                    <input
+                      type="text"
+                      value={newProjectData.dueDate}
+                      onChange={e => setNewProjectData({ ...newProjectData, dueDate: e.target.value })}
+                      placeholder="Ex: 15 Déc 2026"
+                      className="w-full px-2.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-1">Budget Alloué ($)</label>
+                  <input
+                    type="number"
+                    value={newProjectData.budget}
+                    onChange={e => setNewProjectData({ ...newProjectData, budget: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 text-xs focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddProjectOpen(false)}
+                    className="px-3 py-1.5 text-slate-400 hover:text-slate-200"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-xl shadow-md transition-all active:scale-95"
+                  >
+                    Créer le projet
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* CREATE CLIENT MODAL */}
       <AnimatePresence>
         {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-16 bg-black/70 backdrop-blur-md">
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm max-h-[85vh] overflow-y-auto shadow-2xl space-y-4 text-slate-100"
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm max-h-[80vh] overflow-y-auto shadow-2xl space-y-4 text-slate-100"
             >
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div className="flex items-center gap-2">
@@ -954,12 +1325,12 @@ export default function Clients() {
       {/* EDIT CLIENT MODAL */}
       <AnimatePresence>
         {isEditModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-16 bg-black/70 backdrop-blur-md">
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm max-h-[85vh] overflow-y-auto shadow-2xl space-y-4 text-slate-100"
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm max-h-[80vh] overflow-y-auto shadow-2xl space-y-4 text-slate-100"
             >
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div className="flex items-center gap-2">
@@ -1070,12 +1441,12 @@ export default function Clients() {
       {/* JSON STORAGE SCHEMA SYNC & EXPORT/IMPORT MODAL */}
       <AnimatePresence>
         {isJsonModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-16 bg-black/75 backdrop-blur-md">
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl space-y-3 text-slate-100"
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl space-y-3 text-slate-100"
             >
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div className="flex items-center gap-2">
