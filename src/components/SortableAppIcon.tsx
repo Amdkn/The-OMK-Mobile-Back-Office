@@ -35,13 +35,19 @@ export function SortableAppIcon({ app, onClick }: Props) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: app.id });
+  } = useSortable({ 
+    id: app.id,
+    transition: {
+      duration: 320,
+      easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' // Spring physics bounce curve
+    }
+  });
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition: transition || 'transform 200ms cubic-bezier(0.2, 0, 0, 1)',
+    transition: transition || 'transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease',
     zIndex: isDragging ? 0 : 'auto',
-    opacity: isDragging ? 0.35 : 1,
+    opacity: isDragging ? 0.25 : 1,
     touchAction: 'none',
   };
 
@@ -58,3 +64,4 @@ export function SortableAppIcon({ app, onClick }: Props) {
     </button>
   );
 }
+

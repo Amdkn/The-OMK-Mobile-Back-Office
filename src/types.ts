@@ -53,7 +53,7 @@ export interface OSNotification {
   actionLabel?: string;
 }
 
-export type SearchResultCategory = 'apps' | 'settings' | 'actions';
+export type SearchResultCategory = 'apps' | 'settings' | 'actions' | 'clients' | 'files';
 
 export interface SearchResultItem {
   id: string;
@@ -66,5 +66,39 @@ export interface SearchResultItem {
   action: () => void;
   keywords?: string[];
 }
+
+export type WidgetSize = 'small' | 'medium' | 'large';
+
+export interface AppWidget {
+  id: string;
+  appId: AppId;
+  title: string;
+  category?: string;
+  size?: WidgetSize;
+  value: string | number;
+  subValue?: string;
+  icon?: ElementType;
+  accentColor?: string;
+  trend?: 'up' | 'down' | 'neutral';
+  trendValue?: string;
+  badge?: string;
+  updatedAt?: string;
+  actionLabel?: string;
+  isPinned?: boolean;
+  order?: number;
+  data?: Record<string, any>;
+  onClick?: () => void;
+}
+
+export interface AppEvent<T = any> {
+  id: string;
+  type: string;
+  sender: AppId | 'system' | 'tasks' | 'calendar' | 'clients' | 'finance';
+  payload?: T;
+  timestamp: number;
+}
+
+export type DeviceOrientation = 'portrait' | 'landscape';
+export type DeviceFormFactor = 'phone' | 'tablet' | 'desktop';
 
 

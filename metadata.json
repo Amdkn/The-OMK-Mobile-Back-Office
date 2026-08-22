@@ -1,6 +1,6 @@
 {
   "name": "OMK Mobile OS",
   "description": "Back-Office sécurisé et mobile-first de l'écosystème The OMK Office",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

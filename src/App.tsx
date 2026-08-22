@@ -5,6 +5,8 @@
 
 import { useOSStore } from './store/osStore';
 import { AnimatePresence } from 'motion/react';
+import { Smartphone, Tablet, RotateCw, Sparkles, Radio } from 'lucide-react';
+import { haptics } from './services/haptics';
 import PhoneChassis from './components/PhoneChassis';
 import LockScreen from './components/LockScreen';
 import HomeScreen from './components/HomeScreen';
@@ -12,6 +14,7 @@ import AppViewer from './components/AppViewer';
 import StatusBar from './components/StatusBar';
 import WallpaperBackground from './components/WallpaperBackground';
 import NotificationCenter from './components/NotificationCenter';
+import EventBusDevOverlay from './components/dev/EventBusDevOverlay';
 
 export default function App() {
   const { 
@@ -21,37 +24,123 @@ export default function App() {
     theme, 
     contrast, 
     brightness, 
+    deviceViewMode,
     unlock, 
     closeApp, 
     openApp, 
-    setParadigm 
+    setParadigm,
+    setDeviceViewMode,
+    emitEvent
   } = useOSStore();
 
   return (
     <div className="fixed inset-0 bg-slate-950 flex items-center justify-center md:p-8 font-sans text-slate-100 selection:bg-emerald-500/30">
-      {/* Paradigm Selector (Desktop Only) */}
-      <div className="hidden md:flex flex-col gap-4 absolute left-8 top-1/2 -translate-y-1/2 z-50">
-        <h2 className="text-xs font-bold tracking-widest uppercase text-slate-500 mb-2">OS Paradigm</h2>
-        <button
-          onClick={() => setParadigm('ios')}
-          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
-            paradigm === 'ios' 
-              ? 'bg-slate-800 border-slate-700 text-slate-100 shadow-md' 
-              : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          iOS Style
-        </button>
-        <button
-          onClick={() => setParadigm('android')}
-          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
-            paradigm === 'android' 
-              ? 'bg-slate-800 border-slate-700 text-slate-100 shadow-md' 
-              : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          Android Style
-        </button>
+      {/* Desktop Controls Dock */}
+      <div className="hidden lg:flex flex-col gap-5 absolute left-8 top-1/2 -translate-y-1/2 z-50 bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 p-4 rounded-3xl shadow-2xl max-w-[210px]">
+        {/* OS Paradigm Switcher */}
+        <div>
+          <h2 className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-2">
+            OS Paradigm
+          </h2>
+          <div className="flex flex-col gap-1.5">
+            <button
+              onClick={() => {
+                haptics.trigger('selection');
+                setParadigm('ios');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border text-left flex items-center justify-between ${
+                paradigm === 'ios' 
+                  ? 'bg-slate-800 border-slate-700 text-slate-100 shadow-md' 
+                  : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <span>iOS Style</span>
+              {paradigm === 'ios' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+            </button>
+            <button
+              onClick={() => {
+                haptics.trigger('selection');
+                setParadigm('android');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border text-left flex items-center justify-between ${
+                paradigm === 'android' 
+                  ? 'bg-slate-800 border-slate-700 text-slate-100 shadow-md' 
+                  : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <span>Android Style</span>
+              {paradigm === 'android' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Device Orientation & Form Factor Switcher */}
+        <div>
+          <h2 className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-2 flex items-center gap-1">
+            <RotateCw size={11} /> Format & Orientation
+          </h2>
+          <div className="flex flex-col gap-1.5">
+            <button
+              onClick={() => {
+                haptics.trigger('selection');
+                setDeviceViewMode('portrait');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border text-left flex items-center gap-2 ${
+                deviceViewMode === 'portrait' || deviceViewMode === 'auto'
+                  ? 'bg-slate-800 border-slate-700 text-slate-100 shadow-md' 
+                  : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Smartphone size={13} />
+              <span>Portrait</span>
+            </button>
+            <button
+              onClick={() => {
+                haptics.trigger('selection');
+                setDeviceViewMode('landscape');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border text-left flex items-center gap-2 ${
+                deviceViewMode === 'landscape'
+                  ? 'bg-slate-800 border-slate-700 text-slate-100 shadow-md' 
+                  : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <RotateCw size={13} />
+              <span>Paysage</span>
+            </button>
+            <button
+              onClick={() => {
+                haptics.trigger('selection');
+                setDeviceViewMode('tablet');
+              }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all border text-left flex items-center gap-2 ${
+                deviceViewMode === 'tablet'
+                  ? 'bg-slate-800 border-slate-700 text-slate-100 shadow-md' 
+                  : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Tablet size={13} />
+              <span>Tablette</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Cross-App Event Bus Live Trigger */}
+        <div className="pt-2 border-t border-slate-800/60">
+          <h2 className="text-[10px] font-bold tracking-widest uppercase text-slate-400 mb-2 flex items-center gap-1">
+            <Radio size={11} className="text-emerald-400" /> AppEventBus
+          </h2>
+          <button
+            onClick={() => {
+              haptics.trigger('medium');
+              emitEvent('OMK_REFRESH_ALL', 'system', { timestamp: Date.now() });
+            }}
+            className="w-full px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-xl text-[11px] font-medium flex items-center justify-center gap-1.5 transition-colors"
+          >
+            <Sparkles size={12} />
+            <span>Émettre Événement</span>
+          </button>
+        </div>
       </div>
 
       <PhoneChassis>
@@ -82,6 +171,9 @@ export default function App() {
                 </AnimatePresence>
                 {/* Slide-over Notification Center */}
                 <NotificationCenter onOpenApp={openApp} />
+
+                {/* Real-time EventBus Debug Overlay */}
+                <EventBusDevOverlay />
               </>
             )}
           </div>
@@ -90,4 +182,3 @@ export default function App() {
     </div>
   );
 }
-

@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { AppId, AppDefinition } from '../types';
 import { useOSStore } from '../store/osStore';
+import { haptics } from '../services/haptics';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
+import { useAppEventListener } from '../hooks/useAppEventBus';
 import { 
   DndContext, 
   closestCorners, 
@@ -19,10 +22,11 @@ import {
 } from '@dnd-kit/sortable';
 import { SortableAppIcon, AppIconView } from './SortableAppIcon';
 import GlobalSearch from './GlobalSearch';
+import DynamicWidgetsGrid from './widgets/DynamicWidgetsGrid';
 import { 
   Bot, Scale, Users, Server, WalletCards, PhoneCall, TerminalSquare, 
   LockKeyhole, Settings, LayoutDashboard, Landmark, HardHat, PieChart,
-  Users2, LineChart, Cpu, Network, Lightbulb, UserCog, Activity, DollarSign
+  Users2, LineChart, Cpu, Network, Lightbulb, UserCog
 } from 'lucide-react';
 
 export const APPS: AppDefinition[] = [
@@ -48,10 +52,12 @@ export const APPS: AppDefinition[] = [
 ];
 
 export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => void }) {
-  const { lock, gridAppOrder, reorderGridApps, workspace } = useOSStore();
+  const { lock, gridAppOrder, reorderGridApps } = useOSStore();
+  const layout = useResponsiveLayout();
   const [currentPage, setCurrentPage] = useState(0);
   const [activeDragId, setActiveDragId] = useState<AppId | null>(null);
 
+  // Configure touch sensor with 250ms long-press delay for mobile tactile feel
   const sensors = useSensors(
     useSensor(MouseSensor, { 
       activationConstraint: { 
@@ -60,17 +66,17 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     }),
     useSensor(TouchSensor, { 
       activationConstraint: { 
-        delay: 200, 
+        delay: 250, 
         tolerance: 6 
       } 
     }),
     useSensor(KeyboardSensor)
   );
   
-  // Dock apps are static in this implementation
+  // Dock apps
   const dockApps = APPS.filter(a => a.inDock);
 
-  // Map the ordered IDs back to actual AppDefinitions, filtering out any missing ones
+  // Map the ordered IDs back to actual AppDefinitions
   const orderedGridApps = useMemo(() => {
     return gridAppOrder
       .map(id => APPS.find(a => a.id === id))
@@ -81,8 +87,9 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     return activeDragId ? APPS.find(a => a.id === activeDragId) : null;
   }, [activeDragId]);
 
-  const PAGE_1_CAPACITY = 8;
-  const PAGE_N_CAPACITY = 16;
+  // Dynamic pagination capacities based on orientation & grid columns
+  const PAGE_1_CAPACITY = layout.isLandscape || layout.isTablet ? layout.gridCols * 2 : 8;
+  const PAGE_N_CAPACITY = layout.isLandscape || layout.isTablet ? layout.gridCols * 3 : 16;
   
   const page1Apps = orderedGridApps.slice(0, PAGE_1_CAPACITY);
   const remainingApps = orderedGridApps.slice(PAGE_1_CAPACITY);
@@ -94,8 +101,10 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
 
   const handleAppClick = (id: AppId) => {
     if (id === 'lock') {
+      haptics.trigger('heavy');
       lock();
     } else {
+      haptics.trigger('appLaunch');
       onOpenApp(id);
     }
   };
@@ -104,10 +113,14 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     const scrollLeft = e.currentTarget.scrollLeft;
     const width = e.currentTarget.clientWidth;
     const page = Math.round(scrollLeft / width);
-    if (page !== currentPage) setCurrentPage(page);
+    if (page !== currentPage) {
+      haptics.trigger('selection');
+      setCurrentPage(page);
+    }
   };
 
   const handleDragStart = (event: DragStartEvent) => {
+    haptics.trigger('dragStart');
     setActiveDragId(event.active.id as AppId);
   };
 
@@ -117,19 +130,32 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
       const oldIndex = gridAppOrder.indexOf(active.id as AppId);
       const newIndex = gridAppOrder.indexOf(over.id as AppId);
       if (oldIndex !== -1 && newIndex !== -1) {
+        haptics.trigger('dragDrop');
         reorderGridApps(oldIndex, newIndex);
       }
+    } else {
+      haptics.trigger('light');
     }
     setActiveDragId(null);
   };
 
   const handleDragCancel = () => {
+    haptics.trigger('light');
     setActiveDragId(null);
   };
 
+  const gridColsClass = 
+    layout.gridCols >= 6 
+      ? 'grid-cols-6' 
+      : layout.gridCols === 5 
+      ? 'grid-cols-5' 
+      : 'grid-cols-4';
+
   return (
-    <div className="flex flex-col h-full w-full relative z-10 pt-14 pb-5 overflow-hidden theme-transition select-none">
-      {/* OMK Global Search Component */}
+    <div className={`flex flex-col h-full w-full relative z-10 ${
+      layout.isLandscape ? 'pt-11 pb-3' : 'pt-14 pb-5'
+    } overflow-hidden theme-transition select-none`}>
+      {/* OMK Global Search & Voice Command Component */}
       <GlobalSearch onOpenApp={onOpenApp} />
 
       {/* Scrollable Pagination & App Grid Area */}
@@ -148,43 +174,19 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
             items={gridAppOrder}
             strategy={rectSortingStrategy}
           >
-            {/* Page 1 (Widgets + 8 Apps) */}
-            <div className="w-full h-full flex-shrink-0 snap-center flex flex-col px-6">
-              {/* Top Business Status Widgets */}
-              <div className="grid grid-cols-2 gap-3 mb-4 shrink-0">
-                <div 
-                  onClick={() => onOpenApp('coach-ai')}
-                  className="bg-slate-900/80 hover:bg-slate-900 backdrop-blur-xl border border-slate-800 p-3.5 rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer transition-all hover:border-emerald-500/30 group theme-transition"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-400">Coach OS</span>
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  </div>
-                  <div>
-                    <div className="text-base font-semibold text-slate-100 group-hover:text-emerald-300 transition-colors">{workspace}</div>
-                    <div className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
-                      <Activity size={12} className="text-emerald-500" /> Prêt pour requêtes
-                    </div>
-                  </div>
-                </div>
+            {/* Page 1: Dynamic OMK AppWidgets Dashboard + First Page Apps */}
+            <div className={`w-full h-full flex-shrink-0 snap-center flex flex-col ${
+              layout.isLandscape ? 'px-4' : 'px-6'
+            }`}>
+              {/* Dynamic AppWidgets System */}
+              <DynamicWidgetsGrid 
+                onOpenApp={onOpenApp} 
+                widgetCols={layout.widgetCols}
+                className="mb-3"
+              />
 
-                <div 
-                  onClick={() => onOpenApp('finance')}
-                  className="bg-slate-900/80 hover:bg-slate-900 backdrop-blur-xl border border-slate-800 p-3.5 rounded-3xl flex flex-col justify-between shadow-lg cursor-pointer transition-all hover:border-emerald-500/30 group theme-transition"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">Trésorerie</span>
-                    <DollarSign size={14} className="text-emerald-400" />
-                  </div>
-                  <div>
-                    <div className="text-base font-semibold text-slate-100 group-hover:text-emerald-300 transition-colors">$124,500</div>
-                    <div className="text-[11px] text-slate-400 mt-0.5">Règle des 5 active</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 4-Column Aligned Application Grid */}
-              <div className="grid grid-cols-4 gap-x-3 gap-y-4 content-start flex-1">
+              {/* Responsive Aligned Application Grid */}
+              <div className={`grid ${gridColsClass} gap-x-3 gap-y-3.5 content-start flex-1 overflow-y-auto scrollbar-hide`}>
                 {page1Apps.map(app => (
                   <SortableAppIcon 
                     key={app.id} 
@@ -197,8 +199,10 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
 
             {/* Page 2+ Additional App Pages */}
             {extraPages.map((pageApps, idx) => (
-              <div key={idx} className="w-full h-full flex-shrink-0 snap-center flex flex-col px-6 pt-1">
-                <div className="grid grid-cols-4 gap-x-3 gap-y-4 content-start flex-1">
+              <div key={idx} className={`w-full h-full flex-shrink-0 snap-center flex flex-col ${
+                layout.isLandscape ? 'px-4 pt-1' : 'px-6 pt-1'
+              }`}>
+                <div className={`grid ${gridColsClass} gap-x-3 gap-y-3.5 content-start flex-1 overflow-y-auto scrollbar-hide`}>
                   {pageApps.map(app => (
                     <SortableAppIcon 
                       key={app.id} 
@@ -225,7 +229,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
 
       {/* Page Indicators */}
       {totalPages > 1 && (
-        <div className="flex justify-center gap-1.5 mt-1 mb-2 shrink-0 h-3 items-center">
+        <div className="flex justify-center gap-1.5 mt-1 mb-1.5 shrink-0 h-3 items-center">
           {Array.from({ length: totalPages }).map((_, i) => (
             <div 
               key={i} 
@@ -238,8 +242,8 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
       )}
 
       {/* Persistent Dock with High-Contrast Frosted Container */}
-      <div className="mt-auto shrink-0 px-6 pt-1">
-        <div className="bg-slate-900/85 backdrop-blur-2xl border border-slate-800/80 rounded-[2.2rem] p-3 flex justify-around shadow-xl theme-transition">
+      <div className={`mt-auto shrink-0 ${layout.isLandscape ? 'px-4 pt-0.5' : 'px-6 pt-1'}`}>
+        <div className="bg-slate-900/85 backdrop-blur-2xl border border-slate-800/80 rounded-[2.2rem] p-2.5 sm:p-3 flex justify-around shadow-xl theme-transition">
           {dockApps.map(app => (
             <button 
               key={app.id}
@@ -247,8 +251,8 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
               className="flex flex-col items-center group relative focus:outline-none"
               title={app.name}
             >
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${app.color} shadow-md group-hover:scale-105 active:scale-95 transition-all`}>
-                <app.icon size={22} strokeWidth={1.5} />
+              <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center border ${app.color} shadow-md group-hover:scale-105 active:scale-95 transition-all`}>
+                <app.icon size={21} strokeWidth={1.5} />
               </div>
             </button>
           ))}

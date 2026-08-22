@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Users, 
@@ -24,50 +24,22 @@ import {
   Filter,
   BarChart3,
   Layers,
-  FileCheck
+  FileCheck,
+  Edit,
+  Trash2,
+  Download,
+  Upload,
+  RotateCcw,
+  X
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import DetailSection, { DetailCard, AIInsightCard } from '../layout/DetailSection';
 import { AppTopNav } from '../layout/AppTabBar';
 import DetailDrawer from '../layout/DetailDrawer';
-
-interface Contact {
-  id: string;
-  name: string;
-  role: string;
-  email: string;
-  phone: string;
-}
-
-interface Project {
-  id: string;
-  name: string;
-  status: 'in-progress' | 'completed' | 'on-hold';
-  progress: number;
-  dueDate: string;
-}
-
-interface Client {
-  id: string;
-  name: string;
-  mrr: number;
-  status: 'active' | 'at-risk' | 'lead' | 'onboarding';
-  healthScore: number;
-  lastContact: string;
-  industry: string;
-  tier: 'Enterprise' | 'Growth' | 'Scale';
-  sla: string;
-  renewalDate: string;
-  revenueHistory: { month: string; revenue: number }[];
-  contacts: Contact[];
-  projects: Project[];
-  aiInsight: {
-    title: string;
-    content: string;
-    actionLabel: string;
-  };
-  notes: string;
-}
+import { ClientStorageService, Client, Contact, Project } from '../../services/clientStorage';
+import { useOSStore } from '../../store/osStore';
+import { haptics } from '../../services/haptics';
+import { AppEventBus } from '../../services/eventBus';
 
 const CLIENTS_TABS = [
   { id: 'portefeuille', label: 'Portefeuille', icon: Users, badge: 4 },
@@ -77,144 +49,164 @@ const CLIENTS_TABS = [
   { id: 'contrats', label: 'Contrats', icon: FileCheck, badge: '$38k/m' }
 ];
 
-const INITIAL_CLIENTS: Client[] = [
-  { 
-    id: '1', 
-    name: 'Acme Corp', 
-    mrr: 12500, 
-    status: 'active', 
-    healthScore: 94, 
-    lastContact: 'Il y a 2h', 
-    industry: 'Cloud & SaaS',
-    tier: 'Enterprise',
-    sla: '99.99% (SLA Or)',
-    renewalDate: '15 Déc 2026',
-    notes: 'Compte stratégique. Très satisfait du module BaaS Hub. Envisage un déploiement mondial.',
-    revenueHistory: [
-      { month: 'Jan', revenue: 9500 },
-      { month: 'Fév', revenue: 10200 },
-      { month: 'Mar', revenue: 11000 },
-      { month: 'Avr', revenue: 12500 },
-    ],
-    contacts: [
-      { id: 'c1', name: 'Alice Smith', role: 'Chief Executive Officer', email: 'alice@acme.co', phone: '+33 6 12 34 56 78' },
-      { id: 'c2', name: 'Bob Jones', role: 'VP Engineering', email: 'bob@acme.co', phone: '+33 6 98 76 54 32' }
-    ],
-    projects: [
-      { id: 'p1', name: 'Migration Infrastructure Cloud', status: 'in-progress', progress: 75, dueDate: '15 Jan 2027' },
-      { id: 'p2', name: 'Audit de Sécurité SOC2', status: 'completed', progress: 100, dueDate: '01 Nov 2026' }
-    ],
-    aiInsight: {
-      title: 'Opportunité d\'Expansion +$4k MRR',
-      content: 'L\'utilisation de l\'API Cognition a augmenté de 140% ce trimestre. Recommandation d\'upsell vers le forfait Enterprise Uncapped.',
-      actionLabel: 'Générer proposition commerciale'
-    }
-  },
-  { 
-    id: '2', 
-    name: 'Global Tech Industries', 
-    mrr: 8400, 
-    status: 'at-risk', 
-    healthScore: 42, 
-    lastContact: 'Il y a 3j', 
-    industry: 'FinTech & Banking',
-    tier: 'Enterprise',
-    sla: '99.95% (SLA Argent)',
-    renewalDate: '28 Fév 2027',
-    notes: 'Signale des latences sur le cluster Francfort. Risque de désengagement si non résolu d\'ici 10 jours.',
-    revenueHistory: [
-      { month: 'Jan', revenue: 12000 },
-      { month: 'Fév', revenue: 11000 },
-      { month: 'Mar', revenue: 9500 },
-      { month: 'Avr', revenue: 8400 },
-    ],
-    contacts: [
-      { id: 'c3', name: 'Charlie Davis', role: 'Head of Infrastructure', email: 'cdavis@globaltech.com', phone: '+1 555-0200' },
-      { id: 'c4', name: 'Emma Watson', role: 'Procurement Lead', email: 'ewatson@globaltech.com', phone: '+1 555-0201' }
-    ],
-    projects: [
-      { id: 'p3', name: 'Refonte Pipeline de Données', status: 'on-hold', progress: 35, dueDate: '31 Déc 2026' },
-      { id: 'p4', name: 'Optimisation Latence Francfort', status: 'in-progress', progress: 60, dueDate: '10 Nov 2026' }
-    ],
-    aiInsight: {
-      title: 'Alerte Churn Critique (48h)',
-      content: 'Baisse de 40% de l\'activité sur le dashboard. 2 tickets de latence non résolus. Lancer un call exécutif de synchronisation.',
-      actionLabel: 'Organiser réunion de crise'
-    }
-  },
-  { 
-    id: '3', 
-    name: 'Nexus Dynamics AI', 
-    mrr: 14200, 
-    status: 'active', 
-    healthScore: 98, 
-    lastContact: 'Il y a 30m', 
-    industry: 'Autonomous Systems',
-    tier: 'Scale',
-    sla: '99.99% (SLA Or)',
-    renewalDate: '10 Août 2027',
-    notes: 'Partenaire clé en IA. Consommation intensive des modèles de raisonnement distribué.',
-    revenueHistory: [
-      { month: 'Jan', revenue: 6000 },
-      { month: 'Fév', revenue: 8500 },
-      { month: 'Mar', revenue: 11200 },
-      { month: 'Avr', revenue: 14200 },
-    ],
-    contacts: [
-      { id: 'c5', name: 'Diana Prince', role: 'Co-Fondatrice & CTO', email: 'diana@nexus.ai', phone: '+1 555-0300' }
-    ],
-    projects: [
-      { id: 'p5', name: 'Déploiement Ontologie Multi-Agents', status: 'in-progress', progress: 90, dueDate: '05 Déc 2026' }
-    ],
-    aiInsight: {
-      title: 'Croissance Exceptionnelle (+136%)',
-      content: 'Nexus Dynamics est en passe de devenir le 1er client en volume de requêtes. Prévoir un cluster dédié dans PaaS Pro.',
-      actionLabel: 'Configurer noeud dédié'
-    }
-  },
-  { 
-    id: '4', 
-    name: 'Vortex Logistics', 
-    mrr: 3200, 
-    status: 'onboarding', 
-    healthScore: 88, 
-    lastContact: 'Il y a 1j', 
-    industry: 'Logistique & Fret',
-    tier: 'Growth',
-    sla: '99.90% (SLA Standard)',
-    renewalDate: '15 Oct 2027',
-    notes: 'Phase d\'onboarding en cours. Intégration API des flottes de transport.',
-    revenueHistory: [
-      { month: 'Jan', revenue: 0 },
-      { month: 'Fév', revenue: 1200 },
-      { month: 'Mar', revenue: 2400 },
-      { month: 'Avr', revenue: 3200 },
-    ],
-    contacts: [
-      { id: 'c6', name: 'Marc Dupont', role: 'Directeur des Opérations', email: 'm.dupont@vortex.eu', phone: '+33 6 44 22 11 00' }
-    ],
-    projects: [
-      { id: 'p6', name: 'Intégration Télématique API', status: 'in-progress', progress: 50, dueDate: '20 Nov 2026' }
-    ],
-    aiInsight: {
-      title: 'Onboarding à 75% du jalon 1',
-      content: 'Les webhooks de tracking sont fonctionnels. Il reste la validation des certificats SSL pour mise en production.',
-      actionLabel: 'Valider les certificats'
-    }
-  }
-];
-
 export default function Clients() {
+  const { workspace } = useOSStore();
   const [activeTab, setActiveTab] = useState('portefeuille');
-  const [clients, setClients] = useState<Client[]>(INITIAL_CLIENTS);
+  const [clients, setClients] = useState<Client[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTier, setFilterTier] = useState<string>('all');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  
+  // Modals state
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
+  const [jsonInput, setJsonInput] = useState('');
+
+  // Form State for Create/Edit
+  const [formData, setFormData] = useState<Partial<Client>>({
+    name: '',
+    mrr: 5000,
+    status: 'active',
+    healthScore: 90,
+    industry: 'Cloud & SaaS',
+    tier: 'Enterprise',
+    sla: '99.99% (SLA Or)',
+    renewalDate: '15 Déc 2027',
+    notes: '',
+    lastContact: "À l'instant",
+    contacts: [],
+    projects: [],
+    revenueHistory: [
+      { month: 'Jan', revenue: 4000 },
+      { month: 'Fév', revenue: 4500 },
+      { month: 'Mar', revenue: 4800 },
+      { month: 'Avr', revenue: 5000 },
+    ]
+  });
+
+  // Load clients whenever workspace changes or on mount
+  useEffect(() => {
+    const loaded = ClientStorageService.loadClients(workspace);
+    setClients(loaded);
+  }, [workspace]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleOpenAdd = () => {
+    haptics.trigger('selection');
+    setFormData({
+      name: '',
+      mrr: 7500,
+      status: 'active',
+      healthScore: 92,
+      industry: 'Intelligence Artificielle',
+      tier: 'Enterprise',
+      sla: '99.99% (SLA Or)',
+      renewalDate: '31 Déc 2027',
+      notes: 'Nouveau compte stratégique déployé via OMK Mobile OS.',
+      lastContact: "À l'instant",
+      contacts: [
+        { id: 'c1', name: 'Directeur Général', role: 'CEO', email: 'contact@enterprise.com', phone: '+33 6 00 00 00 00' }
+      ],
+      projects: [
+        { id: 'p1', name: 'Initialisation Cloud Pod', status: 'in-progress', progress: 20, dueDate: '15 Jan 2027' }
+      ],
+      revenueHistory: [
+        { month: 'Jan', revenue: 6000 },
+        { month: 'Fév', revenue: 6800 },
+        { month: 'Mar', revenue: 7200 },
+        { month: 'Avr', revenue: 7500 },
+      ]
+    });
+    setIsAddModalOpen(true);
+  };
+
+  const handleSaveAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name?.trim()) return;
+
+    const newClient = ClientStorageService.addClient(formData as Omit<Client, 'id'>, workspace);
+    const updated = ClientStorageService.loadClients(workspace);
+    setClients(updated);
+    setIsAddModalOpen(false);
+    haptics.trigger('success');
+    AppEventBus.emit('CLIENT_UPDATED', 'clients', { action: 'add', client: newClient });
+    showToast(`Client ${newClient.name} enregistré avec succès (persistant)`);
+  };
+
+  const handleOpenEdit = (client: Client) => {
+    haptics.trigger('selection');
+    setFormData({ ...client });
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.id || !formData.name?.trim()) return;
+
+    const updated = ClientStorageService.updateClient(formData.id, formData, workspace);
+    if (updated) {
+      const refreshed = ClientStorageService.loadClients(workspace);
+      setClients(refreshed);
+      setSelectedClient(updated);
+      setIsEditModalOpen(false);
+      haptics.trigger('success');
+      AppEventBus.emit('CLIENT_UPDATED', 'clients', { action: 'update', client: updated });
+      showToast(`Fiche client ${updated.name} mise à jour`);
+    }
+  };
+
+  const handleDeleteClient = (id: string, name: string) => {
+    haptics.trigger('warning');
+    if (confirm(`Confirmer la suppression définitive du compte ${name} ?`)) {
+      ClientStorageService.deleteClient(id, workspace);
+      const refreshed = ClientStorageService.loadClients(workspace);
+      setClients(refreshed);
+      setSelectedClient(null);
+      haptics.trigger('medium');
+      AppEventBus.emit('CLIENT_UPDATED', 'clients', { action: 'delete', clientId: id });
+      showToast(`Compte ${name} supprimé de la base`);
+    }
+  };
+
+  const handleOpenJsonManager = () => {
+    haptics.trigger('selection');
+    const jsonStr = ClientStorageService.exportJSON(workspace);
+    setJsonInput(jsonStr);
+    setIsJsonModalOpen(true);
+  };
+
+  const handleSaveJsonImport = () => {
+    const result = ClientStorageService.importJSON(jsonInput, workspace);
+    if (result.success) {
+      const refreshed = ClientStorageService.loadClients(workspace);
+      setClients(refreshed);
+      setIsJsonModalOpen(false);
+      haptics.trigger('success');
+      AppEventBus.emit('CLIENT_UPDATED', 'clients', { action: 'import' });
+      showToast(`${result.count} comptes importés avec succès`);
+    } else {
+      haptics.trigger('error');
+      alert(`Erreur d'import : ${result.error}`);
+    }
+  };
+
+  const handleResetDefaults = () => {
+    haptics.trigger('warning');
+    if (confirm('Réinitialiser le portefeuille aux données par défaut ?')) {
+      const resetList = ClientStorageService.resetToDefaults(workspace);
+      setClients(resetList);
+      setSelectedClient(null);
+      setIsJsonModalOpen(false);
+      AppEventBus.emit('CLIENT_UPDATED', 'clients', { action: 'reset' });
+      haptics.trigger('success');
+      showToast('Base clients réinitialisée aux données de démonstration');
+    }
   };
 
   const filteredClients = clients.filter(c => {
@@ -225,7 +217,7 @@ export default function Clients() {
   });
 
   const totalMRR = clients.reduce((acc, c) => acc + c.mrr, 0);
-  const avgHealth = Math.round(clients.reduce((acc, c) => acc + c.healthScore, 0) / clients.length);
+  const avgHealth = clients.length > 0 ? Math.round(clients.reduce((acc, c) => acc + c.healthScore, 0) / clients.length) : 0;
   const activeCount = clients.filter(c => c.status === 'active').length;
 
   return (
@@ -234,8 +226,37 @@ export default function Clients() {
       <AppTopNav 
         tabs={CLIENTS_TABS} 
         activeTab={activeTab} 
-        onChange={setActiveTab} 
+        onChange={(tab) => {
+          haptics.trigger('selection');
+          setActiveTab(tab);
+        }} 
       />
+
+      {/* Action Sub-Bar */}
+      <div className="px-4 py-2 bg-slate-900/60 border-b border-slate-800/80 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-1.5 text-xs text-slate-400">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Stockage persistant : <strong className="text-slate-200">{workspace} DB</strong></span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleOpenJsonManager}
+            className="px-2.5 py-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-slate-100 text-[11px] font-medium flex items-center gap-1.5 transition-colors"
+          >
+            <Download size={12} />
+            <span>JSON Sync</span>
+          </button>
+
+          <button
+            onClick={handleOpenAdd}
+            className="px-2.5 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] flex items-center gap-1 shadow-md transition-all active:scale-95"
+          >
+            <Plus size={13} strokeWidth={2.5} />
+            <span>Nouveau Compte</span>
+          </button>
+        </div>
+      </div>
 
       {/* Main Content Body */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
@@ -252,7 +273,7 @@ export default function Clients() {
             >
               <DetailSection
                 title="Portefeuille Clients Entreprise"
-                subtitle="Gestion centralisée des comptes, MRR et engagement opérationnel"
+                subtitle="Gestion centralisée des comptes, MRR et persistance JSON"
                 badge={`${clients.length} Comptes Suivis`}
                 icon={Users}
                 kpis={[
@@ -267,7 +288,7 @@ export default function Clients() {
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                     <input
                       type="text"
-                      placeholder="Rechercher un compte, secteur ou contact..."
+                      placeholder="Rechercher un compte, secteur..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full bg-slate-900/80 border border-slate-800 rounded-2xl py-2 pl-9 pr-3 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
@@ -278,7 +299,10 @@ export default function Clients() {
                     {(['all', 'Enterprise', 'Scale', 'Growth'] as const).map((tier) => (
                       <button
                         key={tier}
-                        onClick={() => setFilterTier(tier)}
+                        onClick={() => {
+                          haptics.trigger('selection');
+                          setFilterTier(tier);
+                        }}
                         className={`px-2.5 py-1 rounded-xl transition-colors text-[11px] ${
                           filterTier === tier 
                             ? 'bg-slate-800 text-emerald-400 font-medium' 
@@ -323,7 +347,10 @@ export default function Clients() {
                         badge={badgeText}
                         badgeColor={badgeColor}
                         isInteractive
-                        onClick={() => setSelectedClient(client)}
+                        onClick={() => {
+                          haptics.trigger('selection');
+                          setSelectedClient(client);
+                        }}
                         actions={
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-bold text-slate-100 text-xs">
@@ -348,7 +375,7 @@ export default function Clients() {
 
                             <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
                               <Clock size={11} />
-                              <span>Dernier contact: {client.lastContact}</span>
+                              <span>{client.lastContact}</span>
                             </div>
                           </div>
 
@@ -365,10 +392,10 @@ export default function Clients() {
                           {/* Quick sub-tags */}
                           <div className="flex items-center justify-between text-[11px] pt-1">
                             <span className="text-slate-400">
-                              {client.contacts.length} Contact{client.contacts.length > 1 ? 's' : ''} • {client.projects.length} Projet{client.projects.length > 1 ? 's' : ''}
+                              {client.contacts?.length || 0} Contact{(client.contacts?.length || 0) > 1 ? 's' : ''} • {client.projects?.length || 0} Projet{(client.projects?.length || 0) > 1 ? 's' : ''}
                             </span>
                             <span className="text-emerald-400/90 font-medium text-[10px]">
-                              Cliquer pour inspecter →
+                              Inspecter la fiche →
                             </span>
                           </div>
                         </div>
@@ -379,9 +406,12 @@ export default function Clients() {
 
                 <AIInsightCard
                   title="Supervision IA du Portefeuille"
-                  content="Le compte Global Tech Industries nécessite une intervention sous 48h. À l'inverse, Acme Corp et Nexus Dynamics présentent un potentiel d'upsell immédiat de +$18,200 d'ARR."
-                  actionLabel="Lancer la séquence de rétention automatique"
-                  onAction={() => showToast('Séquence de rétention IA déployée avec succès')}
+                  content="Le moteur de recommandation vérifie la cohérence du schéma JSON et synchronise les enregistrements locaux sur chaque mutation."
+                  actionLabel="Générer rapport de santé global"
+                  onAction={() => {
+                    haptics.trigger('selection');
+                    showToast('Rapport de portefeuille consolidé avec succès');
+                  }}
                 />
               </DetailSection>
             </motion.div>
@@ -472,14 +502,18 @@ export default function Clients() {
                       <div className="flex gap-2">
                         <button 
                           onClick={() => {
-                            setSelectedClient(clients.find(c => c.id === '2') || null);
+                            const found = clients.find(c => c.name.includes('Global Tech'));
+                            if (found) setSelectedClient(found);
                           }}
                           className="flex-1 py-1.5 px-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 text-xs font-medium text-center"
                         >
                           Ouvrir la fiche d'incident →
                         </button>
                         <button 
-                          onClick={() => showToast('Ticket d\'urgence escaladé à l\'équipe Infrastructure')}
+                          onClick={() => {
+                            haptics.trigger('medium');
+                            showToast('Ticket d\'urgence escaladé à l\'équipe Infrastructure');
+                          }}
                           className="py-1.5 px-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-800"
                         >
                           Escalader Ingénierie
@@ -529,7 +563,10 @@ export default function Clients() {
                       <div className="flex justify-between items-center pt-2 text-xs">
                         <span className="text-slate-400">Statut: <strong className="text-slate-200">{ticket.status}</strong></span>
                         <button 
-                          onClick={() => showToast(`Ticket ${ticket.id} synchronisé avec le support 24/7`)}
+                          onClick={() => {
+                            haptics.trigger('light');
+                            showToast(`Ticket ${ticket.id} synchronisé`);
+                          }}
                           className="text-emerald-400 hover:underline text-[11px] font-medium"
                         >
                           Détails du fil →
@@ -555,10 +592,10 @@ export default function Clients() {
                 title="Contrats, Renouvellements & Facturation"
                 subtitle="Engagements contractuels pluriannuels et cycles de facturation"
                 icon={FileCheck}
-                badge="$456k ARR Total"
+                badge={`$${(totalMRR * 12).toLocaleString()} ARR Total`}
                 kpis={[
-                  { label: 'ARR Contractuel', value: '$456,000', sub: 'Revenus récurrents', trend: 'up' },
-                  { label: 'Prochain Renouvellement', value: '15 Déc 2026', sub: 'Acme Corp (100% probabilité)' },
+                  { label: 'ARR Contractuel', value: `$${(totalMRR * 12).toLocaleString()}`, sub: 'Revenus récurrents', trend: 'up' },
+                  { label: 'Comptes Signés', value: `${clients.length}`, sub: '100% conformes' },
                   { label: 'Factures Émises', value: '100%', sub: 'Zéro impayé' }
                 ]}
               >
@@ -572,7 +609,10 @@ export default function Clients() {
                       badge={`${c.tier} Plan`}
                       badgeColor="bg-slate-950 text-slate-300 border-slate-800"
                       isInteractive
-                      onClick={() => setSelectedClient(c)}
+                      onClick={() => {
+                        haptics.trigger('selection');
+                        setSelectedClient(c);
+                      }}
                       actions={
                         <span className="font-mono font-bold text-emerald-400 text-xs">
                           ${(c.mrr * 12).toLocaleString()}/an
@@ -604,28 +644,31 @@ export default function Clients() {
         avatarText={selectedClient?.name.charAt(0)}
         actions={[
           {
-            id: 'call',
-            label: 'Lancer Visio',
-            icon: Phone,
+            id: 'edit',
+            label: 'Modifier',
+            icon: Edit,
             variant: 'primary',
-            onClick: () => showToast(`Appel visio sécurisé initié avec ${selectedClient?.name}`)
+            onClick: () => selectedClient && handleOpenEdit(selectedClient)
           },
           {
-            id: 'email',
-            label: 'Email Compte',
-            icon: Mail,
-            onClick: () => showToast(`Modèle d'email pré-rempli envoyé pour ${selectedClient?.name}`)
+            id: 'call',
+            label: 'Visio',
+            icon: Phone,
+            onClick: () => {
+              haptics.trigger('medium');
+              showToast(`Appel visio sécurisé initié avec ${selectedClient?.name}`);
+            }
           },
           {
-            id: 'export',
-            label: 'Export PDF',
-            icon: FileText,
-            onClick: () => showToast(`Rapport exécutif PDF généré pour ${selectedClient?.name}`)
+            id: 'delete',
+            label: 'Supprimer',
+            icon: Trash2,
+            onClick: () => selectedClient && handleDeleteClient(selectedClient.id, selectedClient.name)
           }
         ]}
         kpis={[
           { label: 'Revenu MRR', value: `$${selectedClient?.mrr.toLocaleString()}`, sub: 'Mensuel garanti' },
-          { label: 'Score Santé', value: `${selectedClient?.healthScore}/100`, sub: selectedClient?.healthScore! > 80 ? 'Optimal' : 'Sous surveillance' },
+          { label: 'Score Santé', value: `${selectedClient?.healthScore}/100`, sub: (selectedClient?.healthScore || 0) > 80 ? 'Optimal' : 'Sous surveillance' },
           { label: 'Niveau SLA', value: selectedClient?.sla.split(' ')[0] || '99.9%', sub: selectedClient?.sla.split(' ')[1] || 'SLA Standard' },
           { label: 'Échéance Renouvellement', value: selectedClient?.renewalDate || 'N/A', sub: 'Reconduction tacite' }
         ]}
@@ -633,7 +676,10 @@ export default function Clients() {
           title: selectedClient.aiInsight.title,
           content: selectedClient.aiInsight.content,
           actionLabel: selectedClient.aiInsight.actionLabel,
-          onAction: () => showToast(`Action IA activée: ${selectedClient.aiInsight.actionLabel}`)
+          onAction: () => {
+            haptics.trigger('selection');
+            showToast(`Action IA activée: ${selectedClient.aiInsight?.actionLabel}`);
+          }
         } : undefined}
         tabs={[
           {
@@ -648,7 +694,7 @@ export default function Clients() {
                   </div>
                   
                   <div className="h-44 w-full">
-                    {selectedClient && selectedClient.revenueHistory.length > 0 ? (
+                    {selectedClient && selectedClient.revenueHistory && selectedClient.revenueHistory.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={selectedClient.revenueHistory}>
                           <defs>
@@ -671,17 +717,17 @@ export default function Clients() {
 
                 <div className="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 text-xs space-y-2">
                   <div className="font-semibold text-slate-200">Notes Stratégiques du Compte</div>
-                  <p className="text-slate-400 leading-relaxed">{selectedClient?.notes}</p>
+                  <p className="text-slate-400 leading-relaxed">{selectedClient?.notes || 'Aucune note spécifique renseignée.'}</p>
                 </div>
               </div>
             )
           },
           {
             id: 'contacts',
-            label: `Contacts (${selectedClient?.contacts.length || 0})`,
+            label: `Contacts (${selectedClient?.contacts?.length || 0})`,
             content: (
               <div className="space-y-2.5">
-                {selectedClient?.contacts.map((contact) => (
+                {selectedClient?.contacts?.map((contact) => (
                   <div key={contact.id} className="p-3 bg-slate-900/80 rounded-2xl border border-slate-800 flex items-center justify-between">
                     <div>
                       <div className="font-bold text-slate-100 text-xs">{contact.name}</div>
@@ -690,13 +736,19 @@ export default function Clients() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button 
-                        onClick={() => showToast(`Appel vers ${contact.phone}...`)}
+                        onClick={() => {
+                          haptics.trigger('light');
+                          showToast(`Appel vers ${contact.phone}...`);
+                        }}
                         className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-emerald-400 transition-colors"
                       >
                         <Phone size={13} />
                       </button>
                       <button 
-                        onClick={() => showToast(`Email envoyé à ${contact.email}`)}
+                        onClick={() => {
+                          haptics.trigger('light');
+                          showToast(`Email envoyé à ${contact.email}`);
+                        }}
                         className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-colors"
                       >
                         <Mail size={13} />
@@ -709,10 +761,10 @@ export default function Clients() {
           },
           {
             id: 'projects',
-            label: `Projets (${selectedClient?.projects.length || 0})`,
+            label: `Projets (${selectedClient?.projects?.length || 0})`,
             content: (
               <div className="space-y-2.5">
-                {selectedClient?.projects.map((proj) => (
+                {selectedClient?.projects?.map((proj) => (
                   <div key={proj.id} className="p-3 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-slate-200 text-xs">{proj.name}</span>
@@ -740,7 +792,10 @@ export default function Clients() {
                     <div className="flex justify-between text-[10px] text-slate-500">
                       <span>Échéance: {proj.dueDate}</span>
                       <button 
-                        onClick={() => showToast(`Jalon pour ${proj.name} validé`)}
+                        onClick={() => {
+                          haptics.trigger('light');
+                          showToast(`Jalon pour ${proj.name} validé`);
+                        }}
                         className="text-emerald-400 hover:underline"
                       >
                         Marquer jalon validé
@@ -753,6 +808,332 @@ export default function Clients() {
           }
         ]}
       />
+
+      {/* CREATE CLIENT MODAL */}
+      <AnimatePresence>
+        {isAddModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm max-h-[85vh] overflow-y-auto shadow-2xl space-y-4 text-slate-100"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Plus size={16} className="text-emerald-400" />
+                  <h3 className="font-bold text-sm">Nouveau Compte Client</h3>
+                </div>
+                <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-100">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveAdd} className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-slate-400 font-medium mb-1">Nom de l'entreprise *</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.name || ''}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Ex: Quantum Horizon Labs"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-slate-400 font-medium mb-1">MRR ($) *</label>
+                    <input
+                      required
+                      type="number"
+                      value={formData.mrr || ''}
+                      onChange={e => setFormData({ ...formData, mrr: Number(e.target.value) })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-medium mb-1">Score Santé (0-100)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={formData.healthScore || ''}
+                      onChange={e => setFormData({ ...formData, healthScore: Number(e.target.value) })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-slate-400 font-medium mb-1">Secteur</label>
+                    <input
+                      type="text"
+                      value={formData.industry || ''}
+                      onChange={e => setFormData({ ...formData, industry: e.target.value })}
+                      placeholder="Ex: FinTech & IA"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-medium mb-1">Tier / Plan</label>
+                    <select
+                      value={formData.tier || 'Enterprise'}
+                      onChange={e => setFormData({ ...formData, tier: e.target.value as any })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="Enterprise">Enterprise</option>
+                      <option value="Scale">Scale</option>
+                      <option value="Growth">Growth</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-slate-400 font-medium mb-1">Statut</label>
+                    <select
+                      value={formData.status || 'active'}
+                      onChange={e => setFormData({ ...formData, status: e.target.value as any })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="active">Actif</option>
+                      <option value="onboarding">Onboarding</option>
+                      <option value="at-risk">À Risque</option>
+                      <option value="lead">Prospect</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-medium mb-1">SLA Contractuel</label>
+                    <input
+                      type="text"
+                      value={formData.sla || '99.99% (SLA Or)'}
+                      onChange={e => setFormData({ ...formData, sla: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-medium mb-1">Notes & Contexte Stratégique</label>
+                  <textarea
+                    rows={2}
+                    value={formData.notes || ''}
+                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Objectifs de déploiement, interlocuteurs..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddModalOpen(false)}
+                    className="flex-1 py-2 rounded-xl bg-slate-800 text-slate-300 font-medium hover:bg-slate-700 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition-colors shadow-lg"
+                  >
+                    Sauvegarder
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* EDIT CLIENT MODAL */}
+      <AnimatePresence>
+        {isEditModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm max-h-[85vh] overflow-y-auto shadow-2xl space-y-4 text-slate-100"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Edit size={16} className="text-emerald-400" />
+                  <h3 className="font-bold text-sm">Modifier la Fiche Compte</h3>
+                </div>
+                <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-100">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEdit} className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-slate-400 font-medium mb-1">Nom de l'entreprise</label>
+                  <input
+                    required
+                    type="text"
+                    value={formData.name || ''}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-slate-400 font-medium mb-1">MRR ($)</label>
+                    <input
+                      type="number"
+                      value={formData.mrr || ''}
+                      onChange={e => setFormData({ ...formData, mrr: Number(e.target.value) })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-medium mb-1">Score Santé</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={formData.healthScore || ''}
+                      onChange={e => setFormData({ ...formData, healthScore: Number(e.target.value) })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-slate-400 font-medium mb-1">Tier Plan</label>
+                    <select
+                      value={formData.tier || 'Enterprise'}
+                      onChange={e => setFormData({ ...formData, tier: e.target.value as any })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"
+                    >
+                      <option value="Enterprise">Enterprise</option>
+                      <option value="Scale">Scale</option>
+                      <option value="Growth">Growth</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 font-medium mb-1">Statut</label>
+                    <select
+                      value={formData.status || 'active'}
+                      onChange={e => setFormData({ ...formData, status: e.target.value as any })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"
+                    >
+                      <option value="active">Actif</option>
+                      <option value="onboarding">Onboarding</option>
+                      <option value="at-risk">À Risque</option>
+                      <option value="lead">Prospect</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-medium mb-1">Notes</label>
+                  <textarea
+                    rows={2}
+                    value={formData.notes || ''}
+                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="flex-1 py-2 rounded-xl bg-slate-800 text-slate-300 font-medium hover:bg-slate-700"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 shadow-lg"
+                  >
+                    Mettre à jour
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* JSON STORAGE SCHEMA SYNC & EXPORT/IMPORT MODAL */}
+      <AnimatePresence>
+        {isJsonModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl space-y-3 text-slate-100"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Download size={16} className="text-emerald-400" />
+                  <h3 className="font-bold text-sm">Gestionnaire Schéma JSON & Persistance</h3>
+                </div>
+                <button onClick={() => setIsJsonModalOpen(false)} className="text-slate-400 hover:text-slate-100">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Les données de vos clients sont synchronisées dans le stockage local persistant sous l'environnement <strong className="text-emerald-400">{workspace}</strong>.
+              </p>
+
+              <div>
+                <label className="block text-[11px] font-mono text-slate-400 mb-1">Payload JSON (Édition directe / Export / Import) :</label>
+                <textarea
+                  rows={8}
+                  value={jsonInput}
+                  onChange={e => setJsonInput(e.target.value)}
+                  className="w-full bg-slate-950 font-mono text-[11px] text-emerald-400 p-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-2 pt-1 text-xs">
+                <button
+                  onClick={handleResetDefaults}
+                  className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-red-950/40 text-slate-400 hover:text-red-400 border border-slate-700 transition-colors flex items-center gap-1.5 text-[11px]"
+                >
+                  <RotateCcw size={12} />
+                  <span>Réinitialiser</span>
+                </button>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(jsonInput);
+                      haptics.trigger('light');
+                      showToast('JSON copié dans le presse-papier');
+                    }}
+                    className="py-2 px-3 rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700 font-medium"
+                  >
+                    Copier
+                  </button>
+                  <button
+                    onClick={handleSaveJsonImport}
+                    className="py-2 px-4 rounded-xl bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 shadow-md flex items-center gap-1"
+                  >
+                    <Upload size={13} strokeWidth={2.5} />
+                    <span>Sauvegarder JSON</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Floating Action Toast Notification */}
       <AnimatePresence>

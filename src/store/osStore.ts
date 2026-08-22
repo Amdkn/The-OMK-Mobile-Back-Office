@@ -1,8 +1,9 @@
 import { create } from 'zustand';
-import { AppId, Paradigm, ThemeId, ContrastLevel, WallpaperId, OSNotification } from '../types';
+import { AppId, Paradigm, ThemeId, ContrastLevel, WallpaperId, OSNotification, AppEvent } from '../types';
 import { arrayMove } from '@dnd-kit/sortable';
 
 export type Workspace = 'Sandbox' | 'Development' | 'Production';
+export type DeviceViewMode = 'auto' | 'portrait' | 'landscape' | 'tablet';
 
 const DEFAULT_GRID_APPS: AppId[] = [
   'baas-hub', 'jaas-job', 'paas-pro', 'dashboard', 'finance', 
@@ -131,7 +132,15 @@ interface OSStoreState {
   wallpaper: WallpaperId;
   brightness: number;
   gridAppOrder: AppId[];
+  pinnedWidgetIds: string[];
+  widgetOrder: string[];
   workspace: Workspace;
+  deviceViewMode: DeviceViewMode;
+  
+  // AppEventBus - Cross-module Communication
+  events: AppEvent[];
+  lastEventByType: Record<string, AppEvent>;
+  isDevOverlayOpen: boolean;
   
   // Status Bar & Hardware Indicators
   batteryLevel: number;
@@ -153,7 +162,16 @@ interface OSStoreState {
   setWallpaper: (w: WallpaperId) => void;
   setBrightness: (b: number) => void;
   reorderGridApps: (oldIndex: number, newIndex: number) => void;
+  togglePinWidget: (widgetId: string) => void;
+  reorderWidgets: (oldIndex: number, newIndex: number) => void;
   setWorkspace: (w: Workspace) => void;
+  setDeviceViewMode: (mode: DeviceViewMode) => void;
+  
+  // AppEventBus Actions
+  emitEvent: (type: string, sender: AppId | 'system' | 'tasks' | 'calendar' | 'clients' | 'finance', payload?: any) => void;
+  clearEvents: () => void;
+  toggleDevOverlay: () => void;
+  setDevOverlayOpen: (open: boolean) => void;
   
   // Hardware & Status Actions
   setBatteryLevel: (level: number) => void;
@@ -242,6 +260,42 @@ const getInitialBrightness = (): number => {
   return 100;
 };
 
+const DEFAULT_PINNED_WIDGETS = ['widget-coach-ai', 'widget-finance', 'widget-clients', 'widget-tasks'];
+
+const getInitialPinnedWidgets = (): string[] => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('os_pinned_widgets');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+  }
+  return DEFAULT_PINNED_WIDGETS;
+};
+
+const getInitialWidgetOrder = (): string[] => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('os_widget_order');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+  }
+  return [
+    'widget-alerts',
+    'widget-coach-ai',
+    'widget-finance',
+    'widget-clients',
+    'widget-tasks',
+    'widget-calendar',
+    'widget-leads',
+    'widget-paas',
+    'widget-security'
+  ];
+};
+
 export const useOSStore = create<OSStoreState>((set, get) => ({
   isLocked: getInitialLockState(),
   paradigm: 'ios',
@@ -251,7 +305,15 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
   wallpaper: getInitialWallpaper(),
   brightness: getInitialBrightness(),
   gridAppOrder: getInitialGridAppOrder(),
+  pinnedWidgetIds: getInitialPinnedWidgets(),
+  widgetOrder: getInitialWidgetOrder(),
   workspace: getInitialWorkspace(),
+  deviceViewMode: 'auto',
+  
+  // AppEventBus
+  events: [],
+  lastEventByType: {},
+  isDevOverlayOpen: false,
   
   // Status Bar defaults
   batteryLevel: 88,
@@ -295,10 +357,46 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
     localStorage.setItem('os_grid_order', JSON.stringify(newOrder));
     return { gridAppOrder: newOrder };
   }),
+  togglePinWidget: (widgetId) => set((state) => {
+    const exists = state.pinnedWidgetIds.includes(widgetId);
+    const newPinned = exists 
+      ? state.pinnedWidgetIds.filter(id => id !== widgetId)
+      : [...state.pinnedWidgetIds, widgetId];
+    localStorage.setItem('os_pinned_widgets', JSON.stringify(newPinned));
+    return { pinnedWidgetIds: newPinned };
+  }),
+  reorderWidgets: (oldIndex, newIndex) => set((state) => {
+    const newOrder = arrayMove(state.widgetOrder, oldIndex, newIndex);
+    localStorage.setItem('os_widget_order', JSON.stringify(newOrder));
+    return { widgetOrder: newOrder };
+  }),
+  toggleDevOverlay: () => set((state) => ({ isDevOverlayOpen: !state.isDevOverlayOpen })),
+  setDevOverlayOpen: (open) => set({ isDevOverlayOpen: open }),
   setWorkspace: (w) => {
     localStorage.setItem('os_workspace', w);
     set({ workspace: w });
+    get().emitEvent('WORKSPACE_CHANGED', 'system', { workspace: w });
   },
+  setDeviceViewMode: (mode) => set({ deviceViewMode: mode }),
+  
+  // AppEventBus Action Implementation
+  emitEvent: (type, sender, payload) => {
+    const event: AppEvent = {
+      id: `evt-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      type,
+      sender,
+      payload,
+      timestamp: Date.now()
+    };
+    set((state) => ({
+      events: [event, ...state.events.slice(0, 49)], // keep last 50 events
+      lastEventByType: {
+        ...state.lastEventByType,
+        [type]: event
+      }
+    }));
+  },
+  clearEvents: () => set({ events: [], lastEventByType: {} }),
   
   // Status & Hardware
   setBatteryLevel: (batteryLevel) => set({ batteryLevel: Math.max(1, Math.min(100, batteryLevel)) }),

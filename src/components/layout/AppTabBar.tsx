@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { haptics } from '../../services/haptics';
 
 export interface AppTabItem {
   id: string;
@@ -25,6 +26,13 @@ export default function AppTabBar({
   onChange,
   className = ''
 }: AppTabBarProps) {
+  const handleTabClick = (id: string) => {
+    if (id !== activeTab) {
+      haptics.trigger('selection');
+    }
+    onChange(id);
+  };
+
   return (
     <div className={`fixed bottom-4 inset-x-4 z-30 pointer-events-none ${className}`}>
       <div className="max-w-md mx-auto pointer-events-auto">
@@ -36,7 +44,7 @@ export default function AppTabBar({
             return (
               <button
                 key={tab.id}
-                onClick={() => onChange(tab.id)}
+                onClick={() => handleTabClick(tab.id)}
                 className={`relative flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all ${
                   isActive
                     ? 'text-slate-100 font-semibold'
@@ -86,6 +94,13 @@ export function AppTopNav({
   onChange,
   className = ''
 }: AppTabBarProps) {
+  const handleTabClick = (id: string) => {
+    if (id !== activeTab) {
+      haptics.trigger('selection');
+    }
+    onChange(id);
+  };
+
   return (
     <div className={`p-2.5 sm:p-3 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl sticky top-0 z-20 shrink-0 theme-transition ${className}`}>
       <div 
@@ -101,7 +116,7 @@ export function AppTopNav({
           return (
             <button
               key={tab.id}
-              onClick={() => onChange(tab.id)}
+              onClick={() => handleTabClick(tab.id)}
               className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all ${
                 isActive
                   ? 'text-slate-100 font-semibold shadow-sm'
@@ -140,3 +155,4 @@ export function AppTopNav({
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronRight, Sparkles, LucideIcon } from 'lucide-react';
 
@@ -24,6 +24,10 @@ export interface DetailSectionProps {
   className?: string;
 }
 
+/**
+ * Responsive DetailSection Layout
+ * Automatically detects viewport constraints & orientation shifts to dynamically adjust padding
+ */
 export default function DetailSection({
   title,
   subtitle,
@@ -35,21 +39,67 @@ export default function DetailSection({
   children,
   className = ''
 }: DetailSectionProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isCompact, setIsCompact] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = containerRef.current?.offsetWidth || window.innerWidth;
+      const height = containerRef.current?.offsetHeight || window.innerHeight;
+      setIsCompact(width < 380);
+      setIsLandscape(width > height && width > 480);
+    };
+
+    handleResize();
+
+    const resizeObserver = new ResizeObserver(handleResize);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // Dynamic responsive padding based on container dimensions
+  const dynamicPadding = isCompact
+    ? 'px-3 pt-2.5 pb-24 space-y-3'
+    : isLandscape
+    ? 'px-6 pt-3 pb-24 space-y-4'
+    : 'px-4 pt-3.5 pb-24 space-y-4';
+
   return (
-    <div className={`flex flex-col space-y-4 px-4 pt-3 pb-24 overflow-y-auto scrollbar-hide ${className}`}>
+    <div 
+      ref={containerRef}
+      className={`flex flex-col overflow-y-auto scrollbar-hide theme-transition ${dynamicPadding} ${className}`}
+    >
       {/* Header Banner (if provided) */}
       {(title || subtitle || Icon || badge || actions) && (
-        <div className="bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-4.5 shadow-lg relative overflow-hidden theme-transition">
+        <div className={`bg-slate-900/70 backdrop-blur-xl border border-slate-800/80 rounded-3xl ${
+          isCompact ? 'p-3.5' : 'p-4.5'
+        } shadow-lg relative overflow-hidden theme-transition`}>
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               {Icon && (
-                <div className="w-10 h-10 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-center text-emerald-400 shrink-0 shadow-inner">
-                  <Icon size={20} />
+                <div className={`${
+                  isCompact ? 'w-8 h-8 rounded-xl' : 'w-10 h-10 rounded-2xl'
+                } bg-slate-950/80 border border-slate-800 flex items-center justify-center text-emerald-400 shrink-0 shadow-inner`}>
+                  <Icon size={isCompact ? 16 : 20} />
                 </div>
               )}
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {title && <h2 className="text-base font-semibold text-slate-100 tracking-tight">{title}</h2>}
+                  {title && (
+                    <h2 className={`${
+                      isCompact ? 'text-sm' : 'text-base'
+                    } font-semibold text-slate-100 tracking-tight`}>
+                      {title}
+                    </h2>
+                  )}
                   {badge && (
                     <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${badgeColor}`}>
                       {badge}
@@ -71,7 +121,9 @@ export default function DetailSection({
                     <span className="truncate">{kpi.label}</span>
                     {kpi.icon && <kpi.icon size={12} className="opacity-70 text-slate-300" />}
                   </div>
-                  <div className="text-sm font-semibold text-slate-100 mt-1 truncate">{kpi.value}</div>
+                  <div className={`${isCompact ? 'text-xs' : 'text-sm'} font-semibold text-slate-100 mt-1 truncate`}>
+                    {kpi.value}
+                  </div>
                   {kpi.sub && (
                     <div className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1">
                       {kpi.trend === 'up' && <span className="text-emerald-400 font-medium">↑</span>}
@@ -87,7 +139,7 @@ export default function DetailSection({
       )}
 
       {/* Main Section Content */}
-      <div className="space-y-4">
+      <div className={isCompact ? 'space-y-3' : 'space-y-4'}>
         {children}
       </div>
     </div>
