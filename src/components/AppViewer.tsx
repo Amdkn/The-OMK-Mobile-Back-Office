@@ -263,7 +263,7 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
-      className="absolute inset-0 z-20 flex flex-col bg-[#070b14] text-slate-100 shadow-2xl theme-transition select-none"
+      className="absolute inset-0 z-20 flex flex-col bg-slate-950 text-slate-100 shadow-2xl theme-transition select-none"
     >
       {/* Visual Edge Gesture Overlay Cue */}
       <AnimatePresence>
@@ -288,17 +288,17 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
       </AnimatePresence>
 
       {/* Top OS Header Bar */}
-      <div className={`${layout.appViewerPadding.headerHeight} ${layout.appViewerPadding.headerPadding} flex items-center justify-between border-b border-slate-800/80 bg-[#070b14]/95 backdrop-blur-xl z-30 shrink-0 theme-transition`}>
+      <div className={`${layout.appViewerPadding.headerHeight} ${layout.appViewerPadding.headerPadding} flex items-center justify-between border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-xl z-30 shrink-0 theme-transition`}>
         <button 
           onClick={handleClose}
-          className={`flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-medium active:opacity-70 transition-colors ${layout.appViewerPadding.backBtnWidth}`}
+          className={`flex items-center gap-1 text-emerald-500 hover:text-emerald-400 font-semibold active:opacity-70 transition-colors ${layout.appViewerPadding.backBtnWidth}`}
         >
           <ChevronLeft size={layout.isLandscape ? 18 : 22} />
           <span className="text-xs sm:text-sm">Retour</span>
         </button>
         
         <div className="flex items-center justify-center gap-1.5 px-1 flex-1 text-center truncate">
-          <span className="font-semibold text-xs sm:text-sm tracking-tight text-slate-100 truncate">
+          <span className="font-bold text-xs sm:text-sm tracking-tight text-slate-100 truncate">
             {getAppName()}
           </span>
 
