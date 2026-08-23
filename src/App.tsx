@@ -17,6 +17,7 @@ import AppViewer from './components/AppViewer';
 import StatusBar from './components/StatusBar';
 import WallpaperBackground from './components/WallpaperBackground';
 import NotificationCenter from './components/NotificationCenter';
+import ThemeSwitcherModal from './components/ThemeSwitcherModal';
 import EventBusDevOverlay from './components/dev/EventBusDevOverlay';
 
 export default function App() {
@@ -224,13 +225,17 @@ export default function App() {
                     <AppViewer key={activeApp} appId={activeApp} onClose={closeApp} />
                   )}
                 </AnimatePresence>
-                {/* Slide-over Notification Center */}
-                <NotificationCenter onOpenApp={openApp} />
-
-                {/* Real-time EventBus Debug Overlay */}
-                <EventBusDevOverlay />
               </>
             )}
+
+            {/* Slide-over Notification Center */}
+            <NotificationCenter onOpenApp={openApp} />
+
+            {/* Floating Web Desktop Style Theme Switcher Window */}
+            <ThemeSwitcherModal />
+
+            {/* Real-time EventBus Debug Overlay */}
+            <EventBusDevOverlay />
           </div>
         </div>
       </PhoneChassis>

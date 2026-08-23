@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import { 
   AppId, Paradigm, ThemeId, ContrastLevel, WallpaperId, 
-  OSNotification, AppEvent, RecentActivityItem, AppLifecycleState, SmartFolder 
+  OSNotification, AppEvent, RecentActivityItem, AppLifecycleState, SmartFolder,
+  UI_UX_PRO_MAX_THEMES, DARK_THEME_IDS
 } from '../types';
 import { arrayMove } from '@dnd-kit/sortable';
+import { haptics } from '../services/haptics';
 
 export type Workspace = 'Sandbox' | 'Development' | 'Production';
 export type DeviceViewMode = 'auto' | 'portrait' | 'landscape' | 'tablet';
@@ -226,6 +228,17 @@ interface OSStoreState {
   isCharging: boolean;
   networkType: '5G' | 'LTE' | 'Wi-Fi';
   signalStrength: number;
+  networkMode: 'wifi' | '5g';
+  setNetworkMode: (mode: 'wifi' | '5g') => void;
+  toggleNetworkMode: () => void;
+  
+  // Theme Switcher Popover Window
+  isThemeMenuOpen: boolean;
+  openThemeMenu: () => void;
+  closeThemeMenu: () => void;
+  toggleThemeMenu: () => void;
+  setThemeMenuOpen: (open: boolean) => void;
+  cycleRandomDarkTheme: () => ThemeId;
   
   // Notification Center
   notifications: OSNotification[];
@@ -312,8 +325,8 @@ const getInitialWorkspace = (): Workspace => {
 
 const getInitialTheme = (): ThemeId => {
   if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('os_theme');
-    if (saved === 'dark-oled' || saved === 'warm-paper' || saved === 'cyberpunk' || saved === 'glassmorphism') {
+    const saved = localStorage.getItem('os_theme') as ThemeId | null;
+    if (saved && UI_UX_PRO_MAX_THEMES.some(t => t.id === saved)) {
       return saved;
     }
   }
@@ -452,6 +465,40 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
   isCharging: false,
   networkType: '5G',
   signalStrength: 4,
+  networkMode: 'wifi',
+  setNetworkMode: (mode) => set({ networkMode: mode }),
+  toggleNetworkMode: () => set((state) => ({ networkMode: state.networkMode === 'wifi' ? '5g' : 'wifi' })),
+  
+  // Theme Switcher Popover Window
+  isThemeMenuOpen: false,
+  openThemeMenu: () => set({ isThemeMenuOpen: true, isNotificationCenterOpen: false }),
+  closeThemeMenu: () => set({ isThemeMenuOpen: false }),
+  toggleThemeMenu: () => set((state) => ({ isThemeMenuOpen: !state.isThemeMenuOpen, isNotificationCenterOpen: false })),
+  setThemeMenuOpen: (open) => set({ isThemeMenuOpen: open }),
+  cycleRandomDarkTheme: () => {
+    const currentTheme = get().theme;
+    const available = DARK_THEME_IDS.filter(t => t !== currentTheme);
+    const chosen = available[Math.floor(Math.random() * available.length)] || 'dark-oled';
+    
+    localStorage.setItem('os_theme', chosen);
+    set({ theme: chosen });
+    
+    // Also toggle or ensure Low Power mode with haptics
+    const isNowLowPower = !get().isLowPowerMode;
+    get().setLowPowerMode(isNowLowPower);
+    haptics.trigger('selection');
+    
+    const themeDef = UI_UX_PRO_MAX_THEMES.find(t => t.id === chosen);
+    get().addNotification({
+      module: 'settings',
+      title: isNowLowPower ? '⚡ Mode Éco & Thème Sombre' : '🔋 Mode Standard',
+      description: `Thème [${themeDef?.name || chosen}] appliqué pour optimiser la batterie.`,
+      severity: 'info',
+      category: 'system'
+    });
+    
+    return chosen;
+  },
   
   // Notifications
   notifications: INITIAL_NOTIFICATIONS,
@@ -463,7 +510,7 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
   },
   lock: () => {
     sessionStorage.removeItem('os_unlocked');
-    set({ isLocked: true, activeApp: null, isNotificationCenterOpen: false });
+    set({ isLocked: true, activeApp: null, isNotificationCenterOpen: false, isThemeMenuOpen: false });
   },
   setParadigm: (paradigm) => set({ paradigm }),
   openApp: (id) => {
@@ -477,6 +524,7 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
       return { 
         activeApp: id, 
         isNotificationCenterOpen: false,
+        isThemeMenuOpen: false,
         appLifecycleStates: updatedStates
       };
     });
@@ -490,7 +538,7 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
         updatedStates[currentApp] = 'inactive';
       }
       return { 
-        activeApp: null,
+        activeApp: null, 
         appLifecycleStates: updatedStates
       };
     });

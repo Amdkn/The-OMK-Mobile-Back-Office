@@ -218,7 +218,270 @@
 }
 
 /* =========================================================================
-   5. LOW POWER MODE THROTTLING & OPTIMIZATIONS
+   5. NEUMORPHISM (Soft Tactile 3D)
+   ========================================================================= */
+[data-theme="neumorphism"] {
+  --color-slate-950: #e0e5ec;  /* Main Background */
+  --color-slate-900: #e0e5ec;  /* Soft Cards */
+  --color-slate-800: #c8d0dc;  /* Borders & Shadows */
+  --color-slate-700: #b0bcd0;  /* Dividers */
+  --color-slate-500: #7b889b;  /* Secondary Text */
+  --color-slate-400: #556274;  /* Body Text */
+  --color-slate-300: #333f50;  /* Titles */
+  --color-slate-200: #1e2634;  /* High Contrast */
+  --color-slate-100: #0f141f;  /* Deep Navy Ink */
+  
+  --color-emerald-950: #d0f0ec;
+  --color-emerald-900: #a4e4dc;
+  --color-emerald-600: #028090;
+  --color-emerald-500: #00a896; /* Minty Teal */
+  --color-emerald-400: #02c39a;
+}
+
+[data-theme="neumorphism"][data-contrast="high"] {
+  --color-slate-950: #e6ebf2;
+  --color-slate-900: #dfe4eb;
+  --color-slate-800: #9aa8bc;
+  --color-slate-700: #7e8e9e;
+  --color-slate-400: #2c3644;
+  --color-slate-300: #1b222c;
+  --color-slate-100: #000000;
+  --color-emerald-500: #007a6c;
+}
+
+/* =========================================================================
+   6. BRUTALISM (Neo-Brutalism Stark)
+   ========================================================================= */
+[data-theme="brutalism"] {
+  --color-slate-950: #fffdf0;  /* Warm Light Yellow-White */
+  --color-slate-900: #ffffff;  /* Pure White Cards */
+  --color-slate-800: #000000;  /* Hard 2px Solid Black Borders */
+  --color-slate-700: #1a1a1a;  /* Thick Dividers */
+  --color-slate-500: #4a4a4a;  /* Secondary Text */
+  --color-slate-400: #222222;  /* Body Text */
+  --color-slate-300: #000000;  /* Headings */
+  --color-slate-200: #000000;  
+  --color-slate-100: #000000;  /* Stark Black */
+  
+  --color-emerald-950: #fff9b3;
+  --color-emerald-900: #fff366;
+  --color-emerald-600: #e62e24;
+  --color-emerald-500: #ff3b30; /* Bold Red Accent */
+  --color-emerald-400: #ffe600; /* High Voltage Yellow */
+}
+
+/* =========================================================================
+   7. AURORA UI (Cosmic Northern Lights)
+   ========================================================================= */
+[data-theme="aurora-ui"] {
+  --color-slate-950: #0a091e;  /* Deep Midnight Violet */
+  --color-slate-900: rgba(22, 18, 52, 0.75);
+  --color-slate-800: rgba(147, 51, 234, 0.25);
+  --color-slate-700: rgba(236, 72, 153, 0.3);
+  --color-slate-500: #a78bfa;
+  --color-slate-400: #c4b5fd;
+  --color-slate-300: #e9d5ff;
+  --color-slate-200: #f5f3ff;
+  --color-slate-100: #ffffff;
+  
+  --color-emerald-950: rgba(6, 78, 59, 0.5);
+  --color-emerald-900: rgba(13, 148, 136, 0.5);
+  --color-emerald-600: #06b6d4;
+  --color-emerald-500: #00f2fe; /* Cyber Teal Glow */
+  --color-emerald-400: #ff007f; /* Neon Magenta */
+}
+
+/* =========================================================================
+   8. EDITORIAL (Warm Minimal Serif)
+   ========================================================================= */
+[data-theme="editorial"] {
+  --color-slate-950: #f8f6f0;  /* Fine Linen */
+  --color-slate-900: #ede8df;  /* Soft Parchment */
+  --color-slate-800: #dcd4c6;  /* Delicate Borders */
+  --color-slate-700: #c9bfaf;  /* Dividers */
+  --color-slate-500: #7c7263;  /* Muted Text */
+  --color-slate-400: #524a3e;  /* Body */
+  --color-slate-300: #332d24;  /* Subtitles */
+  --color-slate-200: #201c16;  
+  --color-slate-100: #100e0b;  /* Deep Charcoal */
+  
+  --color-emerald-950: #e2ede7;
+  --color-emerald-900: #b7d6c6;
+  --color-emerald-600: #2d6a4f;
+  --color-emerald-500: #1b4332; /* Rich Forest Green */
+  --color-emerald-400: #40916c;
+}
+
+/* =========================================================================
+   9. LIQUID GLASS (Apple Vision Pro Material)
+   ========================================================================= */
+[data-theme="liquid-glass"] {
+  --color-slate-950: #030712;  /* Deep Spatial Dark */
+  --color-slate-900: rgba(17, 24, 39, 0.65);
+  --color-slate-800: rgba(255, 255, 255, 0.16);
+  --color-slate-700: rgba(255, 255, 255, 0.28);
+  --color-slate-500: #94a3b8;
+  --color-slate-400: #cbd5e1;
+  --color-slate-300: #e2e8f0;
+  --color-slate-200: #f8fafc;
+  --color-slate-100: #ffffff;
+  
+  --color-emerald-950: rgba(49, 46, 129, 0.5);
+  --color-emerald-900: rgba(67, 56, 202, 0.6);
+  --color-emerald-600: #6366f1;
+  --color-emerald-500: #38bdf8; /* Prismatic Cyan Glass */
+  --color-emerald-400: #818cf8;
+}
+
+/* =========================================================================
+   10. CLAYMORPHISM (Bubbly 3D Pastels)
+   ========================================================================= */
+[data-theme="claymorphism"] {
+  --color-slate-950: #f3f0f7;  /* Soft Lilac White */
+  --color-slate-900: #ffffff;  /* Pill Cards */
+  --color-slate-800: #ded4ec;  /* Soft Clay Borders */
+  --color-slate-700: #cabce0;  
+  --color-slate-500: #8b79a8;
+  --color-slate-400: #605179;
+  --color-slate-300: #3f3256;
+  --color-slate-200: #251c36;
+  --color-slate-100: #150f20;
+  
+  --color-emerald-950: #f3e8ff;
+  --color-emerald-900: #e9d5ff;
+  --color-emerald-600: #7c3aed;
+  --color-emerald-500: #8b5cf6; /* Soft Violet Clay */
+  --color-emerald-400: #a78bfa;
+}
+
+/* =========================================================================
+   11. TRUST & AUTHORITY (Swiss Navy & Gold)
+   ========================================================================= */
+[data-theme="trust-and-authority"] {
+  --color-slate-950: #0b132b;  /* Royal Deep Navy */
+  --color-slate-900: #1c2541;  /* Executive Cards */
+  --color-slate-800: #2c3859;  /* Platinum Borders */
+  --color-slate-700: #3a4b75;
+  --color-slate-500: #8d9bb8;
+  --color-slate-400: #b5c2de;
+  --color-slate-300: #dce4f5;
+  --color-slate-200: #f0f4fc;
+  --color-slate-100: #ffffff;
+  
+  --color-emerald-950: #3d2f0f;
+  --color-emerald-900: #6b521b;
+  --color-emerald-600: #b8912c;
+  --color-emerald-500: #d4af37; /* Luxury Royal Gold */
+  --color-emerald-400: #e5c568;
+}
+
+/* =========================================================================
+   12. VIBRANT BLOCK (Growth-Hacker Energetic)
+   ========================================================================= */
+[data-theme="vibrant-block"] {
+  --color-slate-950: #0f172a;  /* Electric Slate */
+  --color-slate-900: #1e293b;  /* Punchy Cards */
+  --color-slate-800: #334155;  /* Bold Block Outlines */
+  --color-slate-700: #475569;
+  --color-slate-500: #94a3b8;
+  --color-slate-400: #cbd5e1;
+  --color-slate-300: #e2e8f0;
+  --color-slate-200: #f8fafc;
+  --color-slate-100: #ffffff;
+  
+  --color-emerald-950: #1f300b;
+  --color-emerald-900: #3a5c13;
+  --color-emerald-600: #65a30d;
+  --color-emerald-500: #a3e635; /* Electric Lime */
+  --color-emerald-400: #fb7185; /* Sunset Coral */
+}
+
+/* =========================================================================
+   13. MATRIX HACKER (Green Phosphor Rain)
+   ========================================================================= */
+[data-theme="matrix-hacker"] {
+  --color-slate-950: #020702;  /* Pitch Terminal Black */
+  --color-slate-900: #061306;  /* Dark Green Matrix Panel */
+  --color-slate-800: #0e2a0e;  /* Phosphor Grid Lines */
+  --color-slate-700: #1a4d1a;
+  --color-slate-500: #10b981;
+  --color-slate-400: #34d399;
+  --color-slate-300: #6ee7b7;
+  --color-slate-200: #a7f3d0;
+  --color-slate-100: #ecfdf5;
+  
+  --color-emerald-950: #022c22;
+  --color-emerald-900: #064e3b;
+  --color-emerald-600: #059669;
+  --color-emerald-500: #00ff66; /* High-Output Phosphor Green */
+  --color-emerald-400: #34d399;
+}
+
+/* =========================================================================
+   14. SPACE NEBULA (Deep Cosmic Horizon)
+   ========================================================================= */
+[data-theme="space-nebula"] {
+  --color-slate-950: #070417;  /* Deep Stellar Black */
+  --color-slate-900: #130c30;  /* Nebula Dust Cards */
+  --color-slate-800: #261b58;  /* Starlight Borders */
+  --color-slate-700: #3f2f84;
+  --color-slate-500: #a855f7;
+  --color-slate-400: #c084fc;
+  --color-slate-300: #e9d5ff;
+  --color-slate-200: #f5f3ff;
+  --color-slate-100: #ffffff;
+  
+  --color-emerald-950: #4a044e;
+  --color-emerald-900: #701a75;
+  --color-emerald-600: #c026d3;
+  --color-emerald-500: #d946ef; /* Magenta Horizon */
+  --color-emerald-400: #38bdf8; /* Cyan Star */
+}
+
+/* =========================================================================
+   15. MIDNIGHT TOKYO (Rainy Neon Violet)
+   ========================================================================= */
+[data-theme="midnight-tokyo"] {
+  --color-slate-950: #0b0914;  /* Rainy Asphalt */
+  --color-slate-900: #161226;  /* Izakaya Neon Cards */
+  --color-slate-800: #2c224a;  /* Violet Borders */
+  --color-slate-700: #463772;
+  --color-slate-500: #9333ea;
+  --color-slate-400: #c084fc;
+  --color-slate-300: #e9d5ff;
+  --color-slate-200: #f5f3ff;
+  --color-slate-100: #ffffff;
+  
+  --color-emerald-950: #164e63;
+  --color-emerald-900: #155e75;
+  --color-emerald-600: #0891b2;
+  --color-emerald-500: #06b6d4; /* Tokyo Blue Laser */
+  --color-emerald-400: #a855f7; /* Shinjuku Purple */
+}
+
+/* =========================================================================
+   16. MINIMAL NORDIC (Snow White & Alpine Sky)
+   ========================================================================= */
+[data-theme="minimal-nordic"] {
+  --color-slate-950: #ffffff;  /* Pure Snow White */
+  --color-slate-900: #f8fafc;  /* Clean Surface */
+  --color-slate-800: #e2e8f0;  /* 1px Hairline Borders */
+  --color-slate-700: #cbd5e1;  /* Dividers */
+  --color-slate-500: #64748b;  /* Muted Text */
+  --color-slate-400: #475569;  /* Body */
+  --color-slate-300: #334155;  /* Headings */
+  --color-slate-200: #1e293b;  /* Strong Text */
+  --color-slate-100: #0f172a;  /* Slate 900 Primary */
+  
+  --color-emerald-950: #e0f2fe;
+  --color-emerald-900: #bae6fd;
+  --color-emerald-600: #0284c7;
+  --color-emerald-500: #0ea5e9; /* Alpine Sky Blue */
+  --color-emerald-400: #38bdf8;
+}
+
+/* =========================================================================
+   LOW POWER MODE THROTTLING & OPTIMIZATIONS
    ========================================================================= */
 [data-low-power="true"] * {
   transition-duration: 50ms !important;

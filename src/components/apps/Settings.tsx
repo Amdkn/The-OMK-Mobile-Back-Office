@@ -57,7 +57,7 @@ import { useOSStore } from '../../store/osStore';
 import { usePowerManager } from '../../hooks/usePowerManager';
 import { OfflineStorageService } from '../../services/offlineStorage';
 import { haptics } from '../../services/haptics';
-import { ThemeId, ContrastLevel, WallpaperId, AppId } from '../../types';
+import { ThemeId, ContrastLevel, WallpaperId, AppId, UI_UX_PRO_MAX_THEMES } from '../../types';
 import { WALLPAPERS } from '../WallpaperBackground';
 import DetailSection, { DetailCard, AIInsightCard } from '../layout/DetailSection';
 import DetailDrawer from '../layout/DetailDrawer';
@@ -90,7 +90,7 @@ const PRIMARY_TABS: NavTab[] = [
   { id: 'tenant', label: 'Multi-Tenant', icon: Database, badge: 'Supabase' },
   { id: 'rbac', label: 'Rôles & RBAC', icon: ShieldCheck, badge: '4 Rôles' },
   { id: 'display', label: 'Affichage', icon: Contrast },
-  { id: 'themes', label: 'Thèmes', icon: Palette, badge: 4 }
+  { id: 'themes', label: 'Thèmes', icon: Palette, badge: 16 }
 ];
 
 const EXTENDED_TABS: NavTab[] = [
@@ -1203,13 +1203,13 @@ export default function Settings() {
               transition={{ duration: 0.18 }}
             >
               <DetailSection
-                title="Moteur de Thème OMK"
-                subtitle="Harmonie visuelle et palette de couleurs du système"
+                title="Moteur de Thèmes UI/UX Pro Max"
+                subtitle="Harmonie visuelle, contrastes calibrés et 16 styles d'interface professionnelle"
                 icon={Palette}
-                badge="4 Thèmes Système"
+                badge={`${UI_UX_PRO_MAX_THEMES.length} Thèmes Disponibles`}
               >
-                <div className="grid grid-cols-1 gap-3">
-                  {themes.map((t) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {UI_UX_PRO_MAX_THEMES.map((t) => (
                     <DetailCard
                       key={t.id}
                       onClick={() => {
@@ -1219,17 +1219,29 @@ export default function Settings() {
                       }}
                       isInteractive
                       title={t.name}
-                      badge={theme === t.id ? 'Actif' : 'Sélectionner'}
-                      badgeColor={theme === t.id ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-950 text-slate-400 border-slate-800'}
+                      badge={theme === t.id ? 'Actif' : t.badge || 'Sélectionner'}
+                      badgeColor={theme === t.id ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50' : 'bg-slate-950 text-slate-400 border-slate-800'}
                       icon={Palette}
-                      subtitle={t.desc}
+                      subtitle={t.subtitle}
                     >
-                      <div className="flex items-center gap-3 pt-2">
-                        <div className={`w-10 h-10 rounded-2xl ${t.sampleBg} ${t.sampleBorder} border-2 flex items-center justify-center shadow-inner relative overflow-hidden`}>
-                          <div className={`w-3 h-3 rounded-full ${t.accent}`} />
-                        </div>
-                        <div className="text-xs text-slate-400 font-mono">
-                          ID: {t.id}
+                      <div className="space-y-2 pt-1">
+                        <p className="text-[10px] text-slate-400 line-clamp-2 leading-relaxed">
+                          {t.description}
+                        </p>
+                        
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                          <div className="flex items-center gap-1">
+                            {t.palette.map((c, i) => (
+                              <span 
+                                key={i} 
+                                className="w-3 h-3 rounded-full border border-black/30 shadow-xs" 
+                                style={{ backgroundColor: c }} 
+                              />
+                            ))}
+                          </div>
+                          <span className="text-[9.5px] font-mono text-slate-500">
+                            {t.id}
+                          </span>
                         </div>
                       </div>
                     </DetailCard>
