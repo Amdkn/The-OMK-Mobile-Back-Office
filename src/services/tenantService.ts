@@ -20,18 +20,32 @@ export interface TenantInfo {
   slug: string;
   name: string;
   tier: 'starter' | 'growth' | 'enterprise' | 'custom';
+  plan?: string;
   dbSchema: string;
+  schema?: string;
   region: string;
+  regionFlag?: string;
   activeUsers: number;
+  usersCount?: number;
   mrr: number;
   storageUsedMb: number;
+  storageUsage?: string;
+  storageLimit?: string;
   status: 'active' | 'suspended' | 'trial' | 'archived';
+  rlsStatus?: string;
   healthScore: number;
   tablesCount: number;
   adminEmail: string;
   primaryColor: string;
   logo: string;
   domain: string;
+  customDomain?: string;
+  database?: string;
+  primaryContact?: string;
+  createdAt?: string;
+  backupStatus?: string;
+  latencyMs?: number;
+  description?: string;
   currency: string;
   allowedModules: AppId[];
   features: string[];
@@ -51,6 +65,7 @@ export interface RoleDefinition {
   canWrite: boolean;
   canDelete: boolean;
   canExport: boolean;
+  defaultApp?: string;
 }
 
 export interface AppPermission {

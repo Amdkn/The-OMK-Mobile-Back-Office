@@ -1069,7 +1069,9 @@ export default function Settings() {
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-bold text-slate-100 truncate">{member.name}</span>
                                 {member.twoFactorEnabled && (
-                                  <ShieldCheck size={12} className="text-emerald-400 shrink-0" title="2FA Actif" />
+                                  <span title="2FA Actif">
+                                    <ShieldCheck size={12} className="text-emerald-400 shrink-0" />
+                                  </span>
                                 )}
                               </div>
                               <div className="text-[10px] text-slate-400 truncate">{member.email} • {member.department}</div>

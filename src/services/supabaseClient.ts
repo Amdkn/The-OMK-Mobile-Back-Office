@@ -379,15 +379,20 @@ export interface SupabaseConfig {
   url: string;
   anonKey: string;
   serviceRoleKey?: string;
+  serviceRoleKeyMasked?: string;
   schema: string;
   region: string;
   status: 'connected' | 'offline' | 'degraded';
   ssl: boolean;
   connectionPool: string;
+  poolSize?: number;
   maxConnections: number;
   activeConnections: number;
+  tablesCount?: number;
+  activeRLSStatus?: string;
   latencyMs: number;
   version: string;
+  dbVersion?: string;
 }
 
 export interface SupabaseMigration {
@@ -397,18 +402,25 @@ export interface SupabaseMigration {
   appliedAt: string;
   status: 'applied' | 'pending' | 'rolled_back';
   tablesCount: number;
+  tablesAffected: string[];
   executionTimeMs: number;
   ddlSnippet: string;
+  ddl?: string;
   author: string;
+  rlsPoliciesEnforced: string[];
+  checksum: string;
 }
 
 export interface SupabaseRLSRule {
   id: string;
   table: string;
+  tableName?: string;
   policyName: string;
   action: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE' | 'ALL';
+  command?: string;
   role: string;
   definition: string;
+  usingExpression?: string;
   isStrict: boolean;
   status: 'enforced' | 'disabled';
 }
@@ -1302,9 +1314,13 @@ const DEFAULT_MIGRATIONS: SupabaseMigration[] = [
     appliedAt: '2026-08-23T00:00:00Z',
     status: 'applied',
     tablesCount: 17,
+    tablesAffected: ['tenants', 'profiles', 'clients', 'contracts', 'projects', 'tickets', 'deals', 'leads', 'transactions', 'budgets', 'employees', 'leaves', 'sops', 'microservices', 'cron_jobs', 'audit_logs', 'notes'],
     executionTimeMs: 142,
     ddlSnippet: '-- Complete 17-table schema with 4-tier RLS policies (admin, employee, client, visitor)',
-    author: 'Alexandre de Morais (Chief Architect)'
+    ddl: '-- Complete 17-table schema with 4-tier RLS policies (admin, employee, client, visitor)',
+    author: 'Alexandre de Morais (Chief Architect)',
+    rlsPoliciesEnforced: ['p_tenants_select', 'p_clients_tenant_isolation', 'p_contracts_tenant_isolation', 'p_projects_tenant_isolation', 'p_tickets_tenant_isolation'],
+    checksum: 'sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069'
   },
   {
     id: 'mig-2',
@@ -1313,9 +1329,13 @@ const DEFAULT_MIGRATIONS: SupabaseMigration[] = [
     appliedAt: '2026-08-20T10:00:00Z',
     status: 'applied',
     tablesCount: 17,
+    tablesAffected: ['tenants', 'profiles', 'clients', 'contracts'],
     executionTimeMs: 88,
     ddlSnippet: 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; CREATE EXTENSION IF NOT EXISTS "pgcrypto";',
-    author: 'DevOps / Platform Engineering'
+    ddl: 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; CREATE EXTENSION IF NOT EXISTS "pgcrypto";',
+    author: 'DevOps / Platform Engineering',
+    rlsPoliciesEnforced: ['p_core_extensions_check'],
+    checksum: 'sha256:8b4a2c9183d2e0f498c11e74a873634a1d84b912a76ef4821a8d94e1b38f2981'
   }
 ];
 
@@ -1513,9 +1533,13 @@ export class SupabaseClientService {
       appliedAt: new Date().toISOString(),
       status: 'applied',
       tablesCount: 1,
+      tablesAffected: ['custom_table'],
       executionTimeMs: Math.floor(Math.random() * 100) + 50,
       ddlSnippet: ddl.slice(0, 150) + (ddl.length > 150 ? '...' : ''),
-      author: 'Alexandre de Morais (Admin)'
+      ddl,
+      author: 'Alexandre de Morais (Admin)',
+      rlsPoliciesEnforced: ['p_custom_isolation'],
+      checksum: `sha256:${Date.now()}simulated`
     };
     this.migrations.unshift(newMig);
     return newMig;

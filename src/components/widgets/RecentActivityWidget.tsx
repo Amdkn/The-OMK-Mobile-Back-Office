@@ -168,9 +168,9 @@ export default function RecentActivityWidget({
           <AnimatePresence initial={false}>
             {isSummaryExpanded && (
               <motion.div
-                initial={isLowPowerMode ? false : { opacity: 0, height: 0 }}
-                animate={isLowPowerMode ? false : { opacity: 1, height: 'auto' }}
-                exit={isLowPowerMode ? false : { opacity: 0, height: 0 }}
+                initial={isLowPowerMode ? { opacity: 1, height: 'auto' } : { opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={isLowPowerMode ? { opacity: 0 } : { opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
                 className="space-y-2 pt-0.5 text-slate-300"
               >
