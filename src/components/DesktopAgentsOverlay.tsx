@@ -53,7 +53,7 @@ function DraggableAgentAvatar({
 }) {
   const [inputText, setInputText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
-  const { setAgentPosition } = useOSStore();
+  const { setAgentPosition, setAgentActive } = useOSStore();
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,14 +72,41 @@ function DraggableAgentAvatar({
     <motion.div
       drag
       dragConstraints={containerRef}
-      dragElastic={0.08}
+      dragElastic={0.05}
       dragMomentum={false}
       onDragStart={() => setIsDragging(true)}
       onDragEnd={(_, info) => {
         setIsDragging(false);
+        const parentW = containerRef.current?.clientWidth || 360;
+        const parentH = containerRef.current?.clientHeight || 740;
+
+        const rawNewX = agent.position.x + info.offset.x;
+        const rawNewY = agent.position.y + info.offset.y;
+
+        // Gestuelle "Flick / Push off-screen" pour ranger/désactiver l'assistant
+        const isFlickedOffscreen = (
+          rawNewX < -25 || 
+          rawNewX > parentW - 25 || 
+          rawNewY < 15 || 
+          rawNewY > parentH - 30 ||
+          Math.abs(info.velocity.x) > 600 ||
+          Math.abs(info.velocity.y) > 600
+        );
+
+        if (isFlickedOffscreen) {
+          haptics.trigger('warning');
+          // Désactivation instantanée : l'agent est rangé et sa position est préparée pour réapparition propre
+          setAgentActive(agent.id, false);
+          return;
+        }
+
+        // Si l'agent reste à l'écran, clamping strict aux marges intérieures sécurisées
+        const clampedX = Math.max(12, Math.min(parentW - 65, rawNewX));
+        const clampedY = Math.max(55, Math.min(parentH - 110, rawNewY));
+
         setAgentPosition(agent.id, {
-          x: agent.position.x + info.offset.x,
-          y: agent.position.y + info.offset.y
+          x: clampedX,
+          y: clampedY
         });
       }}
       initial={{ x: agent.position.x, y: agent.position.y, scale: 0.8, opacity: 0 }}
@@ -89,7 +116,7 @@ function DraggableAgentAvatar({
         scale: 1, 
         opacity: 1 
       }}
-      transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+      transition={{ type: 'spring', damping: 22, stiffness: 320 }}
       className="absolute top-0 left-0 pointer-events-auto select-none"
       style={{ touchAction: 'none' }}
     >

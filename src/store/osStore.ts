@@ -414,6 +414,7 @@ interface OSStoreState {
   toggleAgentChat: (agentId: string) => void;
   closeAllAgentChats: () => void;
   setAgentPosition: (agentId: string, pos: { x: number; y: number }) => void;
+  resetAllAgentPositions: () => void;
   turnOffAllAgents: () => void;
   activateAllAgents: () => void;
   sendAgentMessage: (agentId: string, text: string) => void;
@@ -1051,18 +1052,33 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
   },
   toggleAgentActive: (agentId: string) => {
     haptics.trigger('selection');
+    const defaultPos = INITIAL_COACH_AGENTS.find(a => a.id === agentId)?.position || { x: 30, y: 150 };
     set((state) => ({
-      agents: state.agents.map((ag) =>
-        ag.id === agentId ? { ...ag, isActive: !ag.isActive } : ag
-      )
+      agents: state.agents.map((ag) => {
+        if (ag.id !== agentId) return ag;
+        const willBeActive = !ag.isActive;
+        return { 
+          ...ag, 
+          isActive: willBeActive,
+          // When activating, ALWAYS reset position back inside screen frame!
+          position: willBeActive ? defaultPos : ag.position
+        };
+      })
     }));
   },
   setAgentActive: (agentId: string, active: boolean) => {
     haptics.trigger('selection');
+    const defaultPos = INITIAL_COACH_AGENTS.find(a => a.id === agentId)?.position || { x: 30, y: 150 };
     set((state) => ({
-      agents: state.agents.map((ag) =>
-        ag.id === agentId ? { ...ag, isActive: active } : ag
-      )
+      agents: state.agents.map((ag) => {
+        if (ag.id !== agentId) return ag;
+        return { 
+          ...ag, 
+          isActive: active,
+          // When activating, ALWAYS reset position back inside screen frame!
+          position: active ? defaultPos : ag.position
+        };
+      })
     }));
   },
   toggleAgentChat: (agentId: string) => {
@@ -1085,6 +1101,15 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
       )
     }));
   },
+  resetAllAgentPositions: () => {
+    haptics.trigger('success');
+    set((state) => ({
+      agents: state.agents.map((ag) => {
+        const defaultPos = INITIAL_COACH_AGENTS.find(a => a.id === ag.id)?.position || { x: 30, y: 150 };
+        return { ...ag, position: defaultPos };
+      })
+    }));
+  },
   turnOffAllAgents: () => {
     haptics.trigger('warning');
     set((state) => ({
@@ -1094,7 +1119,10 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
   activateAllAgents: () => {
     haptics.trigger('success');
     set((state) => ({
-      agents: state.agents.map((ag) => ({ ...ag, isActive: true }))
+      agents: state.agents.map((ag) => {
+        const defaultPos = INITIAL_COACH_AGENTS.find(a => a.id === ag.id)?.position || { x: 30, y: 150 };
+        return { ...ag, isActive: true, position: defaultPos };
+      })
     }));
   },
   sendAgentMessage: (agentId: string, text: string) => {

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, Bot, Sparkles, Power, Check, Shield, Zap, 
-  MessageSquare, Sliders, ChevronRight, Eye, EyeOff
+  MessageSquare, Sliders, ChevronRight, Eye, EyeOff, RotateCcw
 } from 'lucide-react';
 import { useOSStore } from '../store/osStore';
 import { haptics } from '../services/haptics';
@@ -15,6 +15,7 @@ export default function AgentsMenuModal() {
     agents, 
     toggleAgentActive, 
     setAgentActive,
+    resetAllAgentPositions,
     turnOffAllAgents,
     activateAllAgents,
     theme 
@@ -76,15 +77,26 @@ export default function AgentsMenuModal() {
               </button>
             </div>
 
-            {/* Sub-header notification/info */}
+            {/* Sub-header notification/info & Quick Reset Actions */}
             <div className="px-4 py-2 bg-slate-950/40 border-b border-slate-800/60 text-[11px] text-slate-400 flex items-center justify-between">
-              <span>Activez les assistants pour les déployer sur l'écran</span>
-              <button 
-                onClick={activateAllAgents}
-                className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
-              >
-                Tout activer
-              </button>
+              <span>Activez pour déployer sur l'écran</span>
+              <div className="flex items-center gap-2.5">
+                <button 
+                  onClick={resetAllAgentPositions}
+                  className="text-[10px] font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-1 cursor-pointer"
+                  title="Recentrer tous les avatars sur l'écran"
+                >
+                  <RotateCcw size={10} />
+                  <span>Recentrer</span>
+                </button>
+                <span className="text-slate-600">•</span>
+                <button 
+                  onClick={activateAllAgents}
+                  className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
+                >
+                  Tout activer
+                </button>
+              </div>
             </div>
 
             {/* List of Agents */}
