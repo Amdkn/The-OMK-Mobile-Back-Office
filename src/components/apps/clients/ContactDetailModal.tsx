@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -45,6 +45,14 @@ export default function ContactDetailModal({
   const [isAddingLog, setIsAddingLog] = useState(false);
   const [logType, setLogType] = useState<'call' | 'email' | 'meeting' | 'note'>('call');
   const [logSummary, setLogSummary] = useState('');
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   if (!isOpen || !contact || !client) return null;
 
@@ -108,26 +116,45 @@ export default function ContactDetailModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md">
+      <div 
+        onClick={onClose}
+        className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 pt-16 sm:p-4 bg-black/75 backdrop-blur-md overflow-y-auto"
+      >
         <motion.div
+          onClick={(e) => e.stopPropagation()}
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="relative w-full max-w-lg max-h-[90vh] bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+          className="relative w-full max-w-lg max-h-[85vh] bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl flex flex-col overflow-hidden my-auto"
         >
           {/* Header with Breadcrumb & Close */}
-          <div className="px-4 py-3.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between gap-2 shrink-0">
+          <div className="px-4 py-3.5 bg-slate-900/95 border-b border-slate-800 flex items-center justify-between gap-2 shrink-0">
             <nav aria-label="Fil d'Ariane Contact" className="flex items-center gap-1.5 text-xs text-slate-400 min-w-0 overflow-x-auto scrollbar-hide">
-              <span className="text-slate-400 font-medium truncate">{client.name}</span>
+              <button 
+                onClick={onClose}
+                className="text-slate-400 hover:text-emerald-400 font-medium truncate transition-colors"
+              >
+                {client.name}
+              </button>
               <ChevronRight size={12} className="text-slate-500 shrink-0" />
-              <span className="text-slate-400 shrink-0">Contacts</span>
+              <button 
+                onClick={onClose}
+                className="text-slate-400 hover:text-emerald-400 shrink-0 transition-colors"
+              >
+                Contacts
+              </button>
               <ChevronRight size={12} className="text-slate-500 shrink-0" />
-              <span className="text-slate-100 font-bold truncate">{contact.name}</span>
+              <span className="text-emerald-400 font-bold truncate">{contact.name}</span>
             </nav>
             <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors shrink-0"
+              onClick={() => {
+                haptics.trigger('light');
+                onClose();
+              }}
+              title="Fermer la fiche contact"
+              aria-label="Fermer"
+              className="w-8 h-8 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors shrink-0 shadow-sm border border-slate-700/50 active:scale-95"
             >
               <X size={16} />
             </button>

@@ -46,6 +46,10 @@ import { AppEventBus } from '../../services/eventBus';
 import ContactDetailModal from './clients/ContactDetailModal';
 import ProjectDetailModal from './clients/ProjectDetailModal';
 import ClientMetricsTab from './clients/ClientMetricsTab';
+import ContractDetailModal from './clients/ContractDetailModal';
+import TicketDetailModal, { SupportTicket } from './clients/TicketDetailModal';
+import PipelineStageDetailModal, { PipelineStage } from './clients/PipelineStageDetailModal';
+import HealthIncidentDetailModal from './clients/HealthIncidentDetailModal';
 
 const CLIENTS_TABS = [
   { id: 'portefeuille', label: 'Portefeuille', icon: Users, badge: 4 },
@@ -73,6 +77,11 @@ export default function Clients() {
   // Selected Detail Modal states for Contacts and Projects
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedContractClient, setSelectedContractClient] = useState<Client | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [selectedPipelineStage, setSelectedPipelineStage] = useState<PipelineStage | null>(null);
+  const [isHealthIncidentOpen, setIsHealthIncidentOpen] = useState(false);
+
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
   const [newContactData, setNewContactData] = useState({ name: '', role: '', email: '', phone: '', decisionMaker: true });
@@ -544,10 +553,53 @@ export default function Clients() {
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {[
-                    { stage: '1. Cadrage & Architecture', count: 2, value: '$22k', color: 'border-sky-500/40 text-sky-400', desc: 'Définition des connecteurs d\'ontologie et dimensionnement des pods' },
-                    { stage: '2. Intégration API & Webhooks', count: 1, value: '$18k', color: 'border-amber-500/40 text-amber-400', desc: 'Vérification des clés de chiffrement et configuration des endpoints' },
-                    { stage: '3. Recette de Sécurité SOC2', count: 1, value: '$14k', color: 'border-purple-500/40 text-purple-400', desc: 'Audit des règles d\'isolation réseau et tests d\'intrusion' },
-                    { stage: '4. Mise en Production', count: 1, value: '$10k', color: 'border-emerald-500/40 text-emerald-400', desc: 'Bascule du trafic en direct et monitoring des SLA 99.99%' },
+                    { 
+                      stage: '1. Cadrage & Architecture', 
+                      count: 2, 
+                      value: '$22k', 
+                      color: 'border-sky-500/40 text-sky-400', 
+                      desc: 'Définition des connecteurs d\'ontologie et dimensionnement des pods',
+                      deliverables: [
+                        { id: 'd1', title: 'Audit d\'architecture réseau & dimensionnement des conteneurs', completed: true },
+                        { id: 'd2', title: 'Génération des clés de chiffrement mTLS et certificats SSL', completed: true },
+                        { id: 'd3', title: 'Spécification de l\'ontologie & modèles métier', completed: true },
+                        { id: 'd4', title: 'Revue de sécurité et validation RSSI', completed: false },
+                      ]
+                    },
+                    { 
+                      stage: '2. Intégration API & Webhooks', 
+                      count: 1, 
+                      value: '$18k', 
+                      color: 'border-amber-500/40 text-amber-400', 
+                      desc: 'Vérification des clés de chiffrement et configuration des endpoints',
+                      deliverables: [
+                        { id: 'd1', title: 'Configuration des endpoints REST & Webhooks', completed: true },
+                        { id: 'd2', title: 'Mise en place des clés API avec rotation automatique', completed: true },
+                        { id: 'd3', title: 'Tests de charge 5,000 req/s sans dégradation', completed: false }
+                      ]
+                    },
+                    { 
+                      stage: '3. Recette de Sécurité SOC2', 
+                      count: 1, 
+                      value: '$14k', 
+                      color: 'border-purple-500/40 text-purple-400', 
+                      desc: 'Audit des règles d\'isolation réseau et tests d\'intrusion',
+                      deliverables: [
+                        { id: 'd1', title: 'Rapport pentest externe sans vulnérabilité critique', completed: true },
+                        { id: 'd2', title: 'Audit d\'isolation multi-tenant & conformité SOC2', completed: false }
+                      ]
+                    },
+                    { 
+                      stage: '4. Mise en Production', 
+                      count: 1, 
+                      value: '$10k', 
+                      color: 'border-emerald-500/40 text-emerald-400', 
+                      desc: 'Bascule du trafic en direct et monitoring des SLA 99.99%',
+                      deliverables: [
+                        { id: 'd1', title: 'Routage DNS & bascule DNS Cloudflare', completed: true },
+                        { id: 'd2', title: 'Activation des sondes Datadog & alerting 24/7', completed: true }
+                      ]
+                    },
                   ].map((step, idx) => (
                     <DetailCard
                       key={idx}
@@ -556,10 +608,18 @@ export default function Clients() {
                       badgeColor="bg-slate-950 text-slate-300 border-slate-800"
                       icon={Layers}
                       subtitle={step.desc}
+                      isInteractive
+                      onClick={() => {
+                        haptics.trigger('selection');
+                        setSelectedPipelineStage(step as any);
+                      }}
                     >
                       <div className="flex justify-between items-center pt-2 text-xs">
                         <span className="text-slate-400">ARR Estimé:</span>
                         <span className="font-mono font-bold text-slate-100">{step.value}</span>
+                      </div>
+                      <div className="flex justify-end pt-1">
+                        <span className="text-[10px] text-sky-400 font-medium">Inspecter l'étape & jalons →</span>
                       </div>
                     </DetailCard>
                   ))}
@@ -607,8 +667,8 @@ export default function Clients() {
                       <div className="flex gap-2">
                         <button 
                           onClick={() => {
-                            const found = clients.find(c => c.name.includes('Global Tech'));
-                            if (found) setSelectedClient(found);
+                            haptics.trigger('selection');
+                            setIsHealthIncidentOpen(true);
                           }}
                           className="flex-1 py-1.5 px-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 text-xs font-medium text-center"
                         >
@@ -653,9 +713,9 @@ export default function Clients() {
               >
                 <div className="space-y-3">
                   {[
-                    { id: 't1', client: 'Global Tech', title: 'Latence API v2 Frankfurt cluster', priority: 'P1 - Critique', time: 'Il y a 45m', status: 'En cours de diagnostic' },
-                    { id: 't2', client: 'Nexus Dynamics', title: 'Extension quota token cognition', priority: 'P3 - Normale', time: 'Il y a 2h', status: 'Résolu (Quota doublé)' },
-                    { id: 't3', client: 'Vortex Logistics', title: 'Validation certificat SSL webhook', priority: 'P2 - Moyenne', time: 'Il y a 4h', status: 'En attente retour client' }
+                    { id: 't1', client: 'Global Tech', title: 'Latence API v2 Frankfurt cluster', priority: 'P1 - Critique' as const, time: 'Il y a 45m', status: 'En cours de diagnostic' },
+                    { id: 't2', client: 'Nexus Dynamics', title: 'Extension quota token cognition', priority: 'P3 - Normale' as const, time: 'Il y a 2h', status: 'Résolu (Quota doublé)' },
+                    { id: 't3', client: 'Vortex Logistics', title: 'Validation certificat SSL webhook', priority: 'P2 - Moyenne' as const, time: 'Il y a 4h', status: 'En attente retour client' }
                   ].map((ticket) => (
                     <DetailCard
                       key={ticket.id}
@@ -664,18 +724,17 @@ export default function Clients() {
                       icon={ShieldAlert}
                       badge={ticket.priority}
                       badgeColor={ticket.priority.includes('P1') ? 'bg-red-500/10 text-red-400 border-red-500/30' : 'bg-sky-500/10 text-sky-400 border-sky-500/30'}
+                      isInteractive
+                      onClick={() => {
+                        haptics.trigger('selection');
+                        setSelectedTicket(ticket as any);
+                      }}
                     >
                       <div className="flex justify-between items-center pt-2 text-xs">
                         <span className="text-slate-400">Statut: <strong className="text-slate-200">{ticket.status}</strong></span>
-                        <button 
-                          onClick={() => {
-                            haptics.trigger('light');
-                            showToast(`Ticket ${ticket.id} synchronisé`);
-                          }}
-                          className="text-emerald-400 hover:underline text-[11px] font-medium"
-                        >
-                          Détails du fil →
-                        </button>
+                        <span className="text-emerald-400 font-medium text-[11px]">
+                          Détails du fil & diagnostic →
+                        </span>
                       </div>
                     </DetailCard>
                   ))}
@@ -716,7 +775,7 @@ export default function Clients() {
                       isInteractive
                       onClick={() => {
                         haptics.trigger('selection');
-                        setSelectedClient(c);
+                        setSelectedContractClient(c);
                       }}
                       actions={
                         <span className="font-mono font-bold text-emerald-400 text-xs">
@@ -726,7 +785,7 @@ export default function Clients() {
                     >
                       <div className="flex justify-between items-center pt-2 text-xs">
                         <span className="text-slate-400">Cycle de facturation: <strong className="text-slate-200">Mensuel Automatisé</strong></span>
-                        <span className="text-slate-500 text-[11px]">Inspecter les clauses →</span>
+                        <span className="text-emerald-400 text-[11px] font-medium">Inspecter les clauses & PDF →</span>
                       </div>
                     </DetailCard>
                   ))}
@@ -991,6 +1050,46 @@ export default function Clients() {
             setClients(ClientStorageService.loadClients(workspace));
           }
         }}
+        onToast={showToast}
+      />
+
+      {/* MODAL FICHE DÉTAILLÉE CONTRAT */}
+      <ContractDetailModal
+        isOpen={!!selectedContractClient}
+        onClose={() => setSelectedContractClient(null)}
+        client={selectedContractClient}
+        workspace={workspace}
+        onToast={showToast}
+      />
+
+      {/* MODAL FICHE DÉTAILLÉE TICKET SUPPORT */}
+      <TicketDetailModal
+        isOpen={!!selectedTicket}
+        onClose={() => setSelectedTicket(null)}
+        ticket={selectedTicket}
+        workspace={workspace}
+        onToast={showToast}
+        onUpdateStatus={(ticketId, newStatus) => {
+          if (selectedTicket && selectedTicket.id === ticketId) {
+            setSelectedTicket({ ...selectedTicket, status: newStatus });
+          }
+        }}
+      />
+
+      {/* MODAL FICHE DÉTAILLÉE ÉTAPE PIPELINE */}
+      <PipelineStageDetailModal
+        isOpen={!!selectedPipelineStage}
+        onClose={() => setSelectedPipelineStage(null)}
+        stage={selectedPipelineStage}
+        workspace={workspace}
+        onToast={showToast}
+      />
+
+      {/* MODAL FICHE INCIDENT SANTÉ */}
+      <HealthIncidentDetailModal
+        isOpen={isHealthIncidentOpen}
+        onClose={() => setIsHealthIncidentOpen(false)}
+        workspace={workspace}
         onToast={showToast}
       />
 

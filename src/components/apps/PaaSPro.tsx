@@ -14,15 +14,20 @@ import {
   RotateCcw,
   Zap,
   Layers,
-  Database
+  Database,
+  Radio,
+  Play,
+  RotateCw
 } from 'lucide-react';
 import DetailSection, { DetailCard, AIInsightCard } from '../layout/DetailSection';
 import { AppTopNav } from '../layout/AppTabBar';
+import DetailDrawer from '../layout/DetailDrawer';
+import { haptics } from '../../services/haptics';
 
 const NODES = [
-  { id: 'node-us-east', name: 'us-east-cluster-01', status: 'healthy', cpu: '34%', mem: '58%', region: 'N. Virginia', pods: 42 },
-  { id: 'node-eu-west', name: 'eu-west-cluster-02', status: 'healthy', cpu: '22%', mem: '44%', region: 'Frankfurt', pods: 28 },
-  { id: 'node-ap-south', name: 'ap-south-edge-01', status: 'warning', cpu: '88%', mem: '91%', region: 'Singapore', pods: 16 },
+  { id: 'node-us-east', name: 'us-east-cluster-01', status: 'healthy', cpu: '34%', mem: '58%', region: 'N. Virginia', pods: 42, io: '1.2 Gbps', temp: '42°C' },
+  { id: 'node-eu-west', name: 'eu-west-cluster-02', status: 'healthy', cpu: '22%', mem: '44%', region: 'Frankfurt', pods: 28, io: '850 Mbps', temp: '39°C' },
+  { id: 'node-ap-south', name: 'ap-south-edge-01', status: 'warning', cpu: '88%', mem: '91%', region: 'Singapore', pods: 16, io: '2.1 Gbps', temp: '58°C' },
 ];
 
 const DEPLOYS = [
@@ -48,6 +53,12 @@ const PAAS_TABS = [
 export default function PaaSPro() {
   const [activeTab, setActiveTab] = useState('cluster');
   const [selectedNode, setSelectedNode] = useState<typeof NODES[0] | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   return (
     <div className="h-full flex flex-col relative bg-transparent text-slate-100 theme-transition overflow-hidden">
@@ -99,8 +110,8 @@ export default function PaaSPro() {
                         <div className="text-xs font-mono font-semibold text-slate-200 mt-0.5">4.2 Gbps</div>
                       </div>
                       <div className="bg-slate-950/60 p-2.5 rounded-2xl border border-slate-800/60">
-                        <div className="text-[10px] text-slate-500 uppercase font-semibold">Requêtes / sec</div>
-                        <div className="text-xs font-mono font-semibold text-slate-200 mt-0.5">14,200 RPS</div>
+                        <div className="text-[10px] text-slate-500 uppercase font-semibold">Routage mTLS</div>
+                        <div className="text-xs font-mono font-semibold text-emerald-400 mt-0.5">Actif (v1.3)</div>
                       </div>
                     </div>
                   </div>
@@ -134,7 +145,10 @@ export default function PaaSPro() {
                   {NODES.map(node => (
                     <DetailCard
                       key={node.id}
-                      onClick={() => setSelectedNode(node)}
+                      onClick={() => {
+                        haptics.trigger('selection');
+                        setSelectedNode(node);
+                      }}
                       isInteractive
                       title={node.name}
                       badge={node.region}
@@ -158,6 +172,9 @@ export default function PaaSPro() {
                           <div className="text-[10px] text-slate-500 uppercase font-semibold">Pods</div>
                           <div className="text-xs font-mono font-semibold text-slate-200 mt-0.5">{node.pods} pods</div>
                         </div>
+                      </div>
+                      <div className="flex justify-end pt-1">
+                        <span className="text-[10px] text-emerald-400 font-medium">Inspecter télémétrie nœud →</span>
                       </div>
                     </DetailCard>
                   ))}
@@ -189,6 +206,11 @@ export default function PaaSPro() {
                       badge={d.status}
                       badgeColor="bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                       icon={RotateCcw}
+                      isInteractive
+                      onClick={() => {
+                        haptics.trigger('light');
+                        showToast(`Pipeline de déploiement ${d.commit} inspecté`);
+                      }}
                     >
                       <div className="flex items-center justify-between text-xs pt-1">
                         <div className="text-slate-300">
@@ -231,53 +253,92 @@ export default function PaaSPro() {
         </AnimatePresence>
       </div>
 
-      {/* Slide-over Node Detail */}
+      {/* Slide-over Node Detail Drawer */}
+      <DetailDrawer
+        isOpen={!!selectedNode}
+        onClose={() => setSelectedNode(null)}
+        title={selectedNode?.name || ''}
+        subtitle={`Région ${selectedNode?.region} • Nœud Bare-Metal`}
+        badge={selectedNode?.status === 'healthy' ? 'Opérationnel' : 'Sous Pression'}
+        badgeColor={selectedNode?.status === 'healthy' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}
+        avatarText={selectedNode?.name.charAt(0).toUpperCase()}
+        breadcrumbs={[
+          { label: 'PaaS PRO', onClick: () => setSelectedNode(null) },
+          { label: 'Nœuds', onClick: () => setSelectedNode(null) },
+          { label: selectedNode?.name || 'Nœud' }
+        ]}
+        actions={[
+          {
+            id: 'restart',
+            label: 'Redémarrer',
+            icon: RefreshCw,
+            variant: 'primary',
+            onClick: () => {
+              haptics.trigger('success');
+              showToast(`Nœud ${selectedNode?.name} redémarré avec succès`);
+            }
+          },
+          {
+            id: 'purge',
+            label: 'Purger Cache',
+            icon: RotateCw,
+            onClick: () => {
+              haptics.trigger('medium');
+              showToast(`Mémoire cache purgée sur ${selectedNode?.name}`);
+            }
+          }
+        ]}
+        kpis={[
+          { label: 'Charge CPU', value: selectedNode?.cpu || '0%', sub: '48 Cores vCPU' },
+          { label: 'Mémoire RAM', value: selectedNode?.mem || '0%', sub: '128 GB ECC' },
+          { label: 'Instances Pods', value: `${selectedNode?.pods || 0}`, sub: 'Kubernetes v1.30' },
+          { label: 'Débit E/S Réseau', value: selectedNode?.io || '1 Gbps', sub: selectedNode?.temp || '40°C' }
+        ]}
+        aiInsight={{
+          title: 'Orchestrateur Cloud AI',
+          content: selectedNode?.status === 'warning' 
+            ? `Le nœud ${selectedNode?.name} atteint 91% de charge RAM. Un autoscaling horizontal (HPA) a été automatiquement proposé.`
+            : `Le nœud ${selectedNode?.name} fonctionne à une efficacité énergétique optimale.`,
+          actionLabel: 'Déclencher répartition de charge',
+          onAction: () => showToast('Équilibrage de charge exécuté')
+        }}
+        tabs={[
+          {
+            id: 'telemetry',
+            label: 'Télémétrie',
+            content: (
+              <div className="space-y-3 text-xs">
+                <div className="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Système d'Exploitation :</span>
+                    <span className="font-mono text-slate-200">Ubuntu Server 24.04 LTS</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Kernel Linux :</span>
+                    <span className="font-mono text-slate-200">6.8.0-45-generic</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Driver CNI :</span>
+                    <span className="font-mono text-emerald-400">Cilium eBPF Routing</span>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+        ]}
+      />
+
+      {/* Floating Toast */}
       <AnimatePresence>
-        {selectedNode && (
-          <motion.div 
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-2xl flex flex-col theme-transition"
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-emerald-500/50 text-emerald-300 text-xs px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 backdrop-blur-xl"
           >
-            <div className="px-4 py-3 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/80">
-              <span className="font-medium text-xs text-slate-200">Détail du Nœud</span>
-              <button onClick={() => setSelectedNode(null)} className="p-1.5 bg-slate-900 border border-slate-800 rounded-full text-slate-400 hover:text-slate-200">
-                <X size={16} />
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-base font-semibold text-slate-100">{selectedNode.name}</h3>
-                  <div className="text-xs text-slate-400">Région : {selectedNode.region}</div>
-                </div>
-                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${selectedNode.status === 'healthy' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`}>
-                  {selectedNode.status.toUpperCase()}
-                </span>
-              </div>
-
-              <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-4 space-y-3">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Utilisation CPU</span>
-                  <span className="font-mono text-slate-200 font-semibold">{selectedNode.cpu}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Utilisation Mémoire RAM</span>
-                  <span className="font-mono text-slate-200 font-semibold">{selectedNode.mem}</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Instances Pods Actives</span>
-                  <span className="font-mono text-slate-200 font-semibold">{selectedNode.pods}</span>
-                </div>
-              </div>
-
-              <button className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 rounded-2xl text-xs font-semibold text-slate-950 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-colors">
-                <RefreshCw size={14} /> Redémarrer / Purger Cache Nœud
-              </button>
-            </div>
+            <CheckCircle2 size={15} className="text-emerald-400" />
+            <span>{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>

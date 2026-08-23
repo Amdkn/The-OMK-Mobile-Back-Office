@@ -17,11 +17,13 @@ import {
   FileCode,
   ThumbsUp,
   ArrowRight,
-  GitBranch
+  GitBranch,
+  Download
 } from 'lucide-react';
 import DetailSection, { DetailCard, AIInsightCard } from '../layout/DetailSection';
 import { AppTopNav } from '../layout/AppTabBar';
 import DetailDrawer from '../layout/DetailDrawer';
+import { haptics } from '../../services/haptics';
 
 interface RoadmapItem {
   id: string;
@@ -103,6 +105,9 @@ export default function Product() {
   const [activeTab, setActiveTab] = useState('roadmap');
   const [roadmap, setRoadmap] = useState<RoadmapItem[]>(INITIAL_ROADMAP);
   const [selectedItem, setSelectedItem] = useState<RoadmapItem | null>(null);
+  const [selectedSprint, setSelectedSprint] = useState<typeof SPRINTS[0] | null>(null);
+  const [selectedFeedback, setSelectedFeedback] = useState<typeof FEEDBACKS[0] | null>(null);
+  const [isReleaseDetailOpen, setIsReleaseDetailOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -209,6 +214,11 @@ export default function Product() {
                       badgeColor={sp.progress === 100 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-sky-500/10 text-sky-400 border-sky-500/30'}
                       icon={Flame}
                       subtitle={sp.focus}
+                      isInteractive
+                      onClick={() => {
+                        haptics.trigger('selection');
+                        setSelectedSprint(sp);
+                      }}
                     >
                       <div className="space-y-2 pt-2">
                         <div className="flex justify-between text-xs text-slate-300">
@@ -219,6 +229,9 @@ export default function Product() {
                           <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${sp.progress}%` }} />
                         </div>
                       </div>
+                      <div className="flex justify-end pt-1">
+                        <span className="text-[10px] text-emerald-400 font-medium">Inspecter burndown & tâches →</span>
+                      </div>
                     </DetailCard>
                   ))}
                 </div>
@@ -226,7 +239,6 @@ export default function Product() {
             </motion.div>
           )}
 
-          {/* TAB 3: FEEDBACK */}
           {activeTab === 'feedback' && (
             <motion.div
               key="feedback"
@@ -255,15 +267,27 @@ export default function Product() {
                       badgeColor="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 font-semibold"
                       icon={MessageSquare}
                       subtitle={`Catégorie : ${fb.cat}`}
+                      isInteractive
+                      onClick={() => {
+                        haptics.trigger('selection');
+                        setSelectedFeedback(fb);
+                      }}
                     >
                       <div className="flex justify-between items-center pt-1 text-xs">
                         <p className="text-slate-300 leading-relaxed italic">"{fb.text}"</p>
                         <button 
-                          onClick={() => showToast(`Vote enregistré pour ${fb.user}`)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            haptics.trigger('light');
+                            showToast(`Vote enregistré pour ${fb.user}`);
+                          }}
                           className="ml-3 p-2 bg-slate-900 hover:bg-slate-800 rounded-xl border border-slate-800 text-emerald-400 flex items-center gap-1 shrink-0"
                         >
                           <ThumbsUp size={12} />
                         </button>
+                      </div>
+                      <div className="flex justify-end pt-1">
+                        <span className="text-[10px] text-emerald-400 font-medium">Consulter le fil & convertir en feature →</span>
                       </div>
                     </DetailCard>
                   ))}
@@ -272,7 +296,6 @@ export default function Product() {
             </motion.div>
           )}
 
-          {/* TAB 4: RELEASES */}
           {activeTab === 'releases' && (
             <motion.div
               key="releases"
@@ -292,7 +315,20 @@ export default function Product() {
                   { label: 'Bugs Détectés', value: '0', sub: '100% tests validés' }
                 ]}
               >
-                <DetailCard title="Release v4.2.0 - Depth & Multipage Architecture" icon={Tag}>
+                <DetailCard 
+                  title="Release v4.2.0 - Depth & Multipage Architecture" 
+                  icon={Tag}
+                  isInteractive
+                  onClick={() => {
+                    haptics.trigger('selection');
+                    setIsReleaseDetailOpen(true);
+                  }}
+                  actions={
+                    <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
+                      Inspecter changelog & rollback →
+                    </span>
+                  }
+                >
                   <div className="space-y-2 text-xs text-slate-300 pt-1">
                     <p className="font-semibold text-emerald-400">Nouveautés majeures :</p>
                     <ul className="list-disc pl-4 space-y-1 text-slate-400">
@@ -309,7 +345,6 @@ export default function Product() {
         </AnimatePresence>
       </div>
 
-      {/* SLIDE-OVER ROADMAP ITEM INSPECTOR */}
       <DetailDrawer
         isOpen={!!selectedItem}
         onClose={() => setSelectedItem(null)}
@@ -317,7 +352,7 @@ export default function Product() {
         subtitle={`Epic : ${selectedItem?.epic} • Jalon : ${selectedItem?.quarter}`}
         badge={selectedItem?.status}
         badgeColor="bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-        icon={Compass}
+        avatarText={selectedItem?.title.charAt(0)}
         breadcrumbs={[
           { label: 'Product OS', onClick: () => setSelectedItem(null) },
           { label: 'Roadmap', onClick: () => setSelectedItem(null) },
@@ -329,13 +364,19 @@ export default function Product() {
             label: 'Générer Spécification',
             icon: FileCode,
             variant: 'primary',
-            onClick: () => showToast(`Spécification technique OpenAPI générée pour ${selectedItem?.title}`)
+            onClick: () => {
+              haptics.trigger('success');
+              showToast(`Spécification technique OpenAPI générée pour ${selectedItem?.title}`);
+            }
           },
           {
             id: 'branch',
             label: 'Créer Branche Git',
             icon: GitBranch,
-            onClick: () => showToast(`Branche feature/${selectedItem?.id}-mcp créée`)
+            onClick: () => {
+              haptics.trigger('medium');
+              showToast(`Branche feature/${selectedItem?.id}-mcp créée`);
+            }
           }
         ]}
         kpis={[
@@ -353,20 +394,22 @@ export default function Product() {
         tabs={[
           {
             id: 'tasks',
-            label: `Tâches & Critères (${selectedItem?.tasks.length || 0})`,
+            label: `Tâches (${selectedItem?.tasks.filter(t => t.done).length || 0}/${selectedItem?.tasks.length || 0})`,
             content: (
               <div className="space-y-2">
                 {selectedItem?.tasks.map((task, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleToggleTask(idx)}
-                    className="w-full p-3 bg-slate-900/80 hover:bg-slate-850 rounded-2xl border border-slate-800 flex items-center justify-between text-xs text-left transition-colors"
+                    className="w-full p-3 bg-slate-900/80 hover:bg-slate-800/80 rounded-2xl border border-slate-800 flex items-center justify-between text-xs transition-colors"
                   >
-                    <span className={task.done ? 'line-through text-slate-500' : 'text-slate-200'}>{task.name}</span>
-                    <div className={`w-5 h-5 rounded-lg border flex items-center justify-center ${
-                      task.done ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'border-slate-700 bg-slate-950'
-                    }`}>
-                      {task.done && <Check size={12} strokeWidth={3} />}
+                    <div className="flex items-center gap-2.5 text-left">
+                      <div className={`w-4 h-4 rounded-md border flex items-center justify-center ${task.done ? 'bg-emerald-500 border-emerald-400 text-slate-950' : 'border-slate-700 bg-slate-950'}`}>
+                        {task.done && <Check size={10} strokeWidth={3} />}
+                      </div>
+                      <span className={task.done ? 'line-through text-slate-500' : 'text-slate-200 font-medium'}>
+                        {task.name}
+                      </span>
                     </div>
                   </button>
                 ))}
@@ -374,19 +417,158 @@ export default function Product() {
             )
           },
           {
-            id: 'spec',
-            label: 'Spécification Technique',
+            id: 'spec_tab',
+            label: 'Spécification',
             content: (
-              <div className="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 text-xs space-y-2">
-                <span className="font-semibold text-slate-200">Architecture & Notes</span>
-                <p className="text-slate-400 leading-relaxed font-mono text-[11px]">{selectedItem?.spec}</p>
+              <div className="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-2 text-xs">
+                <span className="font-semibold text-slate-200">Cahier des charges architectural</span>
+                <p className="text-slate-400 leading-relaxed font-mono">{selectedItem?.spec}</p>
               </div>
             )
           }
         ]}
       />
 
-      {/* Floating Toast */}
+      <DetailDrawer
+        isOpen={!!selectedSprint}
+        onClose={() => setSelectedSprint(null)}
+        title={selectedSprint?.name || ''}
+        subtitle={`${selectedSprint?.daysLeft} • Focus : ${selectedSprint?.focus}`}
+        badge={`${selectedSprint?.progress}% Complété`}
+        badgeColor="bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+        avatarText="S"
+        breadcrumbs={[
+          { label: 'Product OS', onClick: () => setSelectedSprint(null) },
+          { label: 'Sprints', onClick: () => setSelectedSprint(null) },
+          { label: selectedSprint?.name || 'Sprint' }
+        ]}
+        actions={[
+          {
+            id: 'close_sprint',
+            label: 'Clôturer le Sprint',
+            icon: CheckCircle2,
+            variant: 'primary',
+            onClick: () => {
+              haptics.trigger('success');
+              showToast(`Sprint "${selectedSprint?.name}" validé et archivé`);
+              setSelectedSprint(null);
+            }
+          }
+        ]}
+        kpis={[
+          { label: 'Vélocité', value: selectedSprint?.velocity || '0 pts', sub: 'Story points' },
+          { label: 'Avancement', value: `${selectedSprint?.progress || 0}%`, sub: 'En avance', trend: 'up' },
+          { label: 'Temps Restant', value: selectedSprint?.daysLeft || '', sub: 'Itération 14j' },
+          { label: 'Bugs Bloquants', value: '0', sub: '100% stable' }
+        ]}
+        tabs={[
+          {
+            id: 'focus_tab',
+            label: 'Objectifs & Scope',
+            content: (
+              <div className="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 text-xs space-y-2">
+                <span className="font-semibold text-slate-200">Focus de l'itération</span>
+                <p className="text-slate-300 leading-relaxed">{selectedSprint?.focus}</p>
+              </div>
+            )
+          }
+        ]}
+      />
+
+      <DetailDrawer
+        isOpen={!!selectedFeedback}
+        onClose={() => setSelectedFeedback(null)}
+        title={`Retour de ${selectedFeedback?.user}`}
+        subtitle={`Catégorie : ${selectedFeedback?.cat} • ${selectedFeedback?.votes} votes`}
+        badge="En Examen"
+        badgeColor="bg-sky-500/10 text-sky-400 border-sky-500/30"
+        avatarText={selectedFeedback?.user.charAt(0) || ''}
+        breadcrumbs={[
+          { label: 'Product OS', onClick: () => setSelectedFeedback(null) },
+          { label: 'Feedback', onClick: () => setSelectedFeedback(null) },
+          { label: 'Idée' }
+        ]}
+        actions={[
+          {
+            id: 'convert_feature',
+            label: 'Transformer en Feature Roadmap',
+            icon: Sparkles,
+            variant: 'primary',
+            onClick: () => {
+              haptics.trigger('success');
+              showToast(`Retour de ${selectedFeedback?.user} ajouté à la Roadmap Q4 !`);
+              setSelectedFeedback(null);
+            }
+          }
+        ]}
+        kpis={[
+          { label: 'Votes Communauté', value: `${selectedFeedback?.votes || 0}`, sub: 'Popularité haute', trend: 'up' },
+          { label: 'Catégorie', value: selectedFeedback?.cat || 'UX', sub: 'Impact utilisateur' },
+          { label: 'Faisabilité IA', value: 'Facile (3j)', sub: 'Composant existant' },
+          { label: 'Priorité', value: 'P1', sub: 'Forte demande' }
+        ]}
+        tabs={[
+          {
+            id: 'feedback_text',
+            label: 'Suggestion Complète',
+            content: (
+              <div className="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 text-xs space-y-2">
+                <p className="text-slate-300 leading-relaxed italic">
+                  "{selectedFeedback?.text}"
+                </p>
+              </div>
+            )
+          }
+        ]}
+      />
+
+      <DetailDrawer
+        isOpen={isReleaseDetailOpen}
+        onClose={() => setIsReleaseDetailOpen(false)}
+        title="Release v4.2.0 Pro - Changelog & Télémétrie"
+        subtitle="Déployé le 22 Août 2026 • Build Production #1042"
+        badge="Version Stable"
+        badgeColor="bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+        avatarText="v4"
+        breadcrumbs={[
+          { label: 'Product OS', onClick: () => setIsReleaseDetailOpen(false) },
+          { label: 'Releases', onClick: () => setIsReleaseDetailOpen(false) },
+          { label: 'v4.2.0' }
+        ]}
+        actions={[
+          {
+            id: 'download_notes',
+            label: 'Télécharger Release Notes',
+            icon: Download,
+            variant: 'primary',
+            onClick: () => {
+              haptics.trigger('light');
+              showToast('Changelog v4.2.0 téléchargé');
+            }
+          }
+        ]}
+        kpis={[
+          { label: 'Version', value: 'v4.2.0', sub: 'Canal Stable' },
+          { label: 'Déploiement', value: '100% Pods', sub: 'Zero-Downtime', trend: 'up' },
+          { label: 'Taux Succès Tests', value: '100%', sub: '248 tests unitaires' },
+          { label: 'Impact Performance', value: '+35% Vitesse', sub: 'Bundle optimisé' }
+        ]}
+        tabs={[
+          {
+            id: 'changelog_tab',
+            label: 'Notes de Version',
+            content: (
+              <div className="space-y-2 text-xs text-slate-300">
+                <div className="p-3 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-1">
+                  <span className="font-semibold text-emerald-400">Architecture Multipage & Profondeur</span>
+                  <p className="text-slate-400">Harmonisation complète de tous les tiroirs d'inspection avec breadcrumbs et KPIs.</p>
+                </div>
+              </div>
+            )
+          }
+        ]}
+      />
+
       <AnimatePresence>
         {toastMessage && (
           <motion.div

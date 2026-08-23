@@ -14,15 +14,20 @@ import {
   FileCheck,
   Sparkles,
   Shield,
-  Layers
+  Layers,
+  Share2,
+  Calendar,
+  Building2
 } from 'lucide-react';
 import DetailSection, { DetailCard, AIInsightCard } from '../layout/DetailSection';
 import { AppTopNav } from '../layout/AppTabBar';
+import DetailDrawer from '../layout/DetailDrawer';
+import { haptics } from '../../services/haptics';
 
 const CONTRACTS = [
-  { id: '1', title: 'Master Services Agreement (MSA)', party: 'Nexus Global Inc.', expires: '15 Déc 2027', status: 'Actif', value: '$120,000 / an', type: 'Enterprise' },
-  { id: '2', title: 'Data Processing Agreement (DPA)', party: 'Specter Tech', expires: '01 Août 2027', status: 'Actif', value: 'Conformité RGPD', type: 'Privacy' },
-  { id: '3', title: 'Accord de Confidentialité (NDA)', party: 'FinData S.A.', expires: '30 Juin 2028', status: 'Actif', value: 'Bilatéral', type: 'Legal' },
+  { id: '1', title: 'Master Services Agreement (MSA)', party: 'Nexus Global Inc.', expires: '15 Déc 2027', status: 'Actif', value: '$120,000 / an', type: 'Enterprise', jurisdiction: 'Tribunal de Commerce de Paris', dpa: 'Conforme RGPD Art. 28' },
+  { id: '2', title: 'Data Processing Agreement (DPA)', party: 'Specter Tech', expires: '01 Août 2027', status: 'Actif', value: 'Conformité RGPD', type: 'Privacy', jurisdiction: 'UE (Irlande)', dpa: 'SCC Commission Européenne' },
+  { id: '3', title: 'Accord de Confidentialité (NDA)', party: 'FinData S.A.', expires: '30 Juin 2028', status: 'Actif', value: 'Bilatéral', type: 'Legal', jurisdiction: 'Droit Français', dpa: 'Secret des affaires' },
 ];
 
 const AUDIT_FLAGS = [
@@ -45,6 +50,12 @@ const LEGAL_TABS = [
 export default function Legal() {
   const [activeTab, setActiveTab] = useState('contracts');
   const [selectedContract, setSelectedContract] = useState<typeof CONTRACTS[0] | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   return (
     <div className="h-full flex flex-col relative bg-transparent text-slate-100 theme-transition overflow-hidden">
@@ -82,7 +93,10 @@ export default function Legal() {
                   {CONTRACTS.map(c => (
                     <DetailCard
                       key={c.id}
-                      onClick={() => setSelectedContract(c)}
+                      onClick={() => {
+                        haptics.trigger('selection');
+                        setSelectedContract(c);
+                      }}
                       isInteractive
                       title={c.title}
                       badge={c.value}
@@ -105,6 +119,7 @@ export default function Legal() {
                   title="Revue Juridique IA"
                   content="Les clauses du Master Services Agreement (MSA) avec Nexus Global contiennent une clause d'indexation Syntec automatique pour 2027."
                   actionLabel="Voir la synthèse des clauses"
+                  onAction={() => showToast('Synthèse des clauses juridiques générée')}
                 />
               </DetailSection>
             </motion.div>
@@ -120,10 +135,15 @@ export default function Legal() {
               transition={{ duration: 0.18 }}
             >
               <DetailSection
-                title="Gouvernance Juridique & Compliance"
-                subtitle="Documents de gouvernance et conformité d'entreprise"
+                title="Gouvernance & Conformité Réglementaire"
+                subtitle="Cartographie des risques et registres légaux"
                 icon={Scale}
-                badge="Conforme"
+                badge="100% Conforme"
+                kpis={[
+                  { label: 'Score Conformité', value: '98/100', sub: 'Audit Q3', trend: 'up' },
+                  { label: 'DPO Référent', value: 'Actif', sub: 'Veille permanente' },
+                  { label: 'Prochain Audit', value: 'Oct 2026', sub: 'Revue semestrielle' }
+                ]}
               >
                 <div className="space-y-3">
                   {GOVERNANCE.map(g => (
@@ -133,11 +153,8 @@ export default function Legal() {
                       badge={g.status}
                       badgeColor="bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                       icon={Scale}
-                    >
-                      <div className="text-xs text-slate-400 pt-1">
-                        Validé par : <strong className="text-slate-200">{g.reviewer}</strong>
-                      </div>
-                    </DetailCard>
+                      subtitle={`Réviseur : ${g.reviewer}`}
+                    />
                   ))}
                 </div>
               </DetailSection>
@@ -154,18 +171,20 @@ export default function Legal() {
               transition={{ duration: 0.18 }}
             >
               <DetailSection
-                title="Conformité Données Personnelles & RGPD"
-                subtitle="DPO virtuel et conformité des transferts transfrontaliers"
+                title="Protection des Données & RGPD"
+                subtitle="Sécurisation des flux de données à caractère personnel"
                 icon={ShieldCheck}
-                badge="100% GDPR Compliant"
+                badge="Certifié RGPD"
+                kpis={[
+                  { label: 'Demandes DSR', value: '0 en attente', sub: 'Délai moyen 24h' },
+                  { label: 'Consentements', value: '100% Opt-in', sub: 'Trace cryptographique' },
+                  { label: 'Localisation Données', value: 'UE (Paris)', sub: 'Souveraineté 100%' }
+                ]}
               >
-                <DetailCard title="Protection des Données & DPA" icon={ShieldCheck}>
-                  <div className="space-y-2 text-xs text-slate-300 pt-1">
-                    <p className="flex items-center gap-2 text-emerald-400 font-semibold">
-                      <CheckCircle2 size={16} /> Hébergement souverain des données avec chiffrement de bout en bout.
-                    </p>
-                    <p>Clauses contractuelles types de la Commission Européenne intégrées à tous les contrats clients.</p>
-                  </div>
+                <DetailCard title="Gestion des Droits des Personnes (DSR)" icon={ShieldCheck}>
+                  <p className="text-xs text-slate-300 leading-relaxed pt-1">
+                    Système d'anonymisation et de suppression automatisé des données utilisateurs conforme aux articles 17 (Droit à l'oubli) et 20 (Portabilité) du RGPD.
+                  </p>
                 </DetailCard>
               </DetailSection>
             </motion.div>
@@ -209,39 +228,89 @@ export default function Legal() {
         </AnimatePresence>
       </div>
 
-      {/* Slide-over Contract Detail */}
+      <DetailDrawer
+        isOpen={!!selectedContract}
+        onClose={() => setSelectedContract(null)}
+        title={selectedContract?.title || ''}
+        subtitle={`Partie : ${selectedContract?.party} • Type ${selectedContract?.type}`}
+        badge={selectedContract?.status || 'Actif'}
+        badgeColor="bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+        avatarText={selectedContract?.party.charAt(0)}
+        breadcrumbs={[
+          { label: 'Legal OS', onClick: () => setSelectedContract(null) },
+          { label: 'Contrats', onClick: () => setSelectedContract(null) },
+          { label: selectedContract?.title || 'Contrat' }
+        ]}
+        actions={[
+          {
+            id: 'pdf',
+            label: 'Télécharger PDF',
+            icon: Download,
+            variant: 'primary',
+            onClick: () => {
+              haptics.trigger('light');
+              showToast(`Contrat ${selectedContract?.title}.pdf téléchargé`);
+            }
+          },
+          {
+            id: 'docusign',
+            label: 'DocuSign',
+            icon: Share2,
+            onClick: () => {
+              haptics.trigger('medium');
+              showToast(`Lien DocuSign renvoyé à ${selectedContract?.party}`);
+            }
+          }
+        ]}
+        kpis={[
+          { label: 'Valeur Annuelle', value: selectedContract?.value || '$0', sub: 'Engagement ferme' },
+          { label: 'Échéance', value: selectedContract?.expires || 'N/A', sub: 'Reconduction tacite' },
+          { label: 'Juridiction', value: selectedContract?.jurisdiction || 'Droit Français', sub: 'Compétence exclusive' },
+          { label: 'Conformité DPA', value: selectedContract?.dpa || 'RGPD Conforme', sub: 'Chiffrement AES-256' }
+        ]}
+        aiInsight={{
+          title: 'Audit IA Contrat',
+          content: `Le document ${selectedContract?.title} avec ${selectedContract?.party} a été audité avec succès. Les clauses de limitation de responsabilité et de propriété intellectuelle sont conformes aux standards entreprise.`,
+          actionLabel: 'Générer avenant annuel',
+          onAction: () => showToast('Avenant généré')
+        }}
+        tabs={[
+          {
+            id: 'clauses',
+            label: 'Clauses Clés',
+            content: (
+              <div className="space-y-3 text-xs">
+                <div className="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Clause de Résiliation :</span>
+                    <span className="text-slate-200">Préavis 60 jours avant échéance</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Plafonnement Responsabilité :</span>
+                    <span className="text-slate-200">100% des sommes perçues (12 mois)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Confidentialité & NDA :</span>
+                    <span className="text-emerald-400">Durée 5 ans post-terme</span>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+        ]}
+      />
+
+      {/* Floating Toast */}
       <AnimatePresence>
-        {selectedContract && (
-          <motion.div 
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="absolute inset-0 z-50 bg-slate-950/95 backdrop-blur-2xl flex flex-col theme-transition"
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-emerald-500/50 text-emerald-300 text-xs px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 backdrop-blur-xl"
           >
-            <div className="px-4 py-3 flex items-center justify-between border-b border-slate-800/80 bg-slate-950/80">
-              <span className="font-medium text-xs text-slate-200">Détail du Contrat</span>
-              <button onClick={() => setSelectedContract(null)} className="p-1.5 bg-slate-900 border border-slate-800 rounded-full text-slate-400 hover:text-slate-200">
-                <X size={16} />
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div>
-                <h3 className="text-base font-semibold text-slate-100">{selectedContract.title}</h3>
-                <div className="text-xs text-slate-400">Cocontractant : {selectedContract.party}</div>
-              </div>
-
-              <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-4 space-y-2">
-                <div className="text-[10px] uppercase font-semibold text-slate-400">Conditions Financières & Durée</div>
-                <div className="text-xs text-slate-200 font-medium">Valeur : {selectedContract.value}</div>
-                <div className="text-xs text-slate-400">Date d'expiration : {selectedContract.expires}</div>
-              </div>
-
-              <button className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 rounded-2xl text-xs font-semibold text-slate-950 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-colors">
-                <Download size={14} /> Télécharger la Copie Signée (PDF)
-              </button>
-            </div>
+            <CheckCircle2 size={15} className="text-emerald-400" />
+            <span>{toastMessage}</span>
           </motion.div>
         )}
       </AnimatePresence>
