@@ -144,18 +144,14 @@ export default function GlobalSearch({ onOpenApp }: Props) {
           triggerBackdrop: 'backdrop-blur-2xl shadow-xl',
           placeholderText: 'text-white/60',
           searchIconColor: 'text-sky-300',
-          modalBg: isHighContrast 
-            ? 'bg-slate-900/90 border-white/30 text-white' 
-            : isLowContrast 
-            ? 'bg-slate-900/60 border-white/15 text-white' 
-            : 'bg-slate-900/75 border-white/20 text-white',
-          modalBackdrop: 'backdrop-blur-3xl shadow-2xl',
-          headerBg: 'bg-white/10 border-white/15',
-          tabActive: 'bg-white/20 border-white/30 text-white shadow-sm',
-          tabInactive: 'text-white/70 hover:text-white',
+          modalBg: 'bg-slate-900 border-white/30 text-white',
+          modalBackdrop: 'shadow-2xl',
+          headerBg: 'bg-slate-800 border-b border-white/20',
+          tabActive: 'bg-white/20 border-white/30 text-white shadow-sm font-bold',
+          tabInactive: 'text-white/70 hover:text-white hover:bg-white/10',
           itemActive: 'bg-white/20 border-white/30 text-white shadow-sm',
           itemInactive: 'text-white/80 hover:bg-white/10',
-          footerBg: 'bg-white/5 border-white/10 text-white/60',
+          footerBg: 'bg-slate-950 border-t border-white/20 text-white/70',
           accentBadge: 'bg-sky-500/20 text-sky-300 border-sky-400/30'
         };
       case 'warm-paper':
@@ -168,18 +164,14 @@ export default function GlobalSearch({ onOpenApp }: Props) {
           triggerBackdrop: 'backdrop-blur-lg shadow-md',
           placeholderText: 'text-stone-500',
           searchIconColor: 'text-amber-700',
-          modalBg: isHighContrast 
-            ? 'bg-amber-50/98 border-amber-900/40 text-stone-950' 
-            : isLowContrast 
-            ? 'bg-amber-50/85 border-amber-900/20 text-stone-900' 
-            : 'bg-amber-50/92 border-amber-900/30 text-stone-900',
-          modalBackdrop: 'backdrop-blur-xl shadow-2xl',
-          headerBg: 'bg-amber-100/60 border-amber-900/15',
-          tabActive: 'bg-amber-200/80 border-amber-900/30 text-stone-950 font-bold',
-          tabInactive: 'text-stone-600 hover:text-stone-900',
-          itemActive: 'bg-amber-200/70 border-amber-900/25 text-stone-950 shadow-sm',
-          itemInactive: 'text-stone-700 hover:bg-amber-100/50',
-          footerBg: 'bg-amber-100/40 border-amber-900/15 text-stone-600',
+          modalBg: 'bg-[#fdfaf3] border-amber-900/30 text-stone-900',
+          modalBackdrop: 'shadow-2xl',
+          headerBg: 'bg-[#f6ebd7] border-b border-amber-900/20',
+          tabActive: 'bg-[#ebd8b7] border-amber-900/30 text-stone-950 font-bold',
+          tabInactive: 'text-stone-600 hover:text-stone-900 hover:bg-[#f6ebd7]',
+          itemActive: 'bg-[#ebd8b7] border-amber-900/30 text-stone-950 shadow-sm font-medium',
+          itemInactive: 'text-stone-800 hover:bg-[#f4e8d3]',
+          footerBg: 'bg-[#f6ebd7] border-t border-amber-900/20 text-stone-600',
           accentBadge: 'bg-amber-600/15 text-amber-800 border-amber-600/30'
         };
       case 'cyberpunk':
@@ -192,18 +184,14 @@ export default function GlobalSearch({ onOpenApp }: Props) {
           triggerBackdrop: 'backdrop-blur-xl shadow-[0_0_15px_rgba(234,179,8,0.15)]',
           placeholderText: 'text-yellow-500/60',
           searchIconColor: 'text-yellow-400',
-          modalBg: isHighContrast 
-            ? 'bg-black border-yellow-400 text-yellow-300' 
-            : isLowContrast 
-            ? 'bg-slate-950/85 border-yellow-500/40 text-yellow-400' 
-            : 'bg-slate-950/95 border-yellow-500/60 text-yellow-400',
-          modalBackdrop: 'backdrop-blur-2xl shadow-[0_0_30px_rgba(234,179,8,0.25)]',
-          headerBg: 'bg-slate-900/80 border-yellow-500/30',
+          modalBg: 'bg-black border-yellow-400/80 text-yellow-400',
+          modalBackdrop: 'shadow-[0_0_30px_rgba(234,179,8,0.25)]',
+          headerBg: 'bg-slate-950 border-b border-yellow-500/40',
           tabActive: 'bg-yellow-400/20 border-yellow-400 text-yellow-300 font-bold',
-          tabInactive: 'text-yellow-500/70 hover:text-yellow-300',
-          itemActive: 'bg-yellow-400/15 border-yellow-500/50 text-yellow-300 shadow-sm',
-          itemInactive: 'text-yellow-400/80 hover:bg-slate-900/70',
-          footerBg: 'bg-slate-900/80 border-yellow-500/30 text-yellow-500/70',
+          tabInactive: 'text-yellow-500/70 hover:text-yellow-300 hover:bg-yellow-400/10',
+          itemActive: 'bg-yellow-400/20 border-yellow-500/50 text-yellow-300 shadow-sm',
+          itemInactive: 'text-yellow-400/80 hover:bg-slate-900',
+          footerBg: 'bg-black border-t border-yellow-500/40 text-yellow-500/70',
           accentBadge: 'bg-yellow-400/20 text-yellow-300 border-yellow-400/40'
         };
       case 'dark-oled':
@@ -217,18 +205,14 @@ export default function GlobalSearch({ onOpenApp }: Props) {
           triggerBackdrop: 'backdrop-blur-xl shadow-lg',
           placeholderText: 'text-slate-400',
           searchIconColor: 'text-emerald-400',
-          modalBg: isHighContrast 
-            ? 'bg-black border-slate-700 text-slate-100' 
-            : isLowContrast 
-            ? 'bg-slate-950/85 border-slate-800/80 text-slate-200' 
-            : 'bg-slate-950/95 border-slate-800/90 text-slate-100',
-          modalBackdrop: 'backdrop-blur-2xl shadow-2xl',
-          headerBg: 'bg-slate-900/70 border-slate-800',
-          tabActive: 'bg-slate-800 border-slate-700 text-slate-100 shadow-sm',
-          tabInactive: 'text-slate-400 hover:text-slate-200',
-          itemActive: 'bg-slate-800/90 border-slate-700 text-slate-100 shadow-sm',
-          itemInactive: 'text-slate-300 hover:bg-slate-900/60',
-          footerBg: 'bg-slate-900/50 border-slate-800/70 text-slate-400',
+          modalBg: 'bg-slate-900 border-slate-700 text-slate-100',
+          modalBackdrop: 'shadow-2xl ring-1 ring-slate-700/50',
+          headerBg: 'bg-slate-800 border-b border-slate-700',
+          tabActive: 'bg-slate-700 border-slate-600 text-slate-100 font-bold shadow-sm',
+          tabInactive: 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60',
+          itemActive: 'bg-slate-800 border-slate-700 text-slate-100 shadow-sm',
+          itemInactive: 'text-slate-300 hover:bg-slate-800/60',
+          footerBg: 'bg-slate-950 border-t border-slate-800 text-slate-400',
           accentBadge: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
         };
     }
@@ -548,52 +532,54 @@ export default function GlobalSearch({ onOpenApp }: Props) {
   };
 
   return (
-    <div className="w-full relative z-20 mb-3 px-6">
-      {/* Search Bar Trigger */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => {
-            haptics.trigger('light');
-            setIsOpen(true);
-          }}
-          className={`flex-1 h-11 px-3.5 border rounded-2xl flex items-center justify-between group transition-all theme-transition ${styleConfig.triggerBg} ${styleConfig.triggerBackdrop}`}
-        >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <Search size={15} className={`transition-colors shrink-0 ${styleConfig.searchIconColor}`} />
-            <span className={`text-xs truncate ${styleConfig.placeholderText}`}>
-              Rechercher ou commande vocale...
-            </span>
-          </div>
+    <>
+      {/* Search Bar Trigger on HomeScreen */}
+      <div className="w-full relative z-20 mb-3 px-6 shrink-0">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              haptics.trigger('light');
+              setIsOpen(true);
+            }}
+            className={`flex-1 h-11 px-3.5 border rounded-2xl flex items-center justify-between group transition-all theme-transition ${styleConfig.triggerBg} ${styleConfig.triggerBackdrop}`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Search size={15} className={`transition-colors shrink-0 ${styleConfig.searchIconColor}`} />
+              <span className={`text-xs truncate ${styleConfig.placeholderText}`}>
+                Rechercher ou commande vocale...
+              </span>
+            </div>
 
-          <div className="flex items-center gap-1.5 shrink-0 pl-2">
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono opacity-80 bg-black/20 border border-white/10 rounded-md">
-              <Command size={10} /> K
-            </kbd>
-            <kbd className="sm:hidden inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono opacity-80 bg-black/20 border border-white/10 rounded-md">
-              /
-            </kbd>
-          </div>
-        </button>
+            <div className="flex items-center gap-1.5 shrink-0 pl-2">
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono opacity-80 bg-black/20 border border-white/10 rounded-md">
+                <Command size={10} /> K
+              </kbd>
+              <kbd className="sm:hidden inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono opacity-80 bg-black/20 border border-white/10 rounded-md">
+                /
+              </kbd>
+            </div>
+          </button>
 
-        {/* Quick Voice Command Trigger Button */}
-        <button
-          onClick={toggleVoice}
-          title="Commande vocale IA"
-          className={`h-11 w-11 rounded-2xl border flex items-center justify-center transition-all shrink-0 ${
-            isListening 
-              ? 'bg-red-500/20 border-red-500 text-red-400 animate-pulse' 
-              : `${styleConfig.triggerBg} ${styleConfig.triggerBackdrop} active:scale-95`
-          }`}
-        >
-          <Mic size={17} className={isListening ? 'text-red-400' : styleConfig.searchIconColor} />
-        </button>
+          {/* Quick Voice Command Trigger Button */}
+          <button
+            onClick={toggleVoice}
+            title="Commande vocale IA"
+            className={`h-11 w-11 rounded-2xl border flex items-center justify-center transition-all shrink-0 ${
+              isListening 
+                ? 'bg-red-500/20 border-red-500 text-red-400 animate-pulse' 
+                : `${styleConfig.triggerBg} ${styleConfig.triggerBackdrop} active:scale-95`
+            }`}
+          >
+            <Mic size={17} className={isListening ? 'text-red-400' : styleConfig.searchIconColor} />
+          </button>
+        </div>
       </div>
 
-      {/* Slide-Down Command Palette Modal */}
+      {/* Slide-Down Command Palette Modal - 1er Plan absolu (devant tout l'écran d'accueil) */}
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex items-start justify-center pt-12 px-4 pointer-events-auto">
-            {/* Backdrop with Frosted Blur */}
+          <div className="fixed inset-0 z-[200] flex items-start justify-center pt-8 sm:pt-12 px-3 sm:px-4 pointer-events-auto">
+            {/* Full-Screen Backdrop with Frosted Blur */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -602,16 +588,17 @@ export default function GlobalSearch({ onOpenApp }: Props) {
                 stopVoiceRecognition();
                 setIsOpen(false);
               }}
-              className="fixed inset-0 bg-black/70 backdrop-blur-md"
+              className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-0"
             />
 
             {/* Slide-Down Modal Dialog */}
             <motion.div
-              initial={{ opacity: 0, y: -60, scale: 0.96 }}
+              initial={{ opacity: 0, y: -40, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -50, scale: 0.96 }}
-              transition={{ type: 'spring', damping: 24, stiffness: 320 }}
-              className={`relative z-10 w-full max-w-sm rounded-3xl overflow-hidden flex flex-col theme-transition max-h-[580px] border ${styleConfig.modalBg} ${styleConfig.modalBackdrop}`}
+              exit={{ opacity: 0, y: -40, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 340 }}
+              className={`relative z-10 w-full max-w-sm rounded-[2rem] overflow-hidden flex flex-col theme-transition max-h-[84vh] border shadow-2xl ${styleConfig.modalBg} ${styleConfig.modalBackdrop}`}
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Search Input Header */}
               <div className={`p-3.5 border-b flex items-center gap-2.5 ${styleConfig.headerBg}`}>
@@ -813,6 +800,6 @@ export default function GlobalSearch({ onOpenApp }: Props) {
           </div>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }

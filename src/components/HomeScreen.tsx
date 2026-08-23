@@ -26,6 +26,7 @@ import SmartFolderIcon from './SmartFolderIcon';
 import SmartFolderModal from './SmartFolderModal';
 import GlobalSearch from './GlobalSearch';
 import DynamicWidgetsGrid from './widgets/DynamicWidgetsGrid';
+import { AppWidgetRegistry } from '../services/widgetRegistry';
 import ConfirmationModal from './ConfirmationModal';
 import { 
   Bot, Scale, Users, Server, WalletCards, PhoneCall, TerminalSquare, 
@@ -99,7 +100,9 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     isLowPowerMode,
     toggleLowPowerMode,
     workspace,
-    setWorkspace
+    setWorkspace,
+    pinnedWidgetIds,
+    widgetOrder
   } = useOSStore();
 
   const layout = useResponsiveLayout();
@@ -112,12 +115,6 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [selectedAppIdsForNewFolder, setSelectedAppIdsForNewFolder] = useState<AppId[]>([]);
-
-  // Search Bar Filter State
-  const [searchFilter, setSearchFilter] = useState('');
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // Category Tag Filter State
   const [selectedCategory, setSelectedCategory] = useState<AppCategoryTag>('all');
@@ -146,17 +143,6 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
   useAppEventListener('*', () => {
     // Dynamic refresh trigger when events arrive
   });
-
-  // Close search dropdown on click outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
-        setIsSearchFocused(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // Compute Unread Notification Counts per App
   const unreadNotifications = useMemo(() => {
@@ -204,143 +190,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     return new Set(smartFolders.flatMap(f => f.appIds));
   }, [smartFolders]);
 
-  // System Settings searchable catalog
-  const systemSettings: SystemSettingAction[] = useMemo(() => [
-    {
-      id: 'setting-theme-cyber',
-      name: 'Thème Cyberpunk',
-      category: 'Apparence',
-      description: 'Activer le mode sombre cyberpunk à fort contraste',
-      icon: Moon,
-      color: 'bg-indigo-950 text-indigo-400 border-indigo-900',
-      keywords: ['theme', 'sombre', 'dark', 'cyber', 'cyberpunk', 'couleur', 'mode'],
-      action: () => {
-        haptics.trigger('success');
-        setTheme('cyberpunk');
-        setSearchFilter('');
-        setIsSearchFocused(false);
-      }
-    },
-    {
-      id: 'setting-theme-warm',
-      name: 'Thème Warm Paper',
-      category: 'Apparence',
-      description: 'Palette studio naturelle et chaleureuse',
-      icon: Sun,
-      color: 'bg-amber-950 text-amber-400 border-amber-900',
-      keywords: ['theme', 'clair', 'warm', 'paper', 'studio', 'papier', 'couleur'],
-      action: () => {
-        haptics.trigger('success');
-        setTheme('warm-paper');
-        setSearchFilter('');
-        setIsSearchFocused(false);
-      }
-    },
-    {
-      id: 'setting-contrast-high',
-      name: 'Contraste Élevé (High)',
-      category: 'Accessibilité',
-      description: 'Bordures et contrastes renforcés pour une lisibilité maximale',
-      icon: Sliders,
-      color: 'bg-cyan-950 text-cyan-400 border-cyan-900',
-      keywords: ['contraste', 'accessibilite', 'lisibilite', 'noir', 'high'],
-      action: () => {
-        haptics.trigger('success');
-        setContrast('high');
-        setSearchFilter('');
-        setIsSearchFocused(false);
-      }
-    },
-    {
-      id: 'setting-power-saver',
-      name: isLowPowerMode ? 'Désactiver Économie d\'Énergie' : 'Mode Économie d\'Énergie',
-      category: 'Batterie & Matériel',
-      description: isLowPowerMode ? 'Rétablir les animations à 60fps' : 'Réduire les animations et préserver la batterie',
-      icon: BatteryCharging,
-      color: isLowPowerMode ? 'bg-amber-950 text-amber-400 border-amber-900' : 'bg-slate-900 text-slate-300 border-slate-800',
-      keywords: ['batterie', 'energie', 'power', 'economie', 'autonomie', 'fps'],
-      action: () => {
-        haptics.trigger('medium');
-        toggleLowPowerMode();
-        setSearchFilter('');
-        setIsSearchFocused(false);
-      }
-    },
-    {
-      id: 'setting-notif-center',
-      name: 'Centre de Notifications',
-      category: 'Système',
-      description: 'Ouvrir le panneau d\'alertes et d\'activités',
-      icon: Bell,
-      color: 'bg-rose-950 text-rose-400 border-rose-900',
-      keywords: ['notifications', 'alertes', 'messages', 'centre', 'notif'],
-      action: () => {
-        haptics.trigger('medium');
-        openNotificationCenter();
-        setSearchFilter('');
-        setIsSearchFocused(false);
-      }
-    },
-    {
-      id: 'setting-lock-system',
-      name: 'Verrouiller le Système (PIN)',
-      category: 'Sécurité',
-      description: 'Sécuriser l\'OS et verrouiller la session active',
-      icon: Shield,
-      color: 'bg-red-950 text-red-400 border-red-900',
-      keywords: ['lock', 'verrouiller', 'pin', 'securite', 'session', 'fermer'],
-      action: () => {
-        haptics.trigger('heavy');
-        lock();
-        setSearchFilter('');
-        setIsSearchFocused(false);
-      }
-    },
-    {
-      id: 'setting-workspace-prod',
-      name: 'Espace : Production',
-      category: 'Environnement',
-      description: 'Basculer vers l\'environnement de Production',
-      icon: Layers,
-      color: 'bg-emerald-950 text-emerald-400 border-emerald-900',
-      keywords: ['workspace', 'espace', 'production', 'environnement', 'travail'],
-      action: () => {
-        haptics.trigger('success');
-        setWorkspace('Production');
-        setSearchFilter('');
-        setIsSearchFocused(false);
-      }
-    },
-    {
-      id: 'setting-open-all-settings',
-      name: 'Tous les Paramètres Système',
-      category: 'Système',
-      description: 'Ouvrir l\'application complète des réglages OS',
-      icon: Settings,
-      color: 'bg-slate-900 text-slate-300 border-slate-800',
-      keywords: ['parametres', 'settings', 'configuration', 'options', 'reglages'],
-      action: () => {
-        haptics.trigger('appLaunch');
-        onOpenApp('settings');
-        setSearchFilter('');
-        setIsSearchFocused(false);
-      }
-    }
-  ], [isLowPowerMode, lock, openNotificationCenter, onOpenApp, setContrast, setTheme, setWorkspace, toggleLowPowerMode]);
-
-  // Filtered system settings based on query
-  const matchingSystemSettings = useMemo(() => {
-    if (!searchFilter.trim()) return [];
-    const q = searchFilter.toLowerCase().trim();
-    return systemSettings.filter(s => 
-      s.name.toLowerCase().includes(q) ||
-      s.description.toLowerCase().includes(q) ||
-      s.category.toLowerCase().includes(q) ||
-      s.keywords.some(k => k.toLowerCase().includes(q))
-    );
-  }, [searchFilter, systemSettings]);
-
-  // Filtered & mapped ordered applications based on Category Tag & Search Bar Filter
+  // Filtered & mapped ordered applications based on Category Tag
   const orderedGridApps = useMemo(() => {
     return gridAppOrder
       .filter(id => !appIdsInFolders.has(id))
@@ -351,28 +201,13 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
         if (selectedCategory !== 'all' && app.category !== selectedCategory) {
           return false;
         }
-        // Search bar filter
-        if (searchFilter.trim()) {
-          const q = searchFilter.toLowerCase().trim();
-          return app.name.toLowerCase().includes(q) || app.id.toLowerCase().includes(q);
-        }
         return true;
       });
-  }, [gridAppOrder, appIdsInFolders, selectedCategory, searchFilter]);
+  }, [gridAppOrder, appIdsInFolders, selectedCategory]);
 
-  // Filtered smart folders based on Category & Search
+  // Filtered smart folders based on Category
   const visibleSmartFolders = useMemo(() => {
     return smartFolders.filter(folder => {
-      // If search filter is active
-      if (searchFilter.trim()) {
-        const q = searchFilter.toLowerCase().trim();
-        const matchesName = folder.name.toLowerCase().includes(q);
-        const matchesApps = folder.appIds.some(id => {
-          const app = APPS.find(a => a.id === id);
-          return app?.name.toLowerCase().includes(q);
-        });
-        return matchesName || matchesApps;
-      }
       // If category filter is active
       if (selectedCategory !== 'all') {
         return folder.appIds.some(id => {
@@ -382,7 +217,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
       }
       return true;
     });
-  }, [smartFolders, selectedCategory, searchFilter]);
+  }, [smartFolders, selectedCategory]);
 
   // Category Counts
   const categoryCounts = useMemo(() => {
@@ -399,17 +234,90 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     return activeDragId ? APPS.find(a => a.id === activeDragId) : null;
   }, [activeDragId]);
 
+  const unreadCount = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
+
+  // Widgets from registry
+  const allWidgets = useMemo(() => {
+    return AppWidgetRegistry.getWidgets(workspace, unreadCount);
+  }, [workspace, unreadCount]);
+
+  const pinnedWidgets = useMemo(() => {
+    const list = [...allWidgets];
+    list.sort((a, b) => {
+      const idxA = widgetOrder.indexOf(a.id);
+      const idxB = widgetOrder.indexOf(b.id);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return 0;
+    });
+    return list.filter(w => pinnedWidgetIds.includes(w.id));
+  }, [allWidgets, widgetOrder, pinnedWidgetIds]);
+
+  const WIDGETS_PER_PAGE = layout.widgetCols >= 4 ? 4 : layout.widgetCols === 3 ? 3 : 2;
+  const totalWidgetPages = Math.ceil(pinnedWidgets.length / WIDGETS_PER_PAGE);
+
   // Dynamic pagination capacities based on orientation & grid columns
-  const PAGE_1_CAPACITY = layout.isLandscape || layout.isTablet ? layout.gridCols * 2 : 8;
-  const PAGE_N_CAPACITY = layout.isLandscape || layout.isTablet ? layout.gridCols * 3 : 16;
-  
-  const page1Apps = orderedGridApps.slice(0, PAGE_1_CAPACITY);
-  const remainingApps = orderedGridApps.slice(PAGE_1_CAPACITY);
-  const extraPages = [];
-  for (let i = 0; i < remainingApps.length; i += PAGE_N_CAPACITY) {
-    extraPages.push(remainingApps.slice(i, i + PAGE_N_CAPACITY));
+  const APPS_CAPACITY_WITH_WIDGETS = layout.isLandscape || layout.isTablet ? layout.gridCols * 2 : 8;
+  const APPS_CAPACITY_WITHOUT_WIDGETS = layout.isLandscape || layout.isTablet ? layout.gridCols * 3 : 16;
+
+  interface PageData {
+    pageIndex: number;
+    hasWidgets: boolean;
+    folders: SmartFolder[];
+    apps: AppDefinition[];
   }
-  const totalPages = 1 + extraPages.length;
+
+  const pagesData: PageData[] = useMemo(() => {
+    const pages: PageData[] = [];
+    const remainingFolders = [...visibleSmartFolders];
+    const remainingApps = [...orderedGridApps];
+
+    let p = 0;
+    while (
+      p === 0 || 
+      (selectedCategory === 'all' && p < totalWidgetPages) || 
+      remainingFolders.length > 0 || 
+      remainingApps.length > 0
+    ) {
+      const startW = p * WIDGETS_PER_PAGE;
+      const pageWidgets = selectedCategory === 'all' ? pinnedWidgets.slice(startW, startW + WIDGETS_PER_PAGE) : [];
+      const hasWidgets = pageWidgets.length > 0 || (p === 0 && selectedCategory === 'all');
+      const pageCapacity = hasWidgets ? APPS_CAPACITY_WITH_WIDGETS : APPS_CAPACITY_WITHOUT_WIDGETS;
+
+      const pageFolders = remainingFolders.splice(0, pageCapacity);
+      const remainingSlots = Math.max(0, pageCapacity - pageFolders.length);
+      const pageApps = remainingApps.splice(0, remainingSlots);
+
+      pages.push({
+        pageIndex: p,
+        hasWidgets,
+        folders: pageFolders,
+        apps: pageApps
+      });
+
+      p++;
+      if (p > 20) break; // safety boundary
+    }
+
+    return pages.length > 0 ? pages : [{ pageIndex: 0, hasWidgets: selectedCategory === 'all', folders: [], apps: [] }];
+  }, [
+    visibleSmartFolders, 
+    orderedGridApps, 
+    pinnedWidgets, 
+    totalWidgetPages, 
+    WIDGETS_PER_PAGE, 
+    APPS_CAPACITY_WITH_WIDGETS, 
+    APPS_CAPACITY_WITHOUT_WIDGETS, 
+    selectedCategory
+  ]);
+
+  // Ensure currentPage doesn't exceed available pages
+  useEffect(() => {
+    if (currentPage >= pagesData.length) {
+      setCurrentPage(Math.max(0, pagesData.length - 1));
+    }
+  }, [pagesData.length, currentPage]);
 
   const handleAppClick = (id: AppId) => {
     if (isEditMode) return;
@@ -574,24 +482,6 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     setPullDistance(0);
   };
 
-  // Search input key handlers
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (matchingSystemSettings.length > 0 && (!orderedGridApps.length || e.shiftKey)) {
-        matchingSystemSettings[0].action();
-      } else if (orderedGridApps.length > 0) {
-        handleAppClick(orderedGridApps[0].id);
-        setSearchFilter('');
-        setIsSearchFocused(false);
-      }
-    } else if (e.key === 'Escape') {
-      setSearchFilter('');
-      setIsSearchFocused(false);
-      searchInputRef.current?.blur();
-    }
-  };
-
   const gridColsClass = 
     layout.gridCols >= 6 
       ? 'grid-cols-6' 
@@ -629,155 +519,6 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
       {/* Global Search Modal / Spotlight (Cmd+K) */}
       <GlobalSearch onOpenApp={onOpenApp} />
 
-      {/* Persistent Global Slide-Down Search Bar at top of HomeScreen */}
-      <div ref={searchContainerRef} className="px-5 sm:px-6 pt-1 pb-1.5 z-30 shrink-0 relative">
-        <div className="relative flex items-center w-full">
-          <div className="absolute left-3.5 flex items-center pointer-events-none text-slate-400">
-            <Search size={15} className="text-emerald-400" />
-          </div>
-
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchFilter}
-            onFocus={() => setIsSearchFocused(true)}
-            onChange={e => {
-              setSearchFilter(e.target.value);
-              setIsSearchFocused(true);
-            }}
-            onKeyDown={handleSearchKeyDown}
-            placeholder="Rechercher une application, réglage ou commande..."
-            className="w-full pl-9 pr-20 py-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-900 text-slate-100 placeholder-slate-400 border border-slate-700/80 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/40 text-xs font-semibold shadow-xl backdrop-blur-xl transition-all focus:outline-none"
-          />
-
-          <div className="absolute right-2.5 flex items-center gap-1.5">
-            {searchFilter ? (
-              <button
-                onClick={() => {
-                  haptics.trigger('light');
-                  setSearchFilter('');
-                  searchInputRef.current?.focus();
-                }}
-                className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors"
-                title="Effacer la recherche"
-              >
-                <X size={13} />
-              </button>
-            ) : null}
-
-            <span className="px-1.5 py-0.5 rounded-md bg-slate-800/80 border border-slate-700/60 text-[9px] font-mono text-slate-400 hidden sm:inline-block">
-              ↵ lancer
-            </span>
-          </div>
-        </div>
-
-        {/* Slide-Down Search Results & System Settings Drawer */}
-        <AnimatePresence>
-          {isSearchFocused && searchFilter.trim().length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: -8, height: 0 }}
-              animate={{ opacity: 1, y: 0, height: 'auto' }}
-              exit={{ opacity: 0, y: -8, height: 0 }}
-              className="absolute left-5 right-5 sm:left-6 sm:right-6 top-full mt-1.5 max-h-[380px] overflow-y-auto rounded-3xl bg-slate-900/95 border border-slate-700/80 shadow-2xl p-3 z-50 backdrop-blur-2xl scrollbar-hide flex flex-col gap-3"
-            >
-              {/* Category 1: Applications */}
-              {orderedGridApps.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    <span className="flex items-center gap-1">
-                      <Layers size={11} className="text-emerald-400" />
-                      Applications ({orderedGridApps.length})
-                    </span>
-                    <span className="text-emerald-400 lowercase">↵ pour lancer</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {orderedGridApps.slice(0, 6).map(app => (
-                      <button
-                        key={app.id}
-                        onClick={() => {
-                          handleAppClick(app.id);
-                          setSearchFilter('');
-                          setIsSearchFocused(false);
-                        }}
-                        className="w-full p-2 rounded-xl bg-slate-950/60 hover:bg-emerald-950/40 border border-slate-800/80 hover:border-emerald-500/50 flex items-center justify-between transition-colors text-left group"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className={`w-7 h-7 rounded-xl ${app.color} flex items-center justify-center shrink-0 shadow-sm`}>
-                            <app.icon size={15} />
-                          </div>
-                          <div className="truncate">
-                            <div className="text-xs font-bold text-slate-100 group-hover:text-emerald-300 transition-colors truncate">
-                              {app.name}
-                            </div>
-                            <div className="text-[9px] text-slate-400 uppercase tracking-tight">
-                              {app.category || 'App'}
-                            </div>
-                          </div>
-                        </div>
-                        <ExternalLink size={13} className="text-slate-500 group-hover:text-emerald-400 shrink-0 ml-1.5 transition-colors" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Category 2: System Settings & Actions */}
-              {matchingSystemSettings.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    <span className="flex items-center gap-1">
-                      <Sliders size={11} className="text-cyan-400" />
-                      Paramètres & Réglages Système ({matchingSystemSettings.length})
-                    </span>
-                    <span className="text-cyan-400">Clic pour appliquer</span>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    {matchingSystemSettings.map(setting => {
-                      const SettingIcon = setting.icon;
-                      return (
-                        <button
-                          key={setting.id}
-                          onClick={setting.action}
-                          className="w-full p-2.5 rounded-xl bg-slate-950/70 hover:bg-cyan-950/40 border border-slate-800/80 hover:border-cyan-500/50 flex items-center justify-between text-left transition-colors group"
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className={`w-7 h-7 rounded-xl ${setting.color} flex items-center justify-center shrink-0 shadow-sm`}>
-                              <SettingIcon size={15} />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-xs font-bold text-slate-100 group-hover:text-cyan-300 transition-colors flex items-center gap-1.5">
-                                <span>{setting.name}</span>
-                                <span className="text-[9px] font-normal px-1.5 py-0.2 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
-                                  {setting.category}
-                                </span>
-                              </div>
-                              <div className="text-[10px] text-slate-400 truncate">
-                                {setting.description}
-                              </div>
-                            </div>
-                          </div>
-                          <Zap size={13} className="text-slate-500 group-hover:text-cyan-400 shrink-0 ml-2 transition-colors" />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Empty state when nothing matches */}
-              {orderedGridApps.length === 0 && matchingSystemSettings.length === 0 && (
-                <div className="py-6 text-center text-slate-400">
-                  <Search size={22} className="mx-auto text-slate-600 mb-1.5" />
-                  <p className="text-xs font-semibold text-slate-300">Aucun résultat trouvé pour "{searchFilter}"</p>
-                  <p className="text-[10px] text-slate-500 mt-0.5">Essayez un nom d'application, thème, batterie ou paramètre</p>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
 
       {/* Grid Management & Quick Organization Controls Toolbar */}
       <div className="px-5 sm:px-6 py-0.5 flex items-center justify-between z-20 shrink-0">
@@ -890,7 +631,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
 
       {/* Scrollable Pagination & App Grid Area */}
       <div 
-        className="flex-1 flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-hide"
+        className="flex-1 min-h-0 flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-hide"
         onScroll={handleScroll}
       >
         <DndContext 
@@ -905,62 +646,43 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
             items={gridAppOrder}
             strategy={rectSortingStrategy}
           >
-            {/* Page 1: Dynamic OMK AppWidgets Dashboard + Smart Folders + First Page Apps */}
-            <div className={`w-full h-full flex-shrink-0 snap-center flex flex-col ${
-              layout.isLandscape ? 'px-4' : 'px-5 sm:px-6'
-            }`}>
-              {/* Dynamic AppWidgets System */}
-              {!searchFilter.trim() && selectedCategory === 'all' && (
-                <DynamicWidgetsGrid 
-                  onOpenApp={onOpenApp} 
-                  widgetCols={layout.widgetCols}
-                  className="mb-2"
-                />
-              )}
-
-              {/* Responsive Aligned Application Grid */}
-              <div className={`grid ${gridColsClass} gap-x-3 gap-y-3.5 content-start flex-1 overflow-y-auto scrollbar-hide pt-1`}>
-                {/* Smart Folders first in Grid */}
-                {visibleSmartFolders.map(folder => (
-                  <SmartFolderIcon
-                    key={folder.id}
-                    folder={folder}
-                    isEditMode={isEditMode}
-                    isDropTarget={currentOverId === folder.id}
-                    badgeCount={getFolderBadgeCount(folder)}
-                    onDissolve={() => handlePromptDissolveFolder(folder)}
-                    onClick={() => {
-                      haptics.trigger('selection');
-                      setActiveFolderId(folder.id);
-                    }}
+            {pagesData.map((page) => (
+              <div 
+                key={page.pageIndex} 
+                className={`w-full h-full flex-shrink-0 snap-center flex flex-col overflow-y-auto scrollbar-hide ${
+                  layout.isLandscape ? 'px-4' : 'px-5 sm:px-6'
+                } ${page.pageIndex > 0 ? 'pt-1' : ''}`}
+              >
+                {/* Dynamic AppWidgets System for this page */}
+                {selectedCategory === 'all' && (
+                  <DynamicWidgetsGrid 
+                    onOpenApp={onOpenApp} 
+                    widgetCols={layout.widgetCols}
+                    pageIndex={page.pageIndex}
+                    className="mb-2 shrink-0"
                   />
-                ))}
+                )}
 
-                {/* Applications with Long-Press Edit Trigger */}
-                {page1Apps.map(app => (
-                  <SortableAppIcon 
-                    key={app.id} 
-                    app={app} 
-                    isEditMode={isEditMode}
-                    isGroupTarget={isEditMode && currentOverId === app.id && activeDragId !== app.id}
-                    badgeCount={appBadgeCounts[app.id] || 0}
-                    onClick={() => handleAppClick(app.id)}
-                    onLongPress={() => {
-                      haptics.trigger('heavy');
-                      setIsEditMode(true);
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
+                {/* Responsive Aligned Application Grid */}
+                <div className={`grid ${gridColsClass} gap-x-3 gap-y-3.5 content-start pb-6 pt-1`}>
+                  {/* Smart Folders first on this page */}
+                  {page.folders.map(folder => (
+                    <SmartFolderIcon
+                      key={folder.id}
+                      folder={folder}
+                      isEditMode={isEditMode}
+                      isDropTarget={currentOverId === folder.id}
+                      badgeCount={getFolderBadgeCount(folder)}
+                      onDissolve={() => handlePromptDissolveFolder(folder)}
+                      onClick={() => {
+                        haptics.trigger('selection');
+                        setActiveFolderId(folder.id);
+                      }}
+                    />
+                  ))}
 
-            {/* Page 2+ Additional App Pages */}
-            {extraPages.map((pageApps, idx) => (
-              <div key={idx} className={`w-full h-full flex-shrink-0 snap-center flex flex-col ${
-                layout.isLandscape ? 'px-4 pt-1' : 'px-5 sm:px-6 pt-1'
-              }`}>
-                <div className={`grid ${gridColsClass} gap-x-3 gap-y-3.5 content-start flex-1 overflow-y-auto scrollbar-hide`}>
-                  {pageApps.map(app => (
+                  {/* Applications on this page */}
+                  {page.apps.map(app => (
                     <SortableAppIcon 
                       key={app.id} 
                       app={app} 
@@ -995,6 +717,22 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
           </DragOverlay>
         </DndContext>
       </div>
+
+      {/* Dynamic Page Indicator Dots */}
+      {pagesData.length > 1 && (
+        <div className="flex justify-center items-center gap-1.5 py-1 z-20 shrink-0">
+          {pagesData.map((_, idx) => (
+            <div
+              key={idx}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                currentPage === idx 
+                  ? 'w-5 bg-emerald-400 dark:bg-emerald-400' 
+                  : 'w-1.5 bg-slate-600/50 hover:bg-slate-500/80'
+              }`}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Smart Folder Modal View */}
       {activeFolderModal && (
@@ -1097,19 +835,6 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
         )}
       </AnimatePresence>
 
-      {/* Page Indicators */}
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-1.5 mt-0.5 mb-1 shrink-0 h-2.5 items-center">
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <div 
-              key={i} 
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === currentPage ? 'bg-slate-200 w-4' : 'bg-slate-700 w-1.5'
-              }`} 
-            />
-          ))}
-        </div>
-      )}
 
       {/* Category Filter Tabs at Bottom of HomeScreen */}
       <div className={`shrink-0 ${layout.isLandscape ? 'px-4 py-1' : 'px-5 sm:px-6 py-1'}`}>

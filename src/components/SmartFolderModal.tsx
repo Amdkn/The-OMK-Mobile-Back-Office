@@ -185,9 +185,9 @@ export default function SmartFolderModal({ folder, onClose, onOpenApp }: SmartFo
                 <app.icon size={26} strokeWidth={1.5} />
               </button>
               
-              {/* Dark backdrop label for high contrast */}
-              <div className="px-1.5 py-0.5 rounded-md bg-slate-950/80 backdrop-blur-md border border-slate-700/60 shadow-sm max-w-full min-w-0 flex items-center justify-center">
-                <span className="text-[10px] font-semibold text-slate-100 text-center leading-tight truncate w-full drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+              {/* Styled Frame Label for High Legibility */}
+              <div className="max-w-[72px] px-1.5 py-0.5 rounded-md bg-slate-950/70 border border-slate-700/60 shadow-sm flex items-center justify-center">
+                <span className="text-[10px] font-semibold text-slate-100 text-center leading-tight truncate w-full tracking-tight">
                   {app.name}
                 </span>
               </div>

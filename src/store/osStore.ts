@@ -648,19 +648,27 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
     return { smartFolders: updated };
   }),
   removeAppFromFolder: (folderId, appId) => set((state) => {
-    // 1. Ensure the app is in gridAppOrder so it re-appears on the desktop grid
-    const existsInGrid = state.gridAppOrder.includes(appId);
-    const updatedGrid = existsInGrid ? state.gridAppOrder : [...state.gridAppOrder, appId];
+    // 1. Ensure the removed app is in gridAppOrder so it re-appears on the desktop grid
+    let updatedGrid = state.gridAppOrder.includes(appId) ? [...state.gridAppOrder] : [...state.gridAppOrder, appId];
 
-    // 2. Remove app from the folder, delete folder if empty or only 1 item remaining (dissolve)
-    const updatedFolders = state.smartFolders
-      .map(f => {
-        if (f.id === folderId) {
-          return { ...f, appIds: f.appIds.filter(id => id !== appId) };
+    // 2. Remove app from the folder and safely handle single-item folder dissolution
+    const updatedFolders: SmartFolder[] = [];
+    state.smartFolders.forEach(f => {
+      if (f.id === folderId) {
+        const remaining = f.appIds.filter(id => id !== appId);
+        if (remaining.length === 1) {
+          // If only 1 app remains, dissolve the folder and ensure the remaining app is also on the grid
+          const remainingAppId = remaining[0];
+          if (!updatedGrid.includes(remainingAppId)) {
+            updatedGrid.push(remainingAppId);
+          }
+        } else if (remaining.length > 1) {
+          updatedFolders.push({ ...f, appIds: remaining });
         }
-        return f;
-      })
-      .filter(f => f.appIds.length > 0);
+      } else {
+        updatedFolders.push(f);
+      }
+    });
 
     localStorage.setItem('os_smart_folders', JSON.stringify(updatedFolders));
     localStorage.setItem('os_grid_order', JSON.stringify(updatedGrid));

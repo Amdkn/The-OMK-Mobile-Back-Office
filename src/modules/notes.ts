@@ -79,10 +79,21 @@ const DEFAULT_NOTES: Record<string, NoteItem[]> = {
   ]
 };
 
+export interface NoteTransactionLogEntry {
+  txId: string;
+  timestamp: number;
+  workspace: string;
+  operation: 'CREATE' | 'UPDATE' | 'DELETE' | 'BATCH_SAVE' | 'IMPORT';
+  itemCount: number;
+  checksum: string;
+  status: 'COMMITTED' | 'FAILED';
+}
+
 export class NotesService {
   private static isInitialized = false;
   private static memoryCache: Record<string, NoteItem[]> = { ...DEFAULT_NOTES };
   private static pendingFlushPromises: Record<string, Promise<void> | null> = {};
+  private static transactionQueue: Promise<void> = Promise.resolve();
 
   public static async init(): Promise<void> {
     if (this.isInitialized) return;
@@ -91,6 +102,49 @@ export class NotesService {
       this.isInitialized = true;
     } catch (e) {
       console.warn('NotesStore IndexedDB fallback', e);
+    }
+  }
+
+  /**
+   * Fast structural checksum to verify data serialization consistency
+   */
+  private static computeChecksum(data: unknown): string {
+    const str = typeof data === 'string' ? data : JSON.stringify(data);
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return `chk-${Math.abs(hash).toString(16)}-${str.length}`;
+  }
+
+  /**
+   * Append an atomic transaction log record
+   */
+  private static async logTransaction(
+    workspace: string, 
+    operation: NoteTransactionLogEntry['operation'], 
+    items: NoteItem[],
+    status: 'COMMITTED' | 'FAILED'
+  ): Promise<void> {
+    try {
+      const checksum = this.computeChecksum(items);
+      const txEntry: NoteTransactionLogEntry = {
+        txId: `tx-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        timestamp: Date.now(),
+        workspace,
+        operation,
+        itemCount: items.length,
+        checksum,
+        status
+      };
+
+      const logKey = `notes_tx_log_${workspace}`;
+      const existingLogs = (await notesStore.getItem<NoteTransactionLogEntry[]>(logKey)) || [];
+      const updatedLogs = [txEntry, ...existingLogs].slice(0, 50); // Keep last 50 transactions
+      await notesStore.setItem(logKey, updatedLogs);
+    } catch (err) {
+      console.warn('Transaction logging fallback:', err);
     }
   }
 
@@ -158,6 +212,7 @@ export class NotesService {
       const initial = DEFAULT_NOTES[workspace] || DEFAULT_NOTES['Sandbox'];
       this.memoryCache[workspace] = initial;
       await notesStore.setItem(`notes_${workspace}`, initial);
+      await this.logTransaction(workspace, 'CREATE', initial, 'COMMITTED');
       return initial;
     } catch (e) {
       console.error(`Failed to load notes for ${workspace}:`, e);
@@ -166,34 +221,48 @@ export class NotesService {
   }
 
   /**
-   * Save full list of notes for a workspace with validation and guaranteed serialization
+   * Save full list of notes for a workspace with atomic transaction logging and guaranteed serialization
    */
-  public static async saveNotes(workspace: string, notes: NoteItem[]): Promise<void> {
+  public static async saveNotes(
+    workspace: string, 
+    notes: NoteItem[], 
+    operation: NoteTransactionLogEntry['operation'] = 'BATCH_SAVE'
+  ): Promise<void> {
     await this.init();
     const sanitized = this.validateAndSanitizeList(notes, workspace);
     this.memoryCache[workspace] = sanitized;
 
-    // Test serialization before committing to persistent storage
-    try {
-      const serialized = JSON.parse(JSON.stringify(sanitized));
-      const writePromise = notesStore.setItem(`notes_${workspace}`, serialized).then(() => {
-        this.pendingFlushPromises[workspace] = null;
-      });
-      this.pendingFlushPromises[workspace] = writePromise;
-      await writePromise;
+    // Queue atomic transaction execution to prevent interleaving
+    this.transactionQueue = this.transactionQueue.then(async () => {
+      try {
+        // 1. Strict serialization test
+        const serialized = JSON.parse(JSON.stringify(sanitized));
+        
+        // 2. Commit write to persistent IndexedDB
+        await notesStore.setItem(`notes_${workspace}`, serialized);
 
-      // Dispatch custom event for immediate cross-component reactivity
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('omk:notes_updated', { detail: { workspace, count: sanitized.length } }));
+        // 3. Record committed transaction log
+        await this.logTransaction(workspace, operation, sanitized, 'COMMITTED');
+
+        this.pendingFlushPromises[workspace] = null;
+
+        // 4. Dispatch custom event for immediate cross-component reactivity
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('omk:notes_updated', { detail: { workspace, count: sanitized.length } }));
+        }
+      } catch (e) {
+        console.error(`Failed to save validated notes for ${workspace}:`, e);
+        await this.logTransaction(workspace, operation, sanitized, 'FAILED');
+        throw e;
       }
-    } catch (e) {
-      console.error(`Failed to save validated notes for ${workspace}:`, e);
-      throw e;
-    }
+    });
+
+    this.pendingFlushPromises[workspace] = this.transactionQueue;
+    await this.transactionQueue;
   }
 
   /**
-   * Guarantee all pending writes are flushed before closing views
+   * Guarantee all pending writes are flushed before closing views or switching sessions
    */
   public static async flushPendingSaves(workspace: string): Promise<boolean> {
     try {
@@ -201,9 +270,8 @@ export class NotesService {
       if (pending) {
         await pending;
       }
-      // Ensure memoryCache is flushed to disk
       if (this.memoryCache[workspace]) {
-        await this.saveNotes(workspace, this.memoryCache[workspace]);
+        await this.saveNotes(workspace, this.memoryCache[workspace], 'BATCH_SAVE');
       }
       return true;
     } catch (e) {
@@ -271,7 +339,7 @@ export class NotesService {
         result = validated;
       }
 
-      await this.saveNotes(workspace, result);
+      await this.saveNotes(workspace, result, 'IMPORT');
       return result;
     } catch (e) {
       console.error('Failed to import notes:', e);
@@ -305,7 +373,7 @@ export class NotesService {
     };
 
     const updated = [newNote, ...existing];
-    await this.saveNotes(workspace, updated);
+    await this.saveNotes(workspace, updated, 'CREATE');
 
     // Register activity
     ActivityService.log(
@@ -325,7 +393,7 @@ export class NotesService {
   public static async updateNote(workspace: string, note: NoteItem): Promise<NoteItem[]> {
     const existing = await this.getNotes(workspace);
     const updated = existing.map(n => n.id === note.id ? { ...note, updatedAt: Date.now() } : n);
-    await this.saveNotes(workspace, updated);
+    await this.saveNotes(workspace, updated, 'UPDATE');
     return updated;
   }
 
@@ -335,7 +403,7 @@ export class NotesService {
   public static async deleteNote(workspace: string, noteId: string): Promise<NoteItem[]> {
     const existing = await this.getNotes(workspace);
     const updated = existing.filter(n => n.id !== noteId);
-    await this.saveNotes(workspace, updated);
+    await this.saveNotes(workspace, updated, 'DELETE');
     return updated;
   }
 

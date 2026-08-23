@@ -33,12 +33,14 @@ interface DynamicWidgetsGridProps {
   onOpenApp: (id: AppId) => void;
   widgetCols?: number;
   className?: string;
+  pageIndex?: number;
 }
 
 export default function DynamicWidgetsGrid({
   onOpenApp,
   widgetCols = 2,
-  className = ''
+  className = '',
+  pageIndex = 0
 }: DynamicWidgetsGridProps) {
   const { 
     workspace, 
@@ -83,11 +85,19 @@ export default function DynamicWidgetsGrid({
     return orderedAllWidgets.filter(w => pinnedWidgetIds.includes(w.id));
   }, [orderedAllWidgets, pinnedWidgetIds]);
 
-  // Determine how many widgets to display on home screen
+  // Determine how many widgets to display on this page
   const maxDisplayCount = widgetCols >= 4 ? 4 : widgetCols === 3 ? 3 : 2;
+  const pageStart = pageIndex * maxDisplayCount;
+  const pageEnd = pageStart + maxDisplayCount;
+
   const visibleWidgets = isCustomizing 
     ? pinnedWidgets 
-    : pinnedWidgets.slice(0, maxDisplayCount);
+    : pinnedWidgets.slice(pageStart, pageEnd);
+
+  // If pageIndex > 0 and no widgets exist on this page, don't render
+  if (pageIndex > 0 && visibleWidgets.length === 0 && !isCustomizing) {
+    return null;
+  }
 
   // Configure sensors for drag & drop
   const sensors = useSensors(
@@ -130,41 +140,88 @@ export default function DynamicWidgetsGrid({
   return (
     <div className={`shrink-0 ${className}`}>
       {/* Header bar with View Toggle & Customize Toggle */}
-      <div className="flex items-center justify-between px-1 mb-2">
-        {/* Tab switch between Live Metrics & Recent Activity */}
-        <div className="flex items-center gap-1 bg-slate-900/80 p-0.5 rounded-xl border border-slate-800/80">
-          <button
-            onClick={() => {
-              haptics.trigger('selection');
-              setActiveTab('metrics');
-            }}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
-              activeTab === 'metrics'
-                ? 'bg-slate-800 text-slate-100 shadow-sm border border-slate-700/60'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <LayoutGrid size={11} />
-            <span>Widgets</span>
-          </button>
-          
-          <button
-            onClick={() => {
-              haptics.trigger('selection');
-              setActiveTab('activity');
-            }}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
-              activeTab === 'activity'
-                ? 'bg-slate-800 text-emerald-400 shadow-sm border border-slate-700/60'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Activity size={11} />
-            <span>Activité</span>
-          </button>
-        </div>
+      {pageIndex === 0 ? (
+        <div className="flex items-center justify-between px-1 mb-2">
+          {/* Tab switch between Live Metrics & Recent Activity */}
+          <div className="flex items-center gap-1 bg-slate-900/80 p-0.5 rounded-xl border border-slate-800/80">
+            <button
+              onClick={() => {
+                haptics.trigger('selection');
+                setActiveTab('metrics');
+              }}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+                activeTab === 'metrics'
+                  ? 'bg-slate-800 text-slate-100 shadow-sm border border-slate-700/60'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <LayoutGrid size={11} />
+              <span>Widgets</span>
+            </button>
+            
+            <button
+              onClick={() => {
+                haptics.trigger('selection');
+                setActiveTab('activity');
+              }}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${
+                activeTab === 'activity'
+                  ? 'bg-slate-800 text-emerald-400 shadow-sm border border-slate-700/60'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Activity size={11} />
+              <span>Activité</span>
+            </button>
+          </div>
 
-        {activeTab === 'metrics' ? (
+          {activeTab === 'metrics' ? (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => {
+                  haptics.trigger('selection');
+                  setShowManagerModal(true);
+                }}
+                title="Gérer les widgets"
+                className="p-1 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 text-[10px] flex items-center gap-1 px-2 transition-colors"
+              >
+                <SlidersHorizontal size={11} />
+                <span>Gérer</span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  haptics.trigger('selection');
+                  setIsCustomizing(prev => !prev);
+                }}
+                title={isCustomizing ? "Terminer" : "Réorganiser"}
+                className={`p-1 rounded-lg border text-[10px] flex items-center gap-1 px-2 transition-colors ${
+                  isCustomizing 
+                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400 font-bold' 
+                    : 'bg-slate-900/60 hover:bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {isCustomizing ? <Check size={11} /> : <Settings2 size={11} />}
+                <span>{isCustomizing ? 'Terminé' : 'Organiser'}</span>
+              </button>
+            </div>
+          ) : (
+            <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Sync live
+            </span>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center justify-between px-1 mb-2">
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-900/80 border border-slate-800/80 text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+              <LayoutGrid size={10} className="text-emerald-400" />
+              <span>Widgets</span>
+            </div>
+            <span className="text-[10px] font-medium text-slate-400">Page {pageIndex + 1}</span>
+          </div>
+
           <div className="flex items-center gap-1">
             <button
               onClick={() => {
@@ -194,16 +251,11 @@ export default function DynamicWidgetsGrid({
               <span>{isCustomizing ? 'Terminé' : 'Organiser'}</span>
             </button>
           </div>
-        ) : (
-          <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Sync live
-          </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Main Content Area: Tab Dependent */}
-      {activeTab === 'activity' ? (
+      {pageIndex === 0 && activeTab === 'activity' ? (
         <RecentActivityWidget onOpenApp={onOpenApp} maxItems={5} />
       ) : (
         /* Grid of sortable and pinnable widgets */

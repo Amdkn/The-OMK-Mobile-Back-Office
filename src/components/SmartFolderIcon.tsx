@@ -84,9 +84,9 @@ export function SmartFolderIconView({
         ) : null}
       </div>
 
-      {/* High-Contrast Semi-Transparent Dark Backdrop with Drop Shadow */}
-      <div className="px-1.5 py-0.5 rounded-lg bg-slate-950/80 backdrop-blur-md border border-slate-700/60 shadow-[0_2px_8px_rgba(0,0,0,0.8)] max-w-full min-w-0 flex items-center justify-center">
-        <span className="text-[10px] font-semibold text-slate-100 text-center leading-tight truncate w-full drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.95)]">
+      {/* Styled Frame Label for High Legibility across all wallpapers */}
+      <div className="max-w-[72px] px-1.5 py-0.5 rounded-md bg-slate-950/70 border border-slate-700/60 shadow-sm flex items-center justify-center">
+        <span className="text-[10px] font-semibold text-slate-100 text-center leading-tight truncate w-full tracking-tight">
           {folder.name}
         </span>
       </div>
@@ -99,13 +99,21 @@ export default function SmartFolderIcon({
   onClick, 
   isEditMode = false, 
   onDissolve, 
-  isDropTarget = false,
-  badgeCount = 0
+  isDropTarget = false, 
+  badgeCount = 0 
 }: SmartFolderIconProps) {
   return (
-    <button 
+    <div 
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="flex flex-col items-center justify-center p-1 rounded-2xl group relative touch-none focus:outline-none transition-opacity"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className="flex flex-col items-center justify-center p-1 rounded-2xl group relative touch-none focus:outline-none transition-opacity cursor-pointer"
       title={`Dossier ${folder.name}`}
     >
       <SmartFolderIconView 
@@ -115,6 +123,6 @@ export default function SmartFolderIcon({
         isDropTarget={isDropTarget}
         badgeCount={badgeCount}
       />
-    </button>
+    </div>
   );
 }

@@ -609,7 +609,7 @@ export default function DynamicIsland({ paradigm }: { paradigm: Paradigm }) {
                         {pomodoroMode === 'work' ? 'Mode Concentration (Deep Work)' : 'Mode Pause Récupération'}
                       </span>
                     </div>
-                    <div className="text-5xl font-black font-mono tracking-tight text-white mt-1 drop-shadow-md">
+                    <div className="text-5xl font-black font-mono tracking-tight text-white mt-1 drop-shadow-md tabular-nums">
                       {formatTimer(pomodoroSeconds)}
                     </div>
                   </div>
