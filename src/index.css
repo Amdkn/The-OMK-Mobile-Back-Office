@@ -510,5 +510,284 @@
   animation: wiggle 0.28s ease-in-out infinite;
 }
 
+/* =========================================================================
+   =========================================================================
+   UI / UX PRO MAX — STRUCTURAL DESIGN PARADIGM ENGINE
+   Applies authentic design philosophies (shadows, borders, radii, typography,
+   tactile motions, and surface depth) across the entire OS and all apps!
+   =========================================================================
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   1. BRUTALISM DESIGN SYSTEM (Raw, Stark, Hard Shadows, Sharp Corners)
+   ------------------------------------------------------------------------- */
+[data-theme="brutalism"] {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+
+[data-theme="brutalism"] * {
+  border-radius: 0px !important;
+}
+
+[data-theme="brutalism"] .bg-slate-900,
+[data-theme="brutalism"] [class*="bg-slate-900"],
+[data-theme="brutalism"] .bg-slate-950\/60,
+[data-theme="brutalism"] .bg-slate-950\/40,
+[data-theme="brutalism"] .bg-slate-950\/80,
+[data-theme="brutalism"] .bg-slate-950\/70,
+[data-theme="brutalism"] .bg-slate-950 {
+  background-color: #ffffff !important;
+  border: 2.5px solid #000000 !important;
+  box-shadow: 4px 4px 0px #000000 !important;
+  color: #000000 !important;
+}
+
+[data-theme="brutalism"] button,
+[data-theme="brutalism"] .cursor-pointer {
+  border: 2px solid #000000 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+  transition: transform 0.06s ease, box-shadow 0.06s ease !important;
+  font-weight: 800 !important;
+}
+
+[data-theme="brutalism"] button:hover,
+[data-theme="brutalism"] .cursor-pointer:hover {
+  transform: translate(-1px, -1px) !important;
+  box-shadow: 4.5px 4.5px 0px #000000 !important;
+}
+
+[data-theme="brutalism"] button:active,
+[data-theme="brutalism"] .cursor-pointer:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 1px 1px 0px #000000 !important;
+}
+
+[data-theme="brutalism"] input,
+[data-theme="brutalism"] textarea,
+[data-theme="brutalism"] select {
+  background-color: #ffffff !important;
+  border: 2.5px solid #000000 !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="brutalism"] h1,
+[data-theme="brutalism"] h2,
+[data-theme="brutalism"] h3,
+[data-theme="brutalism"] h4 {
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: -0.03em !important;
+  color: #000000 !important;
+}
+
+[data-theme="brutalism"] [class*="bg-emerald"],
+[data-theme="brutalism"] [class*="text-emerald"] {
+  background-color: #ffe600 !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  font-weight: 900 !important;
+}
+
+/* -------------------------------------------------------------------------
+   2. NEUMORPHISM DESIGN SYSTEM (Soft UI, Embossed / Debossed Dual Shadows)
+   ------------------------------------------------------------------------- */
+[data-theme="neumorphism"] [class*="rounded-"],
+[data-theme="neumorphism"] button,
+[data-theme="neumorphism"] input {
+  border-radius: 20px !important;
+}
+
+[data-theme="neumorphism"] .bg-slate-900,
+[data-theme="neumorphism"] [class*="bg-slate-900"],
+[data-theme="neumorphism"] .bg-slate-950\/60,
+[data-theme="neumorphism"] .bg-slate-950\/40,
+[data-theme="neumorphism"] .bg-slate-950\/80 {
+  background: #e0e5ec !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 7px 7px 15px #bec5d0, -7px -7px 15px #ffffff !important;
+  color: #2c3644 !important;
+}
+
+[data-theme="neumorphism"] button,
+[data-theme="neumorphism"] .cursor-pointer {
+  background: #e0e5ec !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 5px 5px 12px #bec5d0, -5px -5px 12px #ffffff !important;
+  color: #2c3644 !important;
+  transition: box-shadow 0.15s ease, transform 0.15s ease !important;
+}
+
+[data-theme="neumorphism"] button:active,
+[data-theme="neumorphism"] .cursor-pointer:active,
+[data-theme="neumorphism"] input,
+[data-theme="neumorphism"] textarea,
+[data-theme="neumorphism"] select {
+  background: #e0e5ec !important;
+  border: none !important;
+  box-shadow: inset 4px 4px 8px #bec5d0, inset -4px -4px 8px #ffffff !important;
+  color: #1e2634 !important;
+}
+
+/* -------------------------------------------------------------------------
+   3. CLAYMORPHISM DESIGN SYSTEM (Chunky 3D Pastel & Inset/Outset Depth)
+   ------------------------------------------------------------------------- */
+[data-theme="claymorphism"] [class*="rounded-"],
+[data-theme="claymorphism"] button,
+[data-theme="claymorphism"] input {
+  border-radius: 26px !important;
+}
+
+[data-theme="claymorphism"] .bg-slate-900,
+[data-theme="claymorphism"] [class*="bg-slate-900"],
+[data-theme="claymorphism"] .bg-slate-950\/60,
+[data-theme="claymorphism"] .bg-slate-950\/40,
+[data-theme="claymorphism"] .bg-slate-950\/80 {
+  background: #ffffff !important;
+  border: 3px solid #e2d7f5 !important;
+  box-shadow: 8px 8px 18px rgba(139, 92, 246, 0.12), -4px -4px 12px rgba(255, 255, 255, 0.9), inset 2px 2px 5px rgba(255, 255, 255, 0.95), inset -2px -2px 5px rgba(139, 92, 246, 0.08) !important;
+  color: #251c36 !important;
+}
+
+[data-theme="claymorphism"] button,
+[data-theme="claymorphism"] .cursor-pointer {
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+[data-theme="claymorphism"] button:hover {
+  transform: translateY(-2px) scale(1.02) !important;
+}
+
+[data-theme="claymorphism"] button:active {
+  transform: scale(0.96) !important;
+}
+
+/* -------------------------------------------------------------------------
+   4. GLASSMORPHISM & LIQUID GLASS (Frosted Lensing & Translucency)
+   ------------------------------------------------------------------------- */
+[data-theme="glassmorphism"] .bg-slate-900,
+[data-theme="glassmorphism"] [class*="bg-slate-900"],
+[data-theme="glassmorphism"] .bg-slate-950\/60,
+[data-theme="liquid-glass"] .bg-slate-900,
+[data-theme="liquid-glass"] [class*="bg-slate-900"],
+[data-theme="liquid-glass"] .bg-slate-950\/60 {
+  background: rgba(15, 23, 42, 0.55) !important;
+  backdrop-filter: blur(20px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+[data-theme="liquid-glass"] button:hover,
+[data-theme="liquid-glass"] .cursor-pointer:hover {
+  border-color: rgba(56, 189, 248, 0.6) !important;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+
+/* -------------------------------------------------------------------------
+   5. CYBERPUNK & RETRO-FUTURISM (Neon Glows, Tech Angular Lines)
+   ------------------------------------------------------------------------- */
+[data-theme="cyberpunk"] .bg-slate-900,
+[data-theme="cyberpunk"] [class*="bg-slate-900"],
+[data-theme="cyberpunk"] .bg-slate-950\/60 {
+  background: #0c0c12 !important;
+  border: 1.5px solid #facc15 !important;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.25), inset 0 0 8px rgba(250, 204, 21, 0.05) !important;
+}
+
+[data-theme="cyberpunk"] h1,
+[data-theme="cyberpunk"] h2,
+[data-theme="cyberpunk"] h3,
+[data-theme="cyberpunk"] .font-mono {
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.5) !important;
+}
+
+/* -------------------------------------------------------------------------
+   6. MATRIX HACKER (Terminal Monospace & Phosphor Rain Glow)
+   ------------------------------------------------------------------------- */
+[data-theme="matrix-hacker"] * {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+
+[data-theme="matrix-hacker"] .bg-slate-900,
+[data-theme="matrix-hacker"] [class*="bg-slate-900"],
+[data-theme="matrix-hacker"] .bg-slate-950\/60 {
+  background: #030e05 !important;
+  border: 1.5px solid #00ff66 !important;
+  box-shadow: 0 0 12px rgba(0, 255, 102, 0.25), inset 0 0 8px rgba(0, 255, 102, 0.06) !important;
+}
+
+[data-theme="matrix-hacker"] h1,
+[data-theme="matrix-hacker"] h2,
+[data-theme="matrix-hacker"] h3,
+[data-theme="matrix-hacker"] span,
+[data-theme="matrix-hacker"] p {
+  text-shadow: 0 0 5px rgba(0, 255, 102, 0.6) !important;
+}
+
+/* -------------------------------------------------------------------------
+   7. WARM PAPER & EDITORIAL (Parchment & Classic Serif Print Typography)
+   ------------------------------------------------------------------------- */
+[data-theme="editorial"] h1,
+[data-theme="editorial"] h2,
+[data-theme="editorial"] h3,
+[data-theme="warm-paper"] h1,
+[data-theme="warm-paper"] h2,
+[data-theme="warm-paper"] h3 {
+  font-family: Georgia, 'Times New Roman', Times, serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+}
+
+[data-theme="editorial"] .bg-slate-900,
+[data-theme="editorial"] [class*="bg-slate-900"],
+[data-theme="warm-paper"] .bg-slate-900,
+[data-theme="warm-paper"] [class*="bg-slate-900"] {
+  border: 1px solid #dcd4c6 !important;
+  box-shadow: 0 4px 16px rgba(32, 28, 22, 0.06) !important;
+}
+
+/* -------------------------------------------------------------------------
+   8. TRUST & AUTHORITY (Royal Navy & Gold Prestige Elevation)
+   ------------------------------------------------------------------------- */
+[data-theme="trust-and-authority"] .bg-slate-900,
+[data-theme="trust-and-authority"] [class*="bg-slate-900"] {
+  background: #162038 !important;
+  border: 1.5px solid #d4af37 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="trust-and-authority"] h1,
+[data-theme="trust-and-authority"] h2,
+[data-theme="trust-and-authority"] h3 {
+  letter-spacing: 0.04em !important;
+}
+
+/* -------------------------------------------------------------------------
+   9. VIBRANT BLOCK (Growth-Hacker High Energy Solids)
+   ------------------------------------------------------------------------- */
+[data-theme="vibrant-block"] .bg-slate-900,
+[data-theme="vibrant-block"] [class*="bg-slate-900"] {
+  background: #1e293b !important;
+  border: 2px solid #334155 !important;
+  box-shadow: 4px 4px 0px #0f172a !important;
+}
+
+[data-theme="vibrant-block"] button:hover {
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 6px 6px 0px #0f172a !important;
+}
+
+/* -------------------------------------------------------------------------
+   10. MINIMAL NORDIC (Snow White Pure & Hairline Slate Precision)
+   ------------------------------------------------------------------------- */
+[data-theme="minimal-nordic"] .bg-slate-900,
+[data-theme="minimal-nordic"] [class*="bg-slate-900"] {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
 
 
