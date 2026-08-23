@@ -353,4 +353,30 @@ export interface PowerState {
 export type DeviceOrientation = 'portrait' | 'landscape';
 export type DeviceFormFactor = 'phone' | 'tablet' | 'desktop';
 
+export interface CoachAgentMessage {
+  id: string;
+  sender: 'user' | 'agent';
+  text: string;
+  timestamp: number;
+}
+
+export interface CoachAgent {
+  id: string;
+  name: string;
+  avatarName: string;
+  avatarType: 'clippy' | 'links' | 'rover' | 'merlin' | 'genie' | 'peedy' | 'genius' | 'rocky';
+  role: string;
+  squad: string;
+  color: string;
+  iconEmoji: string;
+  isActive: boolean;
+  position: { x: number; y: number };
+  isChatOpen: boolean;
+  status: 'idle' | 'thinking' | 'speaking';
+  bio: string;
+  personality: string;
+  suggestedPrompt: string;
+  messages: CoachAgentMessage[];
+}
+
 

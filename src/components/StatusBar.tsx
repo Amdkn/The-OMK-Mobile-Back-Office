@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   Wifi, WifiOff, Bell, Zap, Battery, BatteryCharging, 
-  BatteryFull, BatteryMedium, BatteryLow, BatteryWarning, Palette, Signal
+  BatteryFull, BatteryMedium, BatteryLow, BatteryWarning, Palette, Signal, Bot
 } from 'lucide-react';
 import { Paradigm } from '../types';
 import { useOSStore } from '../store/osStore';
@@ -21,8 +21,10 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
     signalStrength, 
     networkMode,
     notifications, 
+    agents,
     toggleNotificationCenter,
     toggleThemeMenu,
+    toggleAgentsMenu,
     cycleRandomDarkTheme
   } = useOSStore();
 
@@ -41,6 +43,10 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
   const unreadCount = useMemo(() => {
     return notifications.filter(n => !n.isRead).length;
   }, [notifications]);
+
+  const activeAgentsCount = useMemo(() => {
+    return agents.filter(a => a.isActive).length;
+  }, [agents]);
 
   // Dynamic Theme & Contrast adaptive styling across all 16 UI UX Pro Max themes
   const styleConfig = useMemo(() => {
@@ -197,13 +203,18 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
     cycleRandomDarkTheme();
   };
 
+  const handleAgentsClick = () => {
+    haptics.trigger('selection');
+    toggleAgentsMenu();
+  };
+
   return (
-    <div className={`absolute top-0 left-0 right-0 h-14 z-40 flex items-center justify-between px-5 pointer-events-none select-none ${styleConfig.containerClass}`}>
-      {/* Left: Real Live Time & Notification Bell */}
-      <div className="flex-1 flex items-center gap-2 pointer-events-auto pl-1">
+    <div className={`absolute top-0 left-0 right-0 h-14 z-40 flex items-center justify-between px-4 pointer-events-none select-none ${styleConfig.containerClass}`}>
+      {/* Left: Real Live Time & Notification Bell tightly grouped together */}
+      <div className="flex items-center gap-1.5 pointer-events-auto pl-0.5 z-40">
         <button
           onClick={toggleNotificationCenter}
-          className={`text-xs sm:text-sm font-medium tracking-tight hover:opacity-80 transition-opacity ${styleConfig.textColor}`}
+          className={`text-xs font-semibold tracking-tight hover:opacity-80 transition-opacity ${styleConfig.textColor}`}
           title="Ouvrir le Centre de Notifications"
         >
           {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -213,38 +224,43 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
         <button
           onClick={toggleNotificationCenter}
           title="Centre de Notifications"
-          className="relative p-1.5 rounded-lg hover:bg-slate-800/40 transition-colors pointer-events-auto flex items-center justify-center group"
+          className="relative p-1 rounded-lg hover:bg-slate-800/40 transition-colors pointer-events-auto flex items-center justify-center group"
         >
-          <Bell size={14} className={`${styleConfig.iconColor} group-hover:${styleConfig.accentColor} transition-colors shrink-0`} />
+          <Bell size={13.5} className={`${styleConfig.iconColor} group-hover:${styleConfig.accentColor} transition-colors shrink-0`} />
           {unreadCount > 0 && (
-            <span className={`absolute -top-1 -right-1.5 min-w-[15px] h-[15px] px-1 rounded-full text-[8.5px] font-black leading-none flex items-center justify-center ${styleConfig.badgeBg} shadow-md border border-slate-950/20 whitespace-nowrap z-10 animate-pulse`}>
+            <span className={`absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-0.5 rounded-full text-[8px] font-black leading-none flex items-center justify-center ${styleConfig.badgeBg} shadow-md border border-slate-950/20 whitespace-nowrap z-10 animate-pulse`}>
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
         </button>
       </div>
       
-      {/* Center: Dynamic Island */}
+      {/* Center: Dynamic Island perfectly centered without collision */}
       <div className="absolute left-1/2 -translate-x-1/2 top-2 z-50 pointer-events-auto">
         <DynamicIsland paradigm={paradigm} />
       </div>
 
-      {/* Right: EXCLUSIVE Single Network Indicator (Wifi OR 5G) & Battery */}
-      <div className="flex-1 flex justify-end items-center gap-2 pr-1 pointer-events-auto">
-        {/* Low Power Mode active indicator pill */}
-        {power.isLowPowerMode && (
-          <button
-            onClick={handleBatteryClick}
-            title={`${power.powerStatusLabel} • Cliquez pour changer de thème sombre`}
-            className="p-1 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-0.5 text-[10px] font-mono hover:scale-105 transition-all cursor-pointer"
-          >
-            <Zap size={10} className="fill-amber-400" />
-            <span className="hidden sm:inline text-[9px] font-bold">Eco</span>
-          </button>
-        )}
+      {/* Right: EXACTLY 3 Icons (1. Coach OS Agents, 2. Wifi/5G Theme Switcher, 3. Battery Eco Mode) */}
+      <div className="flex items-center gap-2 pr-0.5 pointer-events-auto z-40">
+        {/* 
+          1. COACH OS AGENTS ICON:
+          Click opens the Coach OS Assistants Selector & Desktop Deployment Window!
+        */}
+        <button
+          onClick={handleAgentsClick}
+          title={`Coach OS Assistants (${activeAgentsCount} actif${activeAgentsCount > 1 ? 's' : ''}) • Cliquez pour gérer et déployer les avatars`}
+          className="relative p-1.5 rounded-xl hover:bg-slate-800/50 active:scale-95 transition-all cursor-pointer group flex items-center justify-center"
+        >
+          <Bot size={15} className={`${styleConfig.iconColor} group-hover:${styleConfig.accentColor} transition-colors shrink-0`} />
+          {activeAgentsCount > 0 && (
+            <span className="absolute -top-0.5 -right-1 min-w-[13px] h-[13px] px-0.5 rounded-full text-[8px] font-black leading-none flex items-center justify-center bg-emerald-500 text-slate-950 shadow-sm border border-slate-950/20 whitespace-nowrap z-10">
+              {activeAgentsCount}
+            </span>
+          )}
+        </button>
 
         {/* 
-          NETWORK INDICATOR: ONLY ONE SIGN OF NETWORK (Wifi OU 5G)
+          2. NETWORK INDICATOR: ONLY ONE SIGN OF NETWORK (Wifi OU 5G)
           Click opens the floating Theme Switcher Popover Window!
         */}
         <button
@@ -254,14 +270,14 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
               ? (isOnline ? "Wi-Fi Actif • Cliquez pour ouvrir le Sélecteur de Thèmes" : "Hors-ligne • Cliquez pour ouvrir le Sélecteur de Thèmes")
               : `5G Réseau Mobile (${signalStrength}/4) • Cliquez pour ouvrir le Sélecteur de Thèmes`
           }
-          className="flex items-center gap-1 px-1.5 py-1 rounded-xl hover:bg-slate-800/50 active:scale-95 transition-all cursor-pointer group"
+          className="flex items-center gap-1 px-1 py-1 rounded-xl hover:bg-slate-800/50 active:scale-95 transition-all cursor-pointer group"
         >
           {networkMode === 'wifi' ? (
             /* Wifi Glyph */
             isOnline ? (
-              <Wifi size={15} strokeWidth={2.5} className={`${styleConfig.iconColor} group-hover:${styleConfig.accentColor} transition-colors`} />
+              <Wifi size={14.5} strokeWidth={2.5} className={`${styleConfig.iconColor} group-hover:${styleConfig.accentColor} transition-colors`} />
             ) : (
-              <WifiOff size={15} strokeWidth={2.5} className="text-rose-400" />
+              <WifiOff size={14.5} strokeWidth={2.5} className="text-rose-400" />
             )
           ) : (
             /* 5G Cellular Glyph */
@@ -290,7 +306,7 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
         </button>
 
         {/* 
-          BATTERY INDICATOR:
+          3. BATTERY INDICATOR:
           Click toggles Low Power Mode and cycles random dark theme from UI UX Pro Max!
         */}
         <button 
@@ -298,13 +314,13 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
           title={`${power.batteryLevel}% - ${power.isCharging ? 'En charge' : 'Sur batterie'} • Cliquez pour basculer le Mode Éco et changer de thème sombre aléatoire`}
           className="flex items-center gap-1 hover:opacity-80 active:scale-95 transition-all pl-0.5 cursor-pointer group"
         >
-          <span className={`text-[10px] font-medium font-mono ${styleConfig.textColor} group-hover:${styleConfig.accentColor}`}>
+          <span className={`text-[9.5px] font-semibold font-mono ${styleConfig.textColor} group-hover:${styleConfig.accentColor}`}>
             {power.batteryLevel}%
           </span>
           <div className="relative flex items-center">
-            <BatteryIcon size={18} strokeWidth={2} className={styleConfig.batteryFill} />
+            <BatteryIcon size={17} strokeWidth={2} className={styleConfig.batteryFill} />
             {power.isCharging && (
-              <Zap size={9} className="absolute left-1 text-amber-400 fill-amber-400 animate-pulse" />
+              <Zap size={8.5} className="absolute left-1 text-amber-400 fill-amber-400 animate-pulse" />
             )}
           </div>
         </button>
@@ -312,4 +328,5 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
     </div>
   );
 }
+
 

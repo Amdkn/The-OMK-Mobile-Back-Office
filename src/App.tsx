@@ -18,6 +18,8 @@ import StatusBar from './components/StatusBar';
 import WallpaperBackground from './components/WallpaperBackground';
 import NotificationCenter from './components/NotificationCenter';
 import ThemeSwitcherModal from './components/ThemeSwitcherModal';
+import AgentsMenuModal from './components/AgentsMenuModal';
+import DesktopAgentsOverlay from './components/DesktopAgentsOverlay';
 import EventBusDevOverlay from './components/dev/EventBusDevOverlay';
 
 export default function App() {
@@ -228,11 +230,17 @@ export default function App() {
               </>
             )}
 
+            {/* Floating Desktop Coach OS Avatars (Ryos & Web Desktop style) */}
+            <DesktopAgentsOverlay />
+
             {/* Slide-over Notification Center */}
             <NotificationCenter onOpenApp={openApp} />
 
             {/* Floating Web Desktop Style Theme Switcher Window */}
             <ThemeSwitcherModal />
+
+            {/* Floating Web Desktop Style Coach OS Agents Window */}
+            <AgentsMenuModal />
 
             {/* Real-time EventBus Debug Overlay */}
             <EventBusDevOverlay />

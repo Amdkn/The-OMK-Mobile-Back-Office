@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, ChevronRight, Bot, Sparkles, Check, ArrowRight } from 'lucide-react';
+import { X, ChevronRight, Bot, Sparkles, Check, ArrowRight, ChevronDown } from 'lucide-react';
+import { haptics } from '../../services/haptics';
 
 export interface DetailDrawerBreadcrumb {
   label: string;
@@ -61,6 +62,11 @@ export default function DetailDrawer({
   children
 }: DetailDrawerProps) {
   const [activeTab, setActiveTab] = React.useState<string>(tabs[0]?.id || 'main');
+  const [isAiExpanded, setIsAiExpanded] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    setIsAiExpanded(false); // Closed by default on item change
+  }, [title, isOpen]);
 
   React.useEffect(() => {
     if (tabs.length > 0 && (!activeTab || !tabs.find(t => t.id === activeTab))) {
@@ -198,23 +204,53 @@ export default function DetailDrawer({
                 </div>
               )}
 
-              {/* AI Insight Box */}
+              {/* Collapsible AI Insight & Suggestions (Closed by default, click to expand) */}
               {aiInsight && (
-                <div className="bg-gradient-to-br from-emerald-950/40 via-slate-900/80 to-slate-950 border border-emerald-500/30 rounded-3xl p-4 shadow-lg relative overflow-hidden">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 mb-2">
-                    <Sparkles size={14} className="animate-pulse" />
-                    <span>{aiInsight.title || 'Diagnostic Coach AI'}</span>
-                  </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">{aiInsight.content}</p>
-                  {aiInsight.actionLabel && (
-                    <button
-                      onClick={aiInsight.onAction}
-                      className="mt-3 w-full py-2 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <span>{aiInsight.actionLabel}</span>
-                      <ArrowRight size={13} />
-                    </button>
-                  )}
+                <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/30 via-slate-900/80 to-slate-950 overflow-hidden shadow-md transition-all">
+                  {/* Collapsible Accordion Trigger Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      haptics.trigger('selection');
+                      setIsAiExpanded(prev => !prev);
+                    }}
+                    className="w-full py-2.5 px-3.5 flex items-center justify-between text-xs font-bold text-emerald-300 hover:bg-emerald-950/40 transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Sparkles size={14} className="text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" />
+                      <span className="truncate">{aiInsight.title || 'Diagnostic & Coaching IA'}</span>
+                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0 font-normal">
+                        {isAiExpanded ? 'Masquer' : 'Cliquer pour ouvrir'}
+                      </span>
+                    </div>
+                    <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isAiExpanded ? 'rotate-180 text-emerald-400' : ''}`} />
+                  </button>
+
+                  {/* Expanded Content View */}
+                  <AnimatePresence>
+                    {isAiExpanded && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-3.5 pt-1 border-t border-emerald-500/20 text-xs text-slate-300 leading-relaxed">
+                          <p className="mb-3">{aiInsight.content}</p>
+                          {aiInsight.actionLabel && (
+                            <button
+                              onClick={aiInsight.onAction}
+                              className="w-full py-2 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                            >
+                              <span>{aiInsight.actionLabel}</span>
+                              <ArrowRight size={13} />
+                            </button>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
 

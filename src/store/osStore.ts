@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { 
   AppId, Paradigm, ThemeId, ContrastLevel, WallpaperId, 
   OSNotification, AppEvent, RecentActivityItem, AppLifecycleState, SmartFolder,
-  UI_UX_PRO_MAX_THEMES, DARK_THEME_IDS
+  UI_UX_PRO_MAX_THEMES, DARK_THEME_IDS, CoachAgent
 } from '../types';
 import { arrayMove } from '@dnd-kit/sortable';
 import { haptics } from '../services/haptics';
@@ -186,6 +186,169 @@ const SIMULATED_ALERTS: Array<Omit<OSNotification, 'id' | 'timestamp' | 'isRead'
   }
 ];
 
+export const INITIAL_COACH_AGENTS: CoachAgent[] = [
+  {
+    id: 'agent-clippy',
+    name: 'Cerritos-HoloDeck',
+    avatarName: 'Clippy',
+    avatarType: 'clippy',
+    role: 'Assistant Général & Navigation',
+    squad: 'HoloDeck Core',
+    color: 'emerald',
+    iconEmoji: '📎',
+    isActive: true,
+    position: { x: 20, y: 150 },
+    isChatOpen: false,
+    status: 'idle',
+    bio: 'Agent intelligent de bureau multi-tâches, expert en productivité et orientation dans l\'écosystème OMK.',
+    personality: 'Serviable, ultra-rapide, proactif et empathique.',
+    suggestedPrompt: "Comment puis-je t'aider à organiser ta journée ou naviguer dans les applications ?",
+    messages: [
+      { id: 'm1', sender: 'agent', text: 'Bonjour ! Je suis Clippy (Cerritos-HoloDeck). Tu peux me déplacer n\'importe où sur ton écran ! Comment puis-je t\'aider ?', timestamp: Date.now() - 60000 }
+    ]
+  },
+  {
+    id: 'agent-links',
+    name: 'Squad-Orville',
+    avatarName: 'Links',
+    avatarType: 'links',
+    role: 'Assistant DevOps & Cloud',
+    squad: 'Orville Infra',
+    color: 'sky',
+    iconEmoji: '🐱',
+    isActive: false,
+    position: { x: 250, y: 220 },
+    isChatOpen: false,
+    status: 'idle',
+    bio: 'Surveille la santé des microservices BaaS, l\'intégrité des pipelines CI/CD et la latence.',
+    personality: 'Analytique, précis, toujours vigilant sur la télémétrie.',
+    suggestedPrompt: 'Vérifier la latence Supabase et l\'état des 14 microservices.',
+    messages: [
+      { id: 'm2', sender: 'agent', text: 'Télémétrie au vert : 14/14 microservices opérationnels. Prêt pour un audit d\'infrastructure.', timestamp: Date.now() - 45000 }
+    ]
+  },
+  {
+    id: 'agent-rover',
+    name: 'Squad-Discovery',
+    avatarName: 'Rover',
+    avatarType: 'rover',
+    role: 'Assistant Données & BI',
+    squad: 'Discovery Data',
+    color: 'amber',
+    iconEmoji: '🐶',
+    isActive: false,
+    position: { x: 30, y: 320 },
+    isChatOpen: false,
+    status: 'idle',
+    bio: 'Chien de chasse des métriques de croissance, analyseur de churn et détecteur d\'opportunités MRR.',
+    personality: 'Énergique, orienté chiffres et conversion.',
+    suggestedPrompt: 'Analyser les prévisions MRR du trimestre et la vélocité commerciale.',
+    messages: [
+      { id: 'm3', sender: 'agent', text: 'Waf ! Le MRR a augmenté de +14.2% ce mois-ci. Tape ta question pour creuser les data.', timestamp: Date.now() - 30000 }
+    ]
+  },
+  {
+    id: 'agent-merlin',
+    name: 'Squad-SNW',
+    avatarName: 'Merlin',
+    avatarType: 'merlin',
+    role: 'Architecte Code & Systèmes',
+    squad: 'Strange New Worlds',
+    color: 'purple',
+    iconEmoji: '🧙‍♂️',
+    isActive: false,
+    position: { x: 250, y: 380 },
+    isChatOpen: false,
+    status: 'idle',
+    bio: 'Grand maître de l\'ingénierie logicielle, des schémas SQL RLS et des abstractions propres.',
+    personality: 'Sage, méthodique, intransigeant sur la propreté du code.',
+    suggestedPrompt: 'Inspecter les règles de sécurité RLS et l\'optimisation TypeScript.',
+    messages: [
+      { id: 'm4', sender: 'agent', text: 'Par les arcanes du clean code ! Le typage strict est garanti sur l\'ensemble de l\'OS.', timestamp: Date.now() - 20000 }
+    ]
+  },
+  {
+    id: 'agent-genie',
+    name: 'Squad-Enterprise',
+    avatarName: 'Genie',
+    avatarType: 'genie',
+    role: 'Opérations & Automatisation',
+    squad: 'Enterprise Core',
+    color: 'blue',
+    iconEmoji: '🧞‍♂️',
+    isActive: false,
+    position: { x: 30, y: 460 },
+    isChatOpen: false,
+    status: 'idle',
+    bio: 'Exécute tes vœux opérationnels : workflows n8n, génération de devis et synchronisation ERP.',
+    personality: 'Magique, serviable et orienté exécution instantanée.',
+    suggestedPrompt: 'Exécuter le batch de relance factures impayées.',
+    messages: [
+      { id: 'm5', sender: 'agent', text: 'Vos ordres sont mes commandes. Quel workflow souhaitez-vous déclencher ?', timestamp: Date.now() - 10000 }
+    ]
+  },
+  {
+    id: 'agent-peedy',
+    name: 'Squad-Protostar',
+    avatarName: 'Peedy',
+    avatarType: 'peedy',
+    role: 'Coach RH & Talent',
+    squad: 'Protostar Human',
+    color: 'lime',
+    iconEmoji: '🦜',
+    isActive: false,
+    position: { x: 250, y: 500 },
+    isChatOpen: false,
+    status: 'idle',
+    bio: 'Perroquet expert en dynamique humaine, préparation des 1-on-1 et bien-être d\'équipe.',
+    personality: 'Chaleureux, communicatif et bienveillant.',
+    suggestedPrompt: 'Préparer l\'ordre du jour du prochain 1-on-1 avec Marc Dupont.',
+    messages: [
+      { id: 'm6', sender: 'agent', text: 'Cui-cui ! Prêt à synthétiser les feedbacks et valoriser l\'excellence de l\'équipe.', timestamp: Date.now() - 5000 }
+    ]
+  },
+  {
+    id: 'agent-genius',
+    name: 'Squad-GreenLantern-People',
+    avatarName: 'Genius',
+    avatarType: 'genius',
+    role: 'Stratège Croissance & Marketing',
+    squad: 'Green Lantern Growth',
+    color: 'teal',
+    iconEmoji: '🧠',
+    isActive: false,
+    position: { x: 120, y: 220 },
+    isChatOpen: false,
+    status: 'idle',
+    bio: 'Cerveau analytique dédié au funnel d\'acquisition, aux campagnes payantes et au SEO.',
+    personality: 'Visionnaire, axé sur les résultats et le ROI.',
+    suggestedPrompt: 'Optimiser le budget publicitaire Google Ads et le taux de conversion.',
+    messages: [
+      { id: 'm7', sender: 'agent', text: 'Stratégie de croissance prête pour le prochain trimestre. Demandons un audit de campagne.', timestamp: Date.now() }
+    ]
+  },
+  {
+    id: 'agent-rocky',
+    name: 'Jerry-SYSTEMIZE-Squad',
+    avatarName: 'Rocky',
+    avatarType: 'rocky',
+    role: 'Sécurité & Conformité SOC2',
+    squad: 'Systemize Defense',
+    color: 'rose',
+    iconEmoji: '🥊',
+    isActive: false,
+    position: { x: 150, y: 360 },
+    isChatOpen: false,
+    status: 'idle',
+    bio: 'Boxeur de la sécurité informatique, veille à la conformité RGPD, aux logs d\'audit et aux tokens.',
+    personality: 'Robuste, protecteur, intransigeant face aux menaces.',
+    suggestedPrompt: 'Lancer un scan de sécurité et vérifier les sessions actives.',
+    messages: [
+      { id: 'm8', sender: 'agent', text: 'Garde levée ! Périmètre réseau sécurisé et politiques RLS verrouillées.', timestamp: Date.now() }
+    ]
+  }
+];
+
 interface OSStoreState {
   isLocked: boolean;
   paradigm: Paradigm;
@@ -239,6 +402,21 @@ interface OSStoreState {
   toggleThemeMenu: () => void;
   setThemeMenuOpen: (open: boolean) => void;
   cycleRandomDarkTheme: () => ThemeId;
+
+  // Coach OS Agents System (inspired by Ryos & OMK Desktop Web OS)
+  agents: CoachAgent[];
+  isAgentsMenuOpen: boolean;
+  openAgentsMenu: () => void;
+  closeAgentsMenu: () => void;
+  toggleAgentsMenu: () => void;
+  toggleAgentActive: (agentId: string) => void;
+  setAgentActive: (agentId: string, active: boolean) => void;
+  toggleAgentChat: (agentId: string) => void;
+  closeAllAgentChats: () => void;
+  setAgentPosition: (agentId: string, pos: { x: number; y: number }) => void;
+  turnOffAllAgents: () => void;
+  activateAllAgents: () => void;
+  sendAgentMessage: (agentId: string, text: string) => void;
   
   // Notification Center
   notifications: OSNotification[];
@@ -853,6 +1031,151 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
   simulateIncomingAlert: () => {
     const randomAlert = SIMULATED_ALERTS[Math.floor(Math.random() * SIMULATED_ALERTS.length)];
     get().addNotification(randomAlert);
+  },
+
+  // Coach OS Agents System (inspired by Ryos & OMK Desktop Web OS)
+  agents: INITIAL_COACH_AGENTS,
+  isAgentsMenuOpen: false,
+  openAgentsMenu: () => {
+    haptics.trigger('light');
+    set({ isAgentsMenuOpen: true, isThemeMenuOpen: false, isNotificationCenterOpen: false });
+  },
+  closeAgentsMenu: () => set({ isAgentsMenuOpen: false }),
+  toggleAgentsMenu: () => {
+    haptics.trigger('light');
+    set((state) => ({ 
+      isAgentsMenuOpen: !state.isAgentsMenuOpen,
+      isThemeMenuOpen: false,
+      isNotificationCenterOpen: false
+    }));
+  },
+  toggleAgentActive: (agentId: string) => {
+    haptics.trigger('selection');
+    set((state) => ({
+      agents: state.agents.map((ag) =>
+        ag.id === agentId ? { ...ag, isActive: !ag.isActive } : ag
+      )
+    }));
+  },
+  setAgentActive: (agentId: string, active: boolean) => {
+    haptics.trigger('selection');
+    set((state) => ({
+      agents: state.agents.map((ag) =>
+        ag.id === agentId ? { ...ag, isActive: active } : ag
+      )
+    }));
+  },
+  toggleAgentChat: (agentId: string) => {
+    haptics.trigger('selection');
+    set((state) => ({
+      agents: state.agents.map((ag) =>
+        ag.id === agentId ? { ...ag, isChatOpen: !ag.isChatOpen } : ag
+      )
+    }));
+  },
+  closeAllAgentChats: () => {
+    set((state) => ({
+      agents: state.agents.map((ag) => ({ ...ag, isChatOpen: false }))
+    }));
+  },
+  setAgentPosition: (agentId: string, pos: { x: number; y: number }) => {
+    set((state) => ({
+      agents: state.agents.map((ag) =>
+        ag.id === agentId ? { ...ag, position: pos } : ag
+      )
+    }));
+  },
+  turnOffAllAgents: () => {
+    haptics.trigger('warning');
+    set((state) => ({
+      agents: state.agents.map((ag) => ({ ...ag, isActive: false, isChatOpen: false }))
+    }));
+  },
+  activateAllAgents: () => {
+    haptics.trigger('success');
+    set((state) => ({
+      agents: state.agents.map((ag) => ({ ...ag, isActive: true }))
+    }));
+  },
+  sendAgentMessage: (agentId: string, text: string) => {
+    if (!text.trim()) return;
+    const userMsg = {
+      id: `msg-${Date.now()}-u`,
+      sender: 'user' as const,
+      text: text.trim(),
+      timestamp: Date.now()
+    };
+    
+    set((state) => ({
+      agents: state.agents.map((ag) => {
+        if (ag.id !== agentId) return ag;
+        return {
+          ...ag,
+          status: 'thinking',
+          messages: [...ag.messages, userMsg]
+        };
+      })
+    }));
+
+    // Generate smart context-aware agent response
+    setTimeout(() => {
+      const responses: Record<string, string[]> = {
+        'agent-clippy': [
+          "J'ai vérifié vos applications ouvertes. Tout est synchronisé avec les bases locales IndexedDB.",
+          "Excellente idée ! J'ai enregistré cette tâche dans le journal du système.",
+          "Besoin d'un raccourci ? Tapez ⌘K ou cliquez sur les widgets pour y accéder directement."
+        ],
+        'agent-links': [
+          "Latence Supabase stable à 38ms. Tous les microservices REST et GraphQL répondent avec succès (200 OK).",
+          "Pipeline CI/CD vérifié : 0 régression détectée sur l'ensemble des 18 modules applicatifs."
+        ],
+        'agent-rover': [
+          "Analyse de conversion : Le taux de rétention client a bondi de +8.4% ce trimestre !",
+          "L'objectif prévisionnel de $150k MRR sera atteint d'ici la fin du mois selon les tendances de facturation."
+        ],
+        'agent-merlin': [
+          "Architecture vérifiée : Typage TypeScript strict et politiques RLS Supabase validées avec succès.",
+          "Le design system UI/UX Pro Max applique désormais toutes les contraintes de contrastes et micro-interactions."
+        ],
+        'agent-genie': [
+          "Workflow n8n de réconciliation financière exécuté avec succès. Aucune divergence détectée.",
+          "J'ai synchronisé les nouvelles opportunités du pipeline Sales OS avec les contrats clients."
+        ],
+        'agent-peedy': [
+          "Entretien 1-on-1 préparé avec succès. Les objectifs trimestriels et scores CSAT sont consolidés.",
+          "Les demandes de congés et les plannings d'astreinte sont synchronisés au calendrier."
+        ],
+        'agent-genius': [
+          "Score SEO en hausse de +12 points. Les mots-clés stratégiques se positionnent dans le Top 3.",
+          "Campagne d'acquisition optimisée : Coût par acquisition (CAC) réduit de 18% ce mois-ci."
+        ],
+        'agent-rocky': [
+          "Scan de sécurité complet : 0 vulnérabilité détectée. Pare-feu applicatif et chiffrement AES-256 actifs.",
+          "Toutes les sessions de l'organisation respectent les exigences de conformité SOC2 Type II."
+        ]
+      };
+      
+      const pool = responses[agentId] || ["Ordre bien reçu et exécuté dans l'écosystème OMK !"];
+      const replyText = pool[Math.floor(Math.random() * pool.length)];
+
+      const agentReply = {
+        id: `msg-${Date.now()}-a`,
+        sender: 'agent' as const,
+        text: replyText,
+        timestamp: Date.now()
+      };
+
+      set((state) => ({
+        agents: state.agents.map((ag) => {
+          if (ag.id !== agentId) return ag;
+          return {
+            ...ag,
+            status: 'idle',
+            messages: [...ag.messages, agentReply]
+          };
+        })
+      }));
+    }, 600);
   }
 }));
 
