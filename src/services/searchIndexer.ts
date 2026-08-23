@@ -427,9 +427,11 @@ export class SearchIndexingService {
     ];
     catalog.push(...actionItems);
 
-    // Optimization: Pre-normalize all keywords to lowercase during catalog construction.
-    // This avoids thousands of redundant .toLowerCase() string allocations per keystroke during search scoring.
+    // Optimization: Pre-normalize all keywords, title, and subtitle to lowercase during catalog construction.
+    // This eliminates redundant .toLowerCase() string allocations per item per keystroke during search scoring.
     catalog.forEach(item => {
+      item._titleLower = item.title.toLowerCase();
+      item._subLower = item.subtitle.toLowerCase();
       if (item.keywords) {
         item.keywords = item.keywords.map(k => k.toLowerCase());
       }
@@ -466,11 +468,11 @@ export class SearchIndexingService {
     const cleanQuery = query.toLowerCase().trim();
     const queryTokens = cleanQuery.split(/\s+/).filter(Boolean);
 
-    // Score items based on match precision
+    // Score items based on match precision using pre-lowercased string references
     const scored = pool.map(item => {
       let score = 0;
-      const titleLower = item.title.toLowerCase();
-      const subLower = item.subtitle.toLowerCase();
+      const titleLower = item._titleLower || item.title.toLowerCase();
+      const subLower = item._subLower || item.subtitle.toLowerCase();
       const keywords = item.keywords || [];
 
       // Exact title match gets highest score
@@ -481,7 +483,7 @@ export class SearchIndexingService {
       // Subtitle match
       if (subLower.includes(cleanQuery)) score += 20;
 
-      // Token matches using pre-normalized keywords (avoids allocation in loop)
+      // Token matches using pre-normalized strings & keywords (avoids allocation in loop)
       for (const token of queryTokens) {
         if (titleLower.includes(token)) score += 15;
         if (subLower.includes(token)) score += 8;
