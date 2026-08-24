@@ -67,31 +67,34 @@ interface NavTab {
 
 // 4 Onglets Métier Centraux
 const PRIMARY_TABS: NavTab[] = [
-  { id: 'profiles', label: 'Profils Master', icon: Users, badge: '18 CVs' },
-  { id: 'dispatch', label: 'Multi-Dispatch 1-Click', icon: Send, badge: 'SLA 48h' },
-  { id: 'training', label: 'Formations & Bilans', icon: GraduationCap, badge: 'CPF / CACES' },
-  { id: 'affiliates', label: 'Affiliation ($50/filleul)', icon: DollarSign, badge: '$50/u' }
-];
+  { id: 'profiles', label: 'Profils', badge: '18 CVs' },
+  { id: 'dispatch', label: 'Dispatch', badge: 'SLA 48h' },
+  { id: 'training', label: 'Formations', badge: 'CPF/CACES' },
+  { id: 'affiliates', label: 'Affiliation', badge: '$50/u' }
+].map(t => ({
+  ...t,
+  icon: t.id === 'profiles' ? Users : t.id === 'dispatch' ? Send : t.id === 'training' ? GraduationCap : DollarSign
+}));
 
 // Menu Extensible sur 3 Lignes de Rubriques Métier (12 sous-pages)
 const EXTENDED_TABS: NavTab[] = [
   // Ligne 1 : Candidats & Accélération de Carrière
-  { id: 'audit_cv', label: 'Audit CV & Scoring IA', icon: FileSearch, badge: 'ATS 98%', desc: 'Diagnostic sémantique, extraction des mots-clés et optimisation 1-Click', row: 1 },
-  { id: 'interview_sim', label: 'Simulations Entretiens IA', icon: MessageSquareCode, badge: 'Live', desc: 'Entraînement vocal et mise en situation face au coach recruteur virtuel', row: 1 },
-  { id: 'skills_passport', label: 'Passeport Compétences', icon: Award, badge: 'CACES 1-3-5', desc: 'Registre blockchain des certifications, permis cariste et habilitations SST', row: 1 },
-  { id: 'job_radar', label: 'Radar Offres 30km', icon: Compass, badge: 'Bassin Local', desc: 'Scraping d\'opportunités d\'embauche prioritaires en flux continu', row: 1 },
+  { id: 'audit_cv', label: 'Audit CV & IA', icon: FileSearch, badge: 'ATS 98%', desc: 'Diagnostic sémantique & scoring 1-Click', row: 1 },
+  { id: 'interview_sim', label: 'Simulations IA', icon: MessageSquareCode, badge: 'Live Vocal', desc: 'Entraînement face au coach recruteur', row: 1 },
+  { id: 'skills_passport', label: 'Passeport CACES', icon: Award, badge: 'R489/SST', desc: 'Registre certifications & habilitations', row: 1 },
+  { id: 'job_radar', label: 'Radar Offres', icon: Compass, badge: 'IDF 30km', desc: 'Opportunités prioritaires en continu', row: 1 },
 
   // Ligne 2 : Réseau Entreprises & Dispatch
-  { id: 'hubs_map', label: 'Bassins & Entrepôts', icon: Building2, badge: 'Hubs IDF', desc: 'Cartographie des plateformes logistiques partenaires (Garonor, Rungis...)', row: 2 },
-  { id: 'recruiters_sla', label: 'Réseau Recruteurs SLA', icon: ShieldCheck, badge: '48h Garanti', desc: 'Conventions d\'engagement mutuel et suivi des réponses sous 48 heures', row: 2 },
-  { id: 'contracts_1click', label: 'Contrats 1-Click', icon: FileCheck, badge: 'eIDAS', desc: 'Génération et signature numérique de promesses d\'embauche et conventions', row: 2 },
-  { id: 'trial_followup', label: 'Suivi Période d\'Essai', icon: Activity, badge: 'Garantie J+60', desc: 'Points de contrôle J+7, J+30 et garantie de remplacement candidat', row: 2 },
+  { id: 'hubs_map', label: 'Bassins Hubs', icon: Building2, badge: 'IDF', desc: 'Garonor, Rungis et entrepôts partenaires', row: 2 },
+  { id: 'recruiters_sla', label: 'Réseau SLA', icon: ShieldCheck, badge: '48h Garanti', desc: 'Conventions de réponse sous 48 heures', row: 2 },
+  { id: 'contracts_1click', label: 'Contrats 1-Click', icon: FileCheck, badge: 'eIDAS', desc: 'Signature numérique promesses d\'embauche', row: 2 },
+  { id: 'trial_followup', label: 'Suivi Essai J+60', icon: Activity, badge: 'Garantie', desc: 'Points de contrôle J+7, J+30 et relais', row: 2 },
 
   // Ligne 3 : Monétisation, Bilans & Affiliés
-  { id: 'ambassadors_rank', label: 'Réseau Ambassadeurs', icon: Trophy, badge: 'Top 10', desc: 'Classement des parrains actifs, commissions débloquées et kit de parrainage', row: 3 },
-  { id: 'funding_cpf', label: 'Financements CPF & OPCO', icon: Landmark, badge: '100% Pris en charge', desc: 'Instruction des dossiers Qualiopi, abondements région et tiers-payant', row: 3 },
-  { id: 'webinars_pro', label: 'Webinaires Pro & Live', icon: Video, badge: 'Hebdo', desc: 'Sessions collectives de coaching, masterclasses logistique et replays', row: 3 },
-  { id: 'analytics_roi', label: 'Analytics & Taux Insertion', icon: BarChart3, badge: '94.2% ROI', desc: 'Mesure de performance de l\'abonnement annuel $300/an et salaire moyen', row: 3 }
+  { id: 'ambassadors_rank', label: 'Ambassadeurs', icon: Trophy, badge: 'Top 10', desc: 'Parrains actifs, gains & kits partage', row: 3 },
+  { id: 'funding_cpf', label: 'Financement CPF', icon: Landmark, badge: 'Qualiopi', desc: 'Instruction dossiers OPCO & tiers-payant', row: 3 },
+  { id: 'webinars_pro', label: 'Webinaires Pro', icon: Video, badge: 'Hebdo', desc: 'Masterclasses collectives & coaching live', row: 3 },
+  { id: 'analytics_roi', label: 'Analytics ROI', icon: BarChart3, badge: '94.2%', desc: 'Mesure performance abonnement $300/an', row: 3 }
 ];
 
 // DONNÉES INITIALES MÉTIER
@@ -697,11 +700,11 @@ export default function JaaS() {
               className="overflow-hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-3 shadow-2xl space-y-3"
             >
               <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 px-1">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
-                  <SlidersHorizontal size={13} className="text-emerald-400" />
-                  <span>Architecture Métier JaaS (JOB as a Service - $300)</span>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-200 min-w-0">
+                  <SlidersHorizontal size={13} className="text-emerald-400 shrink-0" />
+                  <span className="truncate font-bold">Architecture Métier JaaS ($300)</span>
                 </div>
-                <span className="text-[10px] text-emerald-400 font-mono">
+                <span className="text-[10px] text-emerald-400 font-mono shrink-0">
                   12 Modules
                 </span>
               </div>
@@ -712,7 +715,7 @@ export default function JaaS() {
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                   Ligne 1 : Candidats & Accélération de Carrière
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-2 gap-2">
                   {EXTENDED_TABS.filter(t => t.row === 1).map((tab) => {
                     const isActive = activeTab === tab.id;
                     const Icon = tab.icon;
@@ -723,29 +726,29 @@ export default function JaaS() {
                           handleTabSelect(tab.id);
                           setIsMenuExpanded(false);
                         }}
-                        className={`flex items-center gap-2 p-2 rounded-xl border text-left transition-all ${
+                        className={`flex items-start gap-2 p-2 rounded-xl border text-left transition-all ${
                           isActive
-                            ? 'bg-emerald-500/15 border-emerald-500/50 text-slate-100 shadow-sm'
-                            : 'bg-slate-950/60 border-slate-800/80 text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                            ? 'bg-emerald-500/15 border-emerald-500/60 text-slate-100 shadow-sm ring-1 ring-emerald-500/30'
+                            : 'bg-slate-950/80 border-slate-800/90 text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
                           isActive ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300'
                         }`}>
-                          <Icon size={14} />
+                          <Icon size={13} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="text-[10.5px] font-semibold truncate leading-tight">
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <span className="text-[10.5px] font-bold truncate leading-tight">
                               {tab.label}
                             </span>
                             {tab.badge && (
-                              <span className="text-[8px] px-1 py-0.2 rounded bg-slate-800 text-slate-300 font-mono shrink-0">
+                              <span className="text-[7.5px] px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono shrink-0">
                                 {tab.badge}
                               </span>
                             )}
                           </div>
-                          <p className="text-[8.5px] text-slate-400 truncate mt-0.5">
+                          <p className="text-[8.5px] text-slate-400 line-clamp-1 leading-snug">
                             {tab.desc}
                           </p>
                         </div>
@@ -761,7 +764,7 @@ export default function JaaS() {
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                   Ligne 2 : Réseau Entreprises & Multi-Dispatch
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-2 gap-2">
                   {EXTENDED_TABS.filter(t => t.row === 2).map((tab) => {
                     const isActive = activeTab === tab.id;
                     const Icon = tab.icon;
@@ -772,29 +775,29 @@ export default function JaaS() {
                           handleTabSelect(tab.id);
                           setIsMenuExpanded(false);
                         }}
-                        className={`flex items-center gap-2 p-2 rounded-xl border text-left transition-all ${
+                        className={`flex items-start gap-2 p-2 rounded-xl border text-left transition-all ${
                           isActive
-                            ? 'bg-blue-500/15 border-blue-500/50 text-slate-100 shadow-sm'
-                            : 'bg-slate-950/60 border-slate-800/80 text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                            ? 'bg-blue-500/15 border-blue-500/60 text-slate-100 shadow-sm ring-1 ring-blue-500/30'
+                            : 'bg-slate-950/80 border-slate-800/90 text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
                           isActive ? 'bg-blue-500 text-slate-950' : 'bg-slate-800 text-slate-300'
                         }`}>
-                          <Icon size={14} />
+                          <Icon size={13} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="text-[10.5px] font-semibold truncate leading-tight">
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <span className="text-[10.5px] font-bold truncate leading-tight">
                               {tab.label}
                             </span>
                             {tab.badge && (
-                              <span className="text-[8px] px-1 py-0.2 rounded bg-slate-800 text-slate-300 font-mono shrink-0">
+                              <span className="text-[7.5px] px-1 py-0.2 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30 font-mono shrink-0">
                                 {tab.badge}
                               </span>
                             )}
                           </div>
-                          <p className="text-[8.5px] text-slate-400 truncate mt-0.5">
+                          <p className="text-[8.5px] text-slate-400 line-clamp-1 leading-snug">
                             {tab.desc}
                           </p>
                         </div>
@@ -808,9 +811,9 @@ export default function JaaS() {
               <div>
                 <div className="text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-1.5 px-1 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                  Ligne 3 : Monétisation, Bilans & Réseau d\'Affiliation
+                  Ligne 3 : Monétisation, Bilans & Réseau d'Affiliation
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-2 gap-2">
                   {EXTENDED_TABS.filter(t => t.row === 3).map((tab) => {
                     const isActive = activeTab === tab.id;
                     const Icon = tab.icon;
@@ -821,29 +824,29 @@ export default function JaaS() {
                           handleTabSelect(tab.id);
                           setIsMenuExpanded(false);
                         }}
-                        className={`flex items-center gap-2 p-2 rounded-xl border text-left transition-all ${
+                        className={`flex items-start gap-2 p-2 rounded-xl border text-left transition-all ${
                           isActive
-                            ? 'bg-amber-500/15 border-amber-500/50 text-slate-100 shadow-sm'
-                            : 'bg-slate-950/60 border-slate-800/80 text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                            ? 'bg-amber-500/15 border-amber-500/60 text-slate-100 shadow-sm ring-1 ring-amber-500/30'
+                            : 'bg-slate-950/80 border-slate-800/90 text-slate-300 hover:bg-slate-800/80 hover:text-white'
                         }`}
                       >
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
                           isActive ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300'
                         }`}>
-                          <Icon size={14} />
+                          <Icon size={13} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="text-[10.5px] font-semibold truncate leading-tight">
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <span className="text-[10.5px] font-bold truncate leading-tight">
                               {tab.label}
                             </span>
                             {tab.badge && (
-                              <span className="text-[8px] px-1 py-0.2 rounded bg-slate-800 text-slate-300 font-mono shrink-0">
+                              <span className="text-[7.5px] px-1 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono shrink-0">
                                 {tab.badge}
                               </span>
                             )}
                           </div>
-                          <p className="text-[8.5px] text-slate-400 truncate mt-0.5">
+                          <p className="text-[8.5px] text-slate-400 line-clamp-1 leading-snug">
                             {tab.desc}
                           </p>
                         </div>
@@ -917,7 +920,7 @@ export default function JaaS() {
                 <span className="text-[10px] text-slate-400 mt-1 font-mono">SLA &lt; 48h</span>
               </div>
               <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Taux d\'Employabilité</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Taux d'Employabilité</span>
                 <div className="text-xl font-black text-emerald-400 mt-1">94.2%</div>
                 <span className="text-[10px] text-emerald-400 mt-1 font-mono">Score IA Moyen</span>
               </div>
@@ -1099,7 +1102,7 @@ export default function JaaS() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-slate-100">Catalogue Certifiant Qualiopi & CPF</h3>
-                <p className="text-xs text-slate-400">Passeports CACES, bilans d\'employabilité et montée en compétences</p>
+                <p className="text-xs text-slate-400">Passeports CACES, bilans d'employabilité et montée en compétences</p>
               </div>
               <span className="text-xs px-2.5 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-mono font-bold">
                 100% Finançable CPF
@@ -1168,7 +1171,7 @@ export default function JaaS() {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-slate-100">Programme Ambassadeur : $50 / Filleul</h3>
-                    <p className="text-xs text-slate-400">Objectif : 6 filleuls inscrits à l\'offre JaaS ($300) = Abonnement 100% remboursé</p>
+                    <p className="text-xs text-slate-400">Objectif : 6 filleuls inscrits à l'offre JaaS ($300) = Abonnement 100% remboursé</p>
                   </div>
                 </div>
                 <button
@@ -1262,7 +1265,7 @@ export default function JaaS() {
         {activeTab === 'audit_cv' && (
           <div className="space-y-4">
             <h3 className="text-sm font-bold text-slate-100">Audit CV & Scoring IA (Normes ATS 2026)</h3>
-            <p className="text-xs text-slate-400">Diagnostic sémantique pour caristes, chefs d\'équipe et préparateurs.</p>
+            <p className="text-xs text-slate-400">Diagnostic sémantique pour caristes, chefs d'équipe et préparateurs.</p>
             <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-300 font-semibold">Diagnostic automatique pour Karim Benali</span>
@@ -1279,7 +1282,7 @@ export default function JaaS() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-100">Simulations d\'Entretiens IA en Live</h3>
+                <h3 className="text-sm font-bold text-slate-100">Simulations d'Entretiens IA en Live</h3>
                 <p className="text-xs text-slate-400">Entraînement immersif avec feedback immédiat du recruteur virtuel</p>
               </div>
               <button
@@ -1344,7 +1347,7 @@ export default function JaaS() {
 
         {activeTab === 'job_radar' && (
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-100">Radar Offres d\'Emploi Bassin 30km</h3>
+            <h3 className="text-sm font-bold text-slate-100">Radar Offres d'Emploi Bassin 30km</h3>
             <p className="text-xs text-slate-400">Scraping continu des postes prioritaires IDF</p>
             <div className="space-y-2">
               <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">

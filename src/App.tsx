@@ -43,12 +43,14 @@ export default function App() {
 
   const power = usePowerManager();
 
-  // Initialize IndexedDB offline cache on mount
+  // Initialize IndexedDB offline cache on mount & expose dev test hooks
   useEffect(() => {
+    (window as any).__openApp = openApp;
+    (window as any).__unlock = unlock;
     OfflineStorageService.init().then(() => {
       OfflineStorageService.seedDefaultOfflineCache(workspace);
     });
-  }, [workspace]);
+  }, [workspace, openApp, unlock]);
 
   // Automated background sync loop throttled by power manager (30s in Low Power vs 5s normal)
   useEffect(() => {
