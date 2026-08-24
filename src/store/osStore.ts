@@ -543,7 +543,7 @@ const getInitialBrightness = (): number => {
   return 100;
 };
 
-const DEFAULT_PINNED_WIDGETS = ['widget-coach-ai', 'widget-finance', 'widget-clients', 'widget-tasks'];
+const DEFAULT_PINNED_WIDGETS = ['widget-coach-ai', 'widget-jaas', 'widget-finance', 'widget-clients', 'widget-tasks'];
 
 const getInitialPinnedWidgets = (): string[] => {
   if (typeof window !== 'undefined') {
@@ -568,6 +568,7 @@ const getInitialWidgetOrder = (): string[] => {
   }
   return [
     'widget-alerts',
+    'widget-jaas',
     'widget-coach-ai',
     'widget-finance',
     'widget-clients',

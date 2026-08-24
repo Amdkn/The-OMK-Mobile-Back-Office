@@ -163,6 +163,23 @@ export class AppWidgetRegistry {
         trendValue: '38% conv.',
         isPinned: false
       },
+      // JaaS JOB as a Service Widget
+      {
+        id: 'widget-jaas',
+        appId: 'jaas-job',
+        title: 'JaaS JOB ($300)',
+        category: 'Insertion',
+        size: 'small',
+        value: '18 Profils',
+        subValue: '94.2% Taux Placement',
+        icon: Users2,
+        accentColor: 'emerald',
+        badge: '1-Click Dispatch',
+        updatedAt: 'Live SLA 48h',
+        trend: 'up',
+        trendValue: '+4 dispatches',
+        isPinned: false
+      },
       // PaaS Pro Infrastructure Widget
       {
         id: 'widget-paas',

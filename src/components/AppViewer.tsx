@@ -17,7 +17,7 @@ import LoadingSkeleton from './layout/LoadingSkeleton';
 import BusinessModuleDashboard from './layout/BusinessModuleDashboard';
 import CoachAI from './apps/CoachAI';
 import BaaSHub from './apps/BaaSHub';
-import JaaSJob from './apps/JaaSJob';
+import JaaS from './apps/JaaS';
 import PaaSPro from './apps/PaaSPro';
 import Wallet from './apps/Wallet';
 import Leads from './apps/Leads';
@@ -228,7 +228,7 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
     switch (appId) {
       case 'coach-ai': return <CoachAI />;
       case 'baas-hub': return <BaaSHub />;
-      case 'jaas-job': return <JaaSJob />;
+      case 'jaas-job': return <JaaS />;
       case 'paas-pro': return <PaaSPro />;
       case 'wallet': return <Wallet />;
       case 'leads': return <Leads />;

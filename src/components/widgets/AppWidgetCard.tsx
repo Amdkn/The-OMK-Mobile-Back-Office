@@ -5,6 +5,7 @@ import {
   ArrowUpRight, TrendingUp, TrendingDown, Minus, 
   Pin, PinOff, GripVertical 
 } from 'lucide-react';
+import JaaSAppWidget from './JaaSAppWidget';
 
 interface AppWidgetCardProps {
   key?: React.Key;
@@ -24,6 +25,18 @@ export default function AppWidgetCard({
   isCustomizing = false,
   onTogglePin
 }: AppWidgetCardProps) {
+  // If this is the JaaS widget and not in customization mode, render the rich specialized widget
+  if (!isCustomizing && (widget.id === 'widget-jaas' || widget.appId === 'jaas-job')) {
+    return (
+      <JaaSAppWidget
+        widget={widget}
+        onClick={onClick}
+        className={className}
+        isCompact={isCompact}
+      />
+    );
+  }
+
   const Icon = widget.icon;
 
   const handleClick = (e: React.MouseEvent) => {

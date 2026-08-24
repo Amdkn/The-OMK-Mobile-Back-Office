@@ -379,4 +379,125 @@ export interface CoachAgent {
   messages: CoachAgentMessage[];
 }
 
+// --- JAAS (JOB AS A SERVICE) & OMK MÉTIER DOMAIN TYPES ---
+
+export interface Candidat {
+  id: string;
+  nomComplet: string;
+  posteCible: string;
+  bassinEmploi: string;
+  scoreEmployabilite: number; // 0 - 100
+  statut: 'en_attente_dispatch' | 'dispatche' | 'entretien_planifie' | 'embauche' | 'en_formation';
+  anneesExperience: string;
+  competences: string[];
+  certifications: string[];
+  email: string;
+  telephone: string;
+  pretentionSalariale: string;
+  cvOptimiseUrl?: string;
+  auditIANotes: string;
+  nombreDispatches: number;
+  dateDernierDispatch?: string;
+  formuleAbonnement: 'jaas_annuel_300';
+  dateInscription: string;
+  // Backward-compatibility aliases
+  fullName?: string;
+  roleTarget?: string;
+  location?: string;
+  matchScore?: number;
+  status?: string;
+  experienceYears?: string;
+  skills?: string[];
+  salaryTarget?: string;
+}
+
+export interface Entreprise {
+  id: string;
+  nom: string;
+  secteur: 'Logistique & Entrepôt' | 'Retail & Distribution' | 'Services Pro' | 'Tech & Numérique' | 'Industrie Verte';
+  bassin: string;
+  adresse: string;
+  contactRH: string;
+  emailRH: string;
+  telephoneRH: string;
+  slaHeures: number; // default 48h
+  postesOuverts: number;
+  recrutementsJaaS: number;
+  statutPartenaire: 'actif' | 'en_attente' | 'certifie_omk';
+  dateConvention: string;
+  rating?: number;
+  notes?: string;
+}
+
+export interface ProjetCirculaire {
+  id: string;
+  titre: string;
+  candidatId: string;
+  candidatNom: string;
+  entrepriseId?: string;
+  entrepriseNom: string;
+  statut: 'cadrage' | 'formation_sas' | 'placement_actif' | 'periode_essai' | 'cdi_valide';
+  progression: number; // 0 - 100%
+  parrainId?: string;
+  parrainNom?: string;
+  mentorNom: string;
+  prochaineEtape: string;
+  financementCPF: boolean;
+  gainAnnuelEstime: string;
+  dateDemarrage: string;
+  slaDaysRemaining?: number;
+}
+
+export interface TransactionAffiliation {
+  id: string;
+  parrainNom: string;
+  parrainEmail: string;
+  codeParrain: string;
+  filleulNom: string;
+  filleulEmail: string;
+  montantCommission: number; // $50/filleul
+  statut: 'credite' | 'en_attente' | 'verse';
+  dateTransaction: string;
+  planAbonnement: 'JaaS $300/an';
+  factureRef: string;
+  modePaiement?: 'Stripe Connect' | 'Virement SEPA' | 'Solde OMK';
+}
+
+// Aliases for compatibility
+export type JaaSCandidate = Candidat;
+
+export interface JaaSDispatchMission {
+  id: string;
+  candidateId: string;
+  candidateName: string;
+  candidateRole: string;
+  companyName: string;
+  sector: 'Logistique & Entrepôt' | 'Retail & Distribution' | 'Services Pro' | 'Tech & Numérique' | 'Industrie Verte';
+  location: string;
+  status: 'sent' | 'interview_confirmed' | 'offer_received' | 'onboarding';
+  slaHoursRemaining: number;
+  dispatchedAt: string;
+  recruiterContact: string;
+  salaryProposed: string;
+  aiMatchingReason: string;
+}
+
+export interface JaaSFormation {
+  id: string;
+  title: string;
+  category: 'CACES & Logistique' | 'Bilan & Soft Skills' | 'IA & Numérique' | 'Management Terrain' | 'Sécurité & SST';
+  durationHours: number;
+  enrolledCandidates: number;
+  completionRate: number; // %
+  certifyingBody: string; // Qualiopi, CPF, OMK Academy
+  badgeCode: string;
+  status: 'active' | 'scheduled' | 'completed';
+  nextSessionDate: string;
+  aiSyllabusSummary: string;
+}
+
+export type JaaSReferral = TransactionAffiliation;
+
+
+
 
