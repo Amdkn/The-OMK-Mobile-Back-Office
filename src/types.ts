@@ -4,6 +4,7 @@ export type AppId =
   | 'coach-ai'
   | 'baas-hub'
   | 'jaas-job'
+  | 'job-app'
   | 'paas-pro'
   | 'wallet'
   | 'leads'

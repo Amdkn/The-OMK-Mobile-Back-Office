@@ -180,6 +180,23 @@ export class AppWidgetRegistry {
         trendValue: '+4 dispatches',
         isPinned: false
       },
+      // Job App Widget
+      {
+        id: 'widget-job-app',
+        appId: 'job-app',
+        title: 'Job App',
+        category: 'Insertion',
+        size: 'small',
+        value: '18 Profils',
+        subValue: '94.2% Taux Placement',
+        icon: Users2,
+        accentColor: 'emerald',
+        badge: '1-Click Dispatch',
+        updatedAt: 'Live SLA 48h',
+        trend: 'up',
+        trendValue: '+4 dispatches',
+        isPinned: false
+      },
       // PaaS Pro Infrastructure Widget
       {
         id: 'widget-paas',

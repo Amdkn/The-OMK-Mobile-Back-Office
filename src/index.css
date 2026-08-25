@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+html, body, #root {
+  background-color: #05070c;
+  color: #f8fafc;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
 @layer utilities {
   .scrollbar-hide {
     /* IE and Edge */

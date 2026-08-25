@@ -55,6 +55,7 @@ export class SearchIndexingService {
       'coach-ai': ['ia', 'intelligence', 'briefing', 'assistant', 'recommandations', 'automatisation', 'ai'],
       'baas-hub': ['blockchain', 'smart contracts', 'conformité', 'audit', 'légal', 'fintech', 'baas'],
       'jaas-job': ['recrutement', 'talents', 'rh', 'hiring', 'candidats', 'carrière', 'job', 'jaas'],
+      'job-app': ['recrutement', 'talents', 'rh', 'hiring', 'candidats', 'carrière', 'job', 'job app', 'jaas'],
       'paas-pro': ['serveur', 'cloud', 'docker', 'kubernetes', 'cluster', 'devops', 'scale', 'paas'],
       'wallet': ['trésorerie', 'paiements', 'crypto', 'soldes', 'devises', 'stripe', 'banque'],
       'leads': ['prospection', 'crm', 'pipeline', 'outreach', 'opportunités', 'b2b', 'appels', 'campagnes'],

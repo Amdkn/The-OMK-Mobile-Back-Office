@@ -88,7 +88,7 @@ export function useDeviceLayout(containerRef?: React.RefObject<HTMLElement | nul
       };
     }
 
-    if (deviceViewMode === 'portrait') {
+    if (deviceViewMode === 'portrait' || deviceViewMode === 'auto') {
       return {
         orientation: 'portrait',
         isLandscape: false,
@@ -108,8 +108,8 @@ export function useDeviceLayout(containerRef?: React.RefObject<HTMLElement | nul
           actionsWidth: 'w-[110px]'
         },
         formFactor: 'phone',
-        width,
-        height
+        width: 390,
+        height: 844
       };
     }
 

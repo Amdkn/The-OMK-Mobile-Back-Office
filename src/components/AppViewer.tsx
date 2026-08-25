@@ -18,6 +18,7 @@ import BusinessModuleDashboard from './layout/BusinessModuleDashboard';
 import CoachAI from './apps/CoachAI';
 import BaaSHub from './apps/BaaSHub';
 import JaaS from './apps/JaaS';
+import JobApp from './apps/JobApp';
 import PaaSPro from './apps/PaaSPro';
 import Wallet from './apps/Wallet';
 import Leads from './apps/Leads';
@@ -184,6 +185,7 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
       case 'coach-ai': return 'Coach AI';
       case 'baas-hub': return 'BaaS Hub';
       case 'jaas-job': return 'JaaS JOB';
+      case 'job-app': return 'Job App';
       case 'paas-pro': return 'PaaS PRO';
       case 'wallet': return 'Wallet';
       case 'leads': return 'Leads';
@@ -229,6 +231,7 @@ export default function AppViewer({ appId, onClose }: AppViewerProps) {
       case 'coach-ai': return <CoachAI />;
       case 'baas-hub': return <BaaSHub />;
       case 'jaas-job': return <JaaS />;
+      case 'job-app': return <JobApp />;
       case 'paas-pro': return <PaaSPro />;
       case 'wallet': return <Wallet />;
       case 'leads': return <Leads />;

@@ -59,20 +59,13 @@ const INITIAL_ACTIVITIES: RecentActivityItem[] = [
 ];
 
 const DEFAULT_GRID_APPS: AppId[] = [
-  'notes', 'baas-hub', 'jaas-job', 'paas-pro', 'dashboard', 'finance', 
+  'notes', 'jaas-job', 'job-app', 'dashboard', 'finance', 
   'operations', 'sales', 'clients', 'growth', 'product', 
-  'ontology', 'cognition', 'hr', 'terminal', 'settings'
+  'ontology', 'cognition', 'hr', 'terminal', 'settings',
+  'baas-hub', 'paas-pro'
 ];
 
-const DEFAULT_SMART_FOLDERS: SmartFolder[] = [
-  {
-    id: 'folder-core-fintech',
-    name: 'Fintech & Deals',
-    appIds: ['baas-hub', 'sales'],
-    color: 'emerald',
-    createdAt: Date.now() - 100000
-  }
-];
+const DEFAULT_SMART_FOLDERS: SmartFolder[] = [];
 
 const INITIAL_NOTIFICATIONS: OSNotification[] = [
   {
@@ -480,12 +473,32 @@ const getInitialLockState = () => {
   return true;
 };
 
-const getInitialGridAppOrder = () => {
+const getInitialGridAppOrder = (): AppId[] => {
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem('os_grid_order');
     if (saved) {
       try {
-        return JSON.parse(saved) as AppId[];
+        const parsed = JSON.parse(saved) as AppId[];
+        // Filter valid app IDs
+        const valid = parsed.filter(id => DEFAULT_GRID_APPS.includes(id));
+        // Append any missing apps from DEFAULT_GRID_APPS (such as 'job-app')
+        const missing = DEFAULT_GRID_APPS.filter(id => !valid.includes(id));
+        
+        let merged = [...valid];
+        if (missing.includes('job-app')) {
+          const jaasIdx = merged.indexOf('jaas-job');
+          if (jaasIdx !== -1) {
+            merged.splice(jaasIdx + 1, 0, 'job-app');
+          } else {
+            merged.unshift('job-app');
+          }
+        }
+        for (const m of missing) {
+          if (!merged.includes(m)) {
+            merged.push(m);
+          }
+        }
+        if (merged.length > 0) return merged;
       } catch (e) {}
     }
   }
@@ -753,6 +766,7 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
       'coach-ai': 'Coach AI',
       'baas-hub': 'BaaS Hub',
       'jaas-job': 'JaaS JOB',
+      'job-app': 'Job App',
       'paas-pro': 'PaaS PRO',
       'wallet': 'Wallet',
       'leads': 'Leads',
@@ -787,6 +801,7 @@ export const useOSStore = create<OSStoreState>((set, get) => ({
       'product': '5_Dev_Infra',
       'terminal': '5_Dev_Infra',
       'jaas-job': '6_Operations_RH',
+      'job-app': '6_Operations_RH',
       'operations': '6_Operations_RH',
       'hr': '6_Operations_RH',
       'dashboard': '7_Systeme_Outils',

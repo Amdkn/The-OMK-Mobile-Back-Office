@@ -122,7 +122,7 @@ export const PRESET_TENANTS: TenantInfo[] = [
     allowedModules: [
       'dashboard', 'finance', 'legal', 'operations', 'sales', 'clients',
       'growth', 'product', 'ontology', 'cognition', 'hr', 'security',
-      'notes', 'terminal', 'settings', 'baas-hub', 'jaas-job', 'paas-pro',
+      'notes', 'terminal', 'settings', 'baas-hub', 'jaas-job', 'job-app', 'paas-pro',
       'coach-ai', 'wallet', 'leads'
     ],
     features: ['crm', 'finance', 'hr', 'ops', 'ai', 'paas', 'baas', 'security', 'ontology']
@@ -314,6 +314,7 @@ const MODULE_DEFINITIONS: Array<{ id: AppId; label: string; category: string }> 
   { id: 'settings', label: 'Paramètres Système', category: 'Configuration' },
   { id: 'baas-hub', label: 'BaaS Ledger Hub', category: 'Fintech' },
   { id: 'jaas-job', label: 'JaaS Automations', category: 'Cloud' },
+  { id: 'job-app', label: 'Job App', category: 'RH' },
   { id: 'paas-pro', label: 'PaaS Clusters', category: 'Cloud' },
   { id: 'coach-ai', label: 'Coach IA C-Level', category: 'Intelligence' },
   { id: 'wallet', label: 'Wallet & Cartes', category: 'Finance' },

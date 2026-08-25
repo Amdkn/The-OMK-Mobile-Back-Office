@@ -85,17 +85,16 @@ export default function DynamicWidgetsGrid({
     return orderedAllWidgets.filter(w => pinnedWidgetIds.includes(w.id));
   }, [orderedAllWidgets, pinnedWidgetIds]);
 
-  // Determine how many widgets to display on this page
+  // Determine how many widgets to display on this page (max 2 per page in paginated mode, or max 4 in tablet/landscape)
   const maxDisplayCount = widgetCols >= 4 ? 4 : widgetCols === 3 ? 3 : 2;
   const pageStart = pageIndex * maxDisplayCount;
   const pageEnd = pageStart + maxDisplayCount;
 
-  const visibleWidgets = isCustomizing 
-    ? pinnedWidgets 
-    : pinnedWidgets.slice(pageStart, pageEnd);
+  // In page mode, show only the widgets allocated to this page; in full grid or manager modal, show all
+  const visibleWidgets = pinnedWidgets.slice(pageStart, pageEnd);
 
-  // If pageIndex > 0 and no widgets exist on this page, don't render
-  if (pageIndex > 0 && visibleWidgets.length === 0 && !isCustomizing) {
+  // If pageIndex > 0 and no widgets exist on this page, don't render widget section
+  if (pageIndex > 0 && visibleWidgets.length === 0) {
     return null;
   }
 
@@ -130,6 +129,7 @@ export default function DynamicWidgetsGrid({
     return activeDragId ? allWidgets.find(w => w.id === activeDragId) : null;
   }, [activeDragId, allWidgets]);
 
+  // Ensure widget columns is 2 in portrait/phone mode
   const gridColsClass = 
     widgetCols >= 4 
       ? 'grid-cols-4' 

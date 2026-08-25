@@ -34,7 +34,8 @@ import {
   Users2, LineChart, Cpu, Network, Lightbulb, UserCog, StickyNote, FolderPlus,
   ArrowUpDown, SlidersHorizontal, Check, RotateCcw, Tag, X, Plus, Search,
   ChevronDown, Layers, Briefcase, Palette, Wrench, Bell, Sun, Moon,
-  Sliders, BatteryCharging, Shield, Sparkles, ExternalLink, Zap
+  Sliders, BatteryCharging, Shield, Sparkles, ExternalLink, Zap,
+  ChevronLeft, ChevronRight, LayoutGrid, Grid3X3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -43,6 +44,7 @@ export const APPS: AppDefinition[] = [
   { id: 'coach-ai', name: 'Coach AI', icon: Bot, color: 'bg-emerald-950 text-emerald-400 border-emerald-900', inDock: true, category: 'creative' },
   { id: 'baas-hub', name: 'BaaS Hub', icon: Scale, color: 'bg-slate-900 text-slate-300 border-slate-800', category: 'work' },
   { id: 'jaas-job', name: 'JaaS JOB', icon: Users, color: 'bg-slate-900 text-slate-300 border-slate-800', category: 'work' },
+  { id: 'job-app', name: 'Job App', icon: Users, color: 'bg-emerald-950/60 text-emerald-300 border-emerald-800/60', category: 'work' },
   { id: 'paas-pro', name: 'PaaS PRO', icon: Server, color: 'bg-slate-900 text-slate-300 border-slate-800', category: 'tools' },
   { id: 'wallet', name: 'Wallet', icon: WalletCards, color: 'bg-slate-900 text-slate-300 border-slate-800', inDock: true, category: 'tools' },
   { id: 'leads', name: 'Leads', icon: PhoneCall, color: 'bg-slate-900 text-slate-300 border-slate-800', inDock: true, category: 'work' },
@@ -107,6 +109,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
 
   const layout = useResponsiveLayout();
   const [currentPage, setCurrentPage] = useState(0);
+  const [isFullGridView, setIsFullGridView] = useState(false);
   const [activeDragId, setActiveDragId] = useState<AppId | null>(null);
   const [currentOverId, setCurrentOverId] = useState<string | null>(null);
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
@@ -115,6 +118,8 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [selectedAppIdsForNewFolder, setSelectedAppIdsForNewFolder] = useState<AppId[]>([]);
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Category Tag Filter State
   const [selectedCategory, setSelectedCategory] = useState<AppCategoryTag>('all');
@@ -190,19 +195,26 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     return new Set(smartFolders.flatMap(f => f.appIds));
   }, [smartFolders]);
 
-  // Filtered & mapped ordered applications based on Category Tag
+  // Filtered & mapped ordered applications based on Category Tag (guaranteeing all apps are present)
   const orderedGridApps = useMemo(() => {
-    return gridAppOrder
+    // 1. Gather apps explicitly found in gridAppOrder
+    const inGrid = gridAppOrder
       .filter(id => !appIdsInFolders.has(id))
       .map(id => APPS.find(a => a.id === id))
-      .filter((a): a is AppDefinition => a !== undefined)
-      .filter(app => {
-        // Category filter
-        if (selectedCategory !== 'all' && app.category !== selectedCategory) {
-          return false;
-        }
-        return true;
-      });
+      .filter((a): a is AppDefinition => a !== undefined);
+
+    // 2. Ensure every single app in APPS not in dock and not in a folder is included
+    const inGridIds = new Set(inGrid.map(a => a.id));
+    const missingApps = APPS.filter(a => !a.inDock && !appIdsInFolders.has(a.id) && !inGridIds.has(a.id));
+    const combined = [...inGrid, ...missingApps];
+
+    return combined.filter(app => {
+      // Category filter
+      if (selectedCategory !== 'all' && app.category !== selectedCategory) {
+        return false;
+      }
+      return true;
+    });
   }, [gridAppOrder, appIdsInFolders, selectedCategory]);
 
   // Filtered smart folders based on Category
@@ -330,13 +342,27 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     }
   };
 
+  const scrollToPage = (pageIdx: number) => {
+    if (scrollContainerRef.current) {
+      const width = scrollContainerRef.current.clientWidth;
+      scrollContainerRef.current.scrollTo({
+        left: pageIdx * width,
+        behavior: 'smooth'
+      });
+      setCurrentPage(pageIdx);
+      haptics.trigger('selection');
+    }
+  };
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const scrollLeft = e.currentTarget.scrollLeft;
     const width = e.currentTarget.clientWidth;
-    const page = Math.round(scrollLeft / width);
-    if (page !== currentPage) {
-      haptics.trigger('selection');
-      setCurrentPage(page);
+    if (width > 0) {
+      const page = Math.round(scrollLeft / width);
+      if (page !== currentPage) {
+        haptics.trigger('selection');
+        setCurrentPage(page);
+      }
     }
   };
 
@@ -575,6 +601,23 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
             </AnimatePresence>
           </div>
 
+          {/* Toggle Full Grid View vs Paginated View */}
+          <button
+            onClick={() => {
+              haptics.trigger('selection');
+              setIsFullGridView(!isFullGridView);
+            }}
+            title={isFullGridView ? "Afficher le mode pages" : "Afficher toutes les applications d'un coup"}
+            className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold flex items-center gap-1.5 border transition-all ${
+              isFullGridView 
+                ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300 ring-2 ring-emerald-500/30' 
+                : 'bg-slate-900/80 hover:bg-slate-800 border-slate-800/80 text-slate-300 shadow-sm'
+            }`}
+          >
+            {isFullGridView ? <Layers size={12} className="text-emerald-400" /> : <Grid3X3 size={12} className="text-emerald-400" />}
+            <span>{isFullGridView ? 'Pages' : 'Toutes les Apps'}</span>
+          </button>
+
           {/* New Group Quick Button */}
           <button
             onClick={() => {
@@ -631,8 +674,9 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
 
       {/* Scrollable Pagination & App Grid Area */}
       <div 
-        className="flex-1 min-h-0 flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory scrollbar-hide"
-        onScroll={handleScroll}
+        ref={scrollContainerRef}
+        className={`flex-1 min-h-0 flex ${isFullGridView ? 'overflow-y-auto overflow-x-hidden' : 'overflow-x-auto overflow-y-hidden snap-x snap-mandatory'} scrollbar-hide`}
+        onScroll={!isFullGridView ? handleScroll : undefined}
       >
         <DndContext 
           sensors={sensors}
@@ -646,27 +690,27 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
             items={gridAppOrder}
             strategy={rectSortingStrategy}
           >
-            {pagesData.map((page) => (
-              <div 
-                key={page.pageIndex} 
-                className={`w-full h-full flex-shrink-0 snap-center flex flex-col overflow-y-auto scrollbar-hide ${
-                  layout.isLandscape ? 'px-4' : 'px-5 sm:px-6'
-                } ${page.pageIndex > 0 ? 'pt-1' : ''}`}
-              >
-                {/* Dynamic AppWidgets System for this page */}
+            {isFullGridView ? (
+              /* Full Grid Single Page View: All apps & widgets visible together */
+              <div className="w-full h-full flex flex-col px-5 sm:px-6 pt-1 pb-8">
                 {selectedCategory === 'all' && (
                   <DynamicWidgetsGrid 
                     onOpenApp={onOpenApp} 
                     widgetCols={layout.widgetCols}
-                    pageIndex={page.pageIndex}
-                    className="mb-2 shrink-0"
+                    pageIndex={0}
+                    className="mb-3 shrink-0"
                   />
                 )}
 
-                {/* Responsive Aligned Application Grid */}
-                <div className={`grid ${gridColsClass} gap-x-3 gap-y-3.5 content-start pb-6 pt-1`}>
-                  {/* Smart Folders first on this page */}
-                  {page.folders.map(folder => (
+                <div className="flex items-center justify-between py-1 mb-2 border-b border-slate-800/60">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Toutes les Applications ({orderedGridApps.length})
+                  </span>
+                  <span className="text-[10px] text-emerald-400 font-medium">Vue Globale Déroulante</span>
+                </div>
+
+                <div className={`grid ${gridColsClass} gap-x-3 gap-y-3.5 content-start pb-8 pt-1`}>
+                  {visibleSmartFolders.map(folder => (
                     <SmartFolderIcon
                       key={folder.id}
                       folder={folder}
@@ -681,8 +725,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
                     />
                   ))}
 
-                  {/* Applications on this page */}
-                  {page.apps.map(app => (
+                  {orderedGridApps.map(app => (
                     <SortableAppIcon 
                       key={app.id} 
                       app={app} 
@@ -698,7 +741,62 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
                   ))}
                 </div>
               </div>
-            ))}
+            ) : (
+              /* Standard Paginated iOS-Style View */
+              pagesData.map((page) => (
+                <div 
+                  key={page.pageIndex} 
+                  className={`w-full h-full flex-shrink-0 snap-center flex flex-col overflow-y-auto scrollbar-hide ${
+                    layout.isLandscape ? 'px-4' : 'px-5 sm:px-6'
+                  } ${page.pageIndex > 0 ? 'pt-1' : ''}`}
+                >
+                  {/* Dynamic AppWidgets System for primary page */}
+                  {selectedCategory === 'all' && page.pageIndex === 0 && (
+                    <DynamicWidgetsGrid 
+                      onOpenApp={onOpenApp} 
+                      widgetCols={layout.widgetCols}
+                      pageIndex={0}
+                      className="mb-2.5 shrink-0"
+                    />
+                  )}
+
+                  {/* Responsive Aligned Application Grid */}
+                  <div className={`grid ${gridColsClass} gap-x-3 gap-y-3.5 content-start pb-6 pt-1`}>
+                    {/* Smart Folders first on this page */}
+                    {page.folders.map(folder => (
+                      <SmartFolderIcon
+                        key={folder.id}
+                        folder={folder}
+                        isEditMode={isEditMode}
+                        isDropTarget={currentOverId === folder.id}
+                        badgeCount={getFolderBadgeCount(folder)}
+                        onDissolve={() => handlePromptDissolveFolder(folder)}
+                        onClick={() => {
+                          haptics.trigger('selection');
+                          setActiveFolderId(folder.id);
+                        }}
+                      />
+                    ))}
+
+                    {/* Applications on this page */}
+                    {page.apps.map(app => (
+                      <SortableAppIcon 
+                        key={app.id} 
+                        app={app} 
+                        isEditMode={isEditMode}
+                        isGroupTarget={isEditMode && currentOverId === app.id && activeDragId !== app.id}
+                        badgeCount={appBadgeCounts[app.id] || 0}
+                        onClick={() => handleAppClick(app.id)}
+                        onLongPress={() => {
+                          haptics.trigger('heavy');
+                          setIsEditMode(true);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
           </SortableContext>
 
           {/* Smooth Drag Overlay with High Visibility */}
@@ -718,19 +816,45 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
         </DndContext>
       </div>
 
-      {/* Dynamic Page Indicator Dots */}
-      {pagesData.length > 1 && (
-        <div className="flex justify-center items-center gap-1.5 py-1 z-20 shrink-0">
-          {pagesData.map((_, idx) => (
-            <div
-              key={idx}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                currentPage === idx 
-                  ? 'w-5 bg-emerald-400 dark:bg-emerald-400' 
-                  : 'w-1.5 bg-slate-600/50 hover:bg-slate-500/80'
-              }`}
-            />
-          ))}
+      {/* Dynamic Interactive Page Indicator & Navigation Bar */}
+      {pagesData.length > 1 && !isFullGridView && (
+        <div className="flex justify-center items-center gap-3 py-1.5 z-20 shrink-0">
+          <button
+            onClick={() => scrollToPage(Math.max(0, currentPage - 1))}
+            disabled={currentPage === 0}
+            className="p-1 rounded-lg bg-slate-900/80 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none text-slate-300 border border-slate-800 transition-all"
+            title="Page précédente"
+          >
+            <ChevronLeft size={13} />
+          </button>
+
+          <div className="flex items-center gap-1.5">
+            {pagesData.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => scrollToPage(idx)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  currentPage === idx 
+                    ? 'w-6 bg-emerald-400 dark:bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' 
+                    : 'w-2 bg-slate-600/60 hover:bg-slate-400'
+                }`}
+                title={`Page ${idx + 1} sur ${pagesData.length}`}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={() => scrollToPage(Math.min(pagesData.length - 1, currentPage + 1))}
+            disabled={currentPage === pagesData.length - 1}
+            className="p-1 rounded-lg bg-slate-900/80 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none text-slate-300 border border-slate-800 transition-all"
+            title="Page suivante"
+          >
+            <ChevronRight size={13} />
+          </button>
+
+          <span className="text-[10px] text-slate-500 font-mono ml-1">
+            {currentPage + 1}/{pagesData.length}
+          </span>
         </div>
       )}
 

@@ -25,8 +25,8 @@ export default function AppWidgetCard({
   isCustomizing = false,
   onTogglePin
 }: AppWidgetCardProps) {
-  // If this is the JaaS widget and not in customization mode, render the rich specialized widget
-  if (!isCustomizing && (widget.id === 'widget-jaas' || widget.appId === 'jaas-job')) {
+  // If this is the JaaS/Job App widget and not in customization mode, render the rich specialized widget
+  if (!isCustomizing && (widget.id === 'widget-jaas' || widget.appId === 'jaas-job' || widget.appId === 'job-app')) {
     return (
       <JaaSAppWidget
         widget={widget}
@@ -96,15 +96,15 @@ export default function AppWidgetCard({
       )}
 
       {/* Top row: Category/Title & Badge/Icon */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center justify-between gap-1.5 min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           {isCustomizing ? (
             <div className="p-1 rounded-md bg-slate-950/70 border border-slate-800 text-slate-400 shrink-0">
               <GripVertical size={12} />
             </div>
           ) : Icon ? (
-            <div className="w-6 h-6 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center justify-center shrink-0">
-              <Icon size={13} />
+            <div className="w-5.5 h-5.5 rounded-lg bg-slate-950/60 border border-slate-800/80 flex items-center justify-center shrink-0">
+              <Icon size={12} />
             </div>
           ) : null}
           <span className="text-[10px] font-bold tracking-wider uppercase text-slate-400 truncate">
@@ -114,33 +114,33 @@ export default function AppWidgetCard({
 
         {!isCustomizing && (
           widget.badge ? (
-            <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full bg-slate-950/60 border border-slate-800/80 text-slate-300 shrink-0">
+            <span className="text-[8.5px] font-semibold px-1.5 py-0.5 rounded-md bg-slate-950/60 border border-slate-800/80 text-slate-300 shrink-0 whitespace-nowrap">
               {widget.badge}
             </span>
           ) : (
-            <ArrowUpRight size={13} className="text-slate-500 group-hover:text-slate-200 transition-colors shrink-0 opacity-70 group-hover:opacity-100" />
+            <ArrowUpRight size={12} className="text-slate-500 group-hover:text-slate-200 transition-colors shrink-0 opacity-70 group-hover:opacity-100" />
           )
         )}
       </div>
 
       {/* Main Metric Value */}
-      <div className="mt-2.5">
-        <div className="flex items-baseline justify-between gap-2">
-          <span className={`${isCompact ? 'text-sm' : 'text-base font-bold'} font-bold tracking-tight text-slate-100 group-hover:text-emerald-300 transition-colors truncate`}>
+      <div className="mt-2 min-w-0">
+        <div className="flex items-baseline justify-between gap-1.5 min-w-0">
+          <span className={`${isCompact ? 'text-xs' : 'text-sm font-bold'} font-bold tracking-tight text-slate-100 group-hover:text-emerald-300 transition-colors truncate`}>
             {widget.value}
           </span>
           {widget.trendValue && (
-            <div className="flex items-center gap-0.5 text-[10px] font-semibold shrink-0 text-emerald-400">
-              {widget.trend === 'up' && <TrendingUp size={11} />}
-              {widget.trend === 'down' && <TrendingDown size={11} className="text-red-400" />}
-              {widget.trend === 'neutral' && <Minus size={11} className="text-slate-400" />}
-              <span>{widget.trendValue}</span>
+            <div className="flex items-center gap-0.5 text-[9.5px] font-semibold shrink-0 text-emerald-400">
+              {widget.trend === 'up' && <TrendingUp size={10} />}
+              {widget.trend === 'down' && <TrendingDown size={10} className="text-red-400" />}
+              {widget.trend === 'neutral' && <Minus size={10} className="text-slate-400" />}
+              <span className="whitespace-nowrap">{widget.trendValue}</span>
             </div>
           )}
         </div>
 
         {widget.subValue && (
-          <div className="text-[11px] text-slate-400 mt-0.5 truncate flex items-center gap-1">
+          <div className="text-[10.5px] text-slate-400 mt-0.5 truncate flex items-center gap-1">
             {widget.subValue}
           </div>
         )}

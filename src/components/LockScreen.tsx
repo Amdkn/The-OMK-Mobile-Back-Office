@@ -96,13 +96,21 @@ export default function LockScreen({ onUnlock, paradigm }: LockScreenProps) {
           <div />
         </div>
 
-        <button 
-          onClick={handleFaceID}
-          className="flex items-center gap-2 px-6 py-3 rounded-full bg-slate-900 text-slate-300 font-medium text-sm border border-slate-800 active:bg-slate-800 transition-colors"
-        >
-          <ScanFace size={18} />
-          FaceID / Biométrie
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={handleFaceID}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-900/90 text-slate-300 font-medium text-xs border border-slate-800 active:bg-slate-800 transition-colors"
+          >
+            <ScanFace size={16} className="text-emerald-400" />
+            FaceID
+          </button>
+          <button 
+            onClick={() => onUnlock()}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-600/20 text-emerald-300 font-semibold text-xs border border-emerald-500/40 active:bg-emerald-600/30 transition-colors"
+          >
+            Déverrouiller
+          </button>
+        </div>
       </div>
     </div>
   );
