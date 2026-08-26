@@ -1,13 +1,13 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { AppDefinition } from '../types';
+import { AppDefinition, AppId } from '../types';
 import { FolderPlus } from 'lucide-react';
 
 interface Props {
   key?: React.Key;
   app: AppDefinition;
-  onClick: () => void;
+  onClick: (id: AppId) => void;
   onLongPress?: () => void;
   isOverlay?: boolean;
   isEditMode?: boolean;
@@ -83,7 +83,9 @@ export function AppIconView({
   );
 }
 
-export function SortableAppIcon({ 
+// Optimization (Bolt ⚡): Wrapped in React.memo to prevent unnecessary icon re-renders
+// during parent HomeScreen state changes (e.g. status bar timer ticks, scroll, gesture pull).
+export const SortableAppIcon = React.memo(function SortableAppIcon({
   app, 
   onClick, 
   onLongPress,
@@ -133,7 +135,7 @@ export function SortableAppIcon({
       e.stopPropagation();
       return;
     }
-    onClick();
+    onClick(app.id);
   };
 
   const style: React.CSSProperties = {
@@ -187,5 +189,5 @@ export function SortableAppIcon({
       />
     </div>
   );
-}
+});
 

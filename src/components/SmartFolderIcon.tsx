@@ -6,10 +6,10 @@ import { Folder, X } from 'lucide-react';
 interface SmartFolderIconProps {
   key?: React.Key;
   folder: SmartFolder;
-  onClick: () => void;
+  onClick: (id: string) => void;
   isOverlay?: boolean;
   isEditMode?: boolean;
-  onDissolve?: () => void;
+  onDissolve?: (folder: SmartFolder) => void;
   isDropTarget?: boolean;
   badgeCount?: number;
 }
@@ -94,7 +94,9 @@ export function SmartFolderIconView({
   );
 }
 
-export default function SmartFolderIcon({ 
+// Optimization (Bolt ⚡): Wrapped in React.memo to prevent unnecessary folder icon re-renders
+// during parent HomeScreen state changes (e.g. status bar timer ticks, scroll, gesture pull).
+const SmartFolderIcon = React.memo(function SmartFolderIcon({
   folder, 
   onClick, 
   isEditMode = false, 
@@ -106,11 +108,11 @@ export default function SmartFolderIcon({
     <div 
       role="button"
       tabIndex={0}
-      onClick={onClick}
+      onClick={() => onClick(folder.id)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onClick();
+          onClick(folder.id);
         }
       }}
       className="flex flex-col items-center justify-center p-1 rounded-2xl group relative touch-none focus:outline-none transition-opacity cursor-pointer"
@@ -119,10 +121,12 @@ export default function SmartFolderIcon({
       <SmartFolderIconView 
         folder={folder} 
         isEditMode={isEditMode}
-        onDissolve={onDissolve}
+        onDissolve={onDissolve ? () => onDissolve(folder) : undefined}
         isDropTarget={isDropTarget}
         badgeCount={badgeCount}
       />
     </div>
   );
-}
+});
+
+export default SmartFolderIcon;
