@@ -8,38 +8,6 @@ import { useOSStore } from '../store/osStore';
 import { haptics } from '../services/haptics';
 import { CoachAgent } from '../types';
 
-export default function DesktopAgentsOverlay() {
-  const { 
-    agents, 
-    toggleAgentChat, 
-    closeAllAgentChats, 
-    sendAgentMessage,
-    theme 
-  } = useOSStore();
-
-  const containerRef = useRef<HTMLDivElement>(null);
-  const activeAgents = agents.filter(a => a.isActive);
-
-  if (activeAgents.length === 0) return null;
-
-  return (
-    <div 
-      ref={containerRef} 
-      className="absolute inset-0 pointer-events-none z-30 overflow-hidden"
-    >
-      {activeAgents.map((agent) => (
-        <DraggableAgentAvatar 
-          key={agent.id} 
-          agent={agent} 
-          containerRef={containerRef}
-          onToggleChat={() => toggleAgentChat(agent.id)}
-          onSendMessage={(text) => sendAgentMessage(agent.id, text)}
-        />
-      ))}
-    </div>
-  );
-}
-
 function DraggableAgentAvatar({
   agent,
   containerRef,
@@ -53,7 +21,8 @@ function DraggableAgentAvatar({
 }) {
   const [inputText, setInputText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
-  const { setAgentPosition, setAgentActive } = useOSStore();
+  const setAgentPosition = useOSStore((state) => state.setAgentPosition);
+  const setAgentActive = useOSStore((state) => state.setAgentActive);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -245,3 +214,35 @@ function DraggableAgentAvatar({
     </motion.div>
   );
 }
+
+// Optimization (Bolt ⚡): Use fine-grained Zustand store selectors and React.memo
+// to prevent full component overlay re-renders on unrelated OS state changes.
+export const DesktopAgentsOverlay = React.memo(function DesktopAgentsOverlay() {
+  const agents = useOSStore((state) => state.agents);
+  const toggleAgentChat = useOSStore((state) => state.toggleAgentChat);
+  const sendAgentMessage = useOSStore((state) => state.sendAgentMessage);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const activeAgents = agents.filter(a => a.isActive);
+
+  if (activeAgents.length === 0) return null;
+
+  return (
+    <div
+      ref={containerRef}
+      className="absolute inset-0 pointer-events-none z-30 overflow-hidden"
+    >
+      {activeAgents.map((agent) => (
+        <DraggableAgentAvatar
+          key={agent.id}
+          agent={agent}
+          containerRef={containerRef}
+          onToggleChat={() => toggleAgentChat(agent.id)}
+          onSendMessage={(text) => sendAgentMessage(agent.id, text)}
+        />
+      ))}
+    </div>
+  );
+});
+
+export default DesktopAgentsOverlay;
