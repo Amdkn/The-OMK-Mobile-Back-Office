@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { AppId, AppDefinition, SmartFolder, AppCategoryTag } from '../types';
 import { useOSStore } from '../store/osStore';
 import { haptics } from '../services/haptics';
@@ -170,6 +170,8 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     return notifications.filter(n => !n.isRead);
   }, [notifications]);
 
+  // Optimization (Bolt ⚡): Memoize unread badge counts for both apps and folders to prevent
+  // repeated array reduction and object allocations across all grid items on every HomeScreen re-render.
   const appBadgeCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const n of unreadNotifications) {
@@ -178,9 +180,13 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     return counts;
   }, [unreadNotifications]);
 
-  const getFolderBadgeCount = (folder: SmartFolder) => {
-    return folder.appIds.reduce((sum, appId) => sum + (appBadgeCounts[appId] || 0), 0);
-  };
+  const folderBadgeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const folder of smartFolders) {
+      counts[folder.id] = folder.appIds.reduce((sum, appId) => sum + (appBadgeCounts[appId] || 0), 0);
+    }
+    return counts;
+  }, [smartFolders, appBadgeCounts]);
 
   // Dynamically resolve the active folder object so edits/removals immediately update
   const activeFolderModal = useMemo(() => {
@@ -325,7 +331,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     }
   }, [pagesData.length, currentPage]);
 
-  const handleAppClick = (id: AppId) => {
+  const handleAppClick = useCallback((id: AppId) => {
     if (isEditMode) return;
     if (id === 'lock') {
       haptics.trigger('heavy');
@@ -334,7 +340,17 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
       haptics.trigger('appLaunch');
       onOpenApp(id);
     }
-  };
+  }, [isEditMode, lock, onOpenApp]);
+
+  const handleFolderClick = useCallback((id: string) => {
+    haptics.trigger('selection');
+    setActiveFolderId(id);
+  }, []);
+
+  const handleAppLongPress = useCallback(() => {
+    haptics.trigger('heavy');
+    setIsEditMode(true);
+  }, []);
 
   const scrollToPage = (pageIdx: number) => {
     if (scrollContainerRef.current) {
@@ -441,7 +457,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     setShowSortMenu(false);
   };
 
-  const handlePromptDissolveFolder = (folder: SmartFolder) => {
+  const handlePromptDissolveFolder = useCallback((folder: SmartFolder) => {
     haptics.trigger('light');
     setConfirmModal({
       isOpen: true,
@@ -454,7 +470,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
         setConfirmModal(prev => ({ ...prev, isOpen: false }));
       }
     });
-  };
+  }, [dissolveSmartFolder]);
 
   const handleCreateFolderFromSelection = (e: React.FormEvent) => {
     e.preventDefault();
@@ -710,12 +726,9 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
                       folder={folder}
                       isEditMode={isEditMode}
                       isDropTarget={currentOverId === folder.id}
-                      badgeCount={getFolderBadgeCount(folder)}
-                      onDissolve={() => handlePromptDissolveFolder(folder)}
-                      onClick={() => {
-                        haptics.trigger('selection');
-                        setActiveFolderId(folder.id);
-                      }}
+                      badgeCount={folderBadgeCounts[folder.id] || 0}
+                      onDissolve={handlePromptDissolveFolder}
+                      onClick={handleFolderClick}
                     />
                   ))}
 
@@ -726,11 +739,8 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
                       isEditMode={isEditMode}
                       isGroupTarget={isEditMode && currentOverId === app.id && activeDragId !== app.id}
                       badgeCount={appBadgeCounts[app.id] || 0}
-                      onClick={() => handleAppClick(app.id)}
-                      onLongPress={() => {
-                        haptics.trigger('heavy');
-                        setIsEditMode(true);
-                      }}
+                      onClick={handleAppClick}
+                      onLongPress={handleAppLongPress}
                     />
                   ))}
                 </div>
@@ -763,12 +773,9 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
                         folder={folder}
                         isEditMode={isEditMode}
                         isDropTarget={currentOverId === folder.id}
-                        badgeCount={getFolderBadgeCount(folder)}
-                        onDissolve={() => handlePromptDissolveFolder(folder)}
-                        onClick={() => {
-                          haptics.trigger('selection');
-                          setActiveFolderId(folder.id);
-                        }}
+                        badgeCount={folderBadgeCounts[folder.id] || 0}
+                        onDissolve={handlePromptDissolveFolder}
+                        onClick={handleFolderClick}
                       />
                     ))}
 
@@ -780,11 +787,8 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
                         isEditMode={isEditMode}
                         isGroupTarget={isEditMode && currentOverId === app.id && activeDragId !== app.id}
                         badgeCount={appBadgeCounts[app.id] || 0}
-                        onClick={() => handleAppClick(app.id)}
-                        onLongPress={() => {
-                          haptics.trigger('heavy');
-                          setIsEditMode(true);
-                        }}
+                        onClick={handleAppClick}
+                        onLongPress={handleAppLongPress}
                       />
                     ))}
                   </div>
