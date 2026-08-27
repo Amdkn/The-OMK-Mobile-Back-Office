@@ -297,6 +297,8 @@ export interface SearchResultItem {
   badge?: string;
   action: () => void;
   keywords?: string[];
+  _titleLower?: string;
+  _subLower?: string;
 }
 
 export type WidgetSize = 'small' | 'medium' | 'large';
