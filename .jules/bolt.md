@@ -9,3 +9,9 @@
 **Learning:** Uncached synchronous `localStorage` reads combined with indented `JSON.stringify` formatting lead to repetitive `JSON.parse` CPU overhead and unnecessary object allocations on every widget registry update and component re-render.
 
 **Action:** Cache parsed JSON objects in-memory against the raw `localStorage` string to bypass redundant parsing on unchanged storage reads, and omit `null, 2` indentation parameters during serialization.
+
+## 2026-08-27 - Selective Store Subscriptions & Memoization in Persistent Layout Components
+
+**Learning:** Subscribing to an entire Zustand store without property selectors (`useOSStore()`) in persistent layout components (e.g., `WallpaperBackground` and `DesktopAgentsOverlay`) causes them to re-render on every state change in the OS (such as background telemetry events, time ticks, or notification alerts). This forces React to reconcile heavy CSS blur filters (`blur-3xl`), radial gradients, and floating overlay trees unnecessarily.
+
+**Action:** Always use targeted selectors (e.g., `useOSStore(state => state.wallpaper)`) and `React.memo` on persistent or heavy layout components so they only re-render when their specific slices of state change.
