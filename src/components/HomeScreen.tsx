@@ -70,6 +70,22 @@ const CATEGORY_TABS: Array<{ id: AppCategoryTag; label: string; icon: React.Elem
   { id: 'tools', label: 'Outils', icon: Wrench },
 ];
 
+// Performance Optimization: Compute static values and sensor constraints once outside component renders
+const STATIC_DOCK_APPS = APPS.filter(a => a.inDock);
+
+const STATIC_CATEGORY_COUNTS = (() => {
+  const counts = { all: APPS.length, work: 0, creative: 0, tools: 0 };
+  APPS.forEach(app => {
+    if (app.category && counts[app.category] !== undefined) {
+      counts[app.category]++;
+    }
+  });
+  return counts;
+})();
+
+const MOUSE_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
+const TOUCH_SENSOR_OPTIONS = { activationConstraint: { delay: 250, tolerance: 6 } };
+
 interface SystemSettingAction {
   id: string;
   name: string;
@@ -171,24 +187,12 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     return activeFolderId ? smartFolders.find(f => f.id === activeFolderId) || null : null;
   }, [activeFolderId, smartFolders]);
 
-  // Configure touch sensor with 250ms long-press delay for mobile tactile feel
+  // Configure touch sensor with 250ms long-press delay for mobile tactile feel using static constraint objects
   const sensors = useSensors(
-    useSensor(MouseSensor, { 
-      activationConstraint: { 
-        distance: 8 
-      } 
-    }),
-    useSensor(TouchSensor, { 
-      activationConstraint: { 
-        delay: 250, 
-        tolerance: 6 
-      } 
-    }),
+    useSensor(MouseSensor, MOUSE_SENSOR_OPTIONS),
+    useSensor(TouchSensor, TOUCH_SENSOR_OPTIONS),
     useSensor(KeyboardSensor)
   );
-  
-  // Dock apps
-  const dockApps = APPS.filter(a => a.inDock);
 
   // App IDs that are placed inside folders (don't duplicate in root grid)
   const appIdsInFolders = useMemo(() => {
@@ -231,22 +235,12 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
     });
   }, [smartFolders, selectedCategory]);
 
-  // Category Counts
-  const categoryCounts = useMemo(() => {
-    const counts = { all: APPS.length, work: 0, creative: 0, tools: 0 };
-    APPS.forEach(app => {
-      if (app.category && counts[app.category] !== undefined) {
-        counts[app.category]++;
-      }
-    });
-    return counts;
-  }, []);
-
   const activeAppDef = useMemo(() => {
     return activeDragId ? APPS.find(a => a.id === activeDragId) : null;
   }, [activeDragId]);
 
-  const unreadCount = useMemo(() => notifications.filter(n => !n.isRead).length, [notifications]);
+  // Performance Optimization: Reuse already memoized unreadNotifications array length
+  const unreadCount = unreadNotifications.length;
 
   // Widgets from registry
   const allWidgets = useMemo(() => {
@@ -966,7 +960,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
           {CATEGORY_TABS.map(tab => {
             const TabIcon = tab.icon;
             const isSelected = selectedCategory === tab.id;
-            const count = categoryCounts[tab.id];
+            const count = STATIC_CATEGORY_COUNTS[tab.id];
 
             return (
               <button
@@ -1004,7 +998,7 @@ export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => vo
       {/* Persistent Dock with High-Contrast Frosted Container & Notification Badges */}
       <div className={`shrink-0 ${layout.isLandscape ? 'px-4 pt-0.5' : 'px-5 sm:px-6 pt-0.5'}`}>
         <div className="bg-slate-900/90 backdrop-blur-2xl border border-slate-800/90 rounded-[2.2rem] p-2.5 sm:p-3 flex justify-around shadow-xl theme-transition">
-          {dockApps.map(app => {
+          {STATIC_DOCK_APPS.map(app => {
             const badgeCount = appBadgeCounts[app.id] || 0;
             return (
               <button 
