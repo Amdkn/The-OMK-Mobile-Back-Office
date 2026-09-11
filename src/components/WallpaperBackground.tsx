@@ -1,3 +1,4 @@
+import React from 'react';
 import { useOSStore } from '../store/osStore';
 import { WallpaperId } from '../types';
 
@@ -54,8 +55,10 @@ export const WALLPAPERS: WallpaperConfig[] = [
   },
 ];
 
-export default function WallpaperBackground() {
-  const { wallpaper } = useOSStore();
+// Optimization (Bolt ⚡): Targeted store selector & React.memo to prevent
+// redundant re-renders and heavy CSS blur reconciliation when unrelated store properties update.
+export const WallpaperBackground = React.memo(function WallpaperBackground() {
+  const wallpaper = useOSStore((state) => state.wallpaper);
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 transition-opacity duration-700">
@@ -160,4 +163,6 @@ export default function WallpaperBackground() {
       />
     </div>
   );
-}
+});
+
+export default WallpaperBackground;
