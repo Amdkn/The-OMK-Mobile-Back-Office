@@ -15,3 +15,9 @@
 **Learning:** Subscribing to an entire Zustand store without property selectors (`useOSStore()`) in persistent layout components (e.g., `WallpaperBackground` and `DesktopAgentsOverlay`) causes them to re-render on every state change in the OS (such as background telemetry events, time ticks, or notification alerts). This forces React to reconcile heavy CSS blur filters (`blur-3xl`), radial gradients, and floating overlay trees unnecessarily.
 
 **Action:** Always use targeted selectors (e.g., `useOSStore(state => state.wallpaper)`) and `React.memo` on persistent or heavy layout components so they only re-render when their specific slices of state change.
+
+## 2026-09-12 - Conditional Panel Mounting for Persistent Modals
+
+**Learning:** Persistent modal components that subscribe to store slices and filter data unconditionally force re-renders and array operations on every store update (e.g., telemetry syncs or background events) even when closed. Moreover, short-circuiting data inside closed modals breaks Framer Motion `<AnimatePresence>` exit transitions.
+
+**Action:** Isolate modal state subscriptions to inner panel components that are conditionally mounted under `<AnimatePresence>` (e.g. `{isOpen && <Panel />}`). This keeps closed modals subscription-free while allowing `<AnimatePresence>` to preserve the panel snapshot cleanly during exit animations.
