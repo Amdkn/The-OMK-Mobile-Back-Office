@@ -76,6 +76,9 @@ export default function ThemeSwitcherModal() {
 
           {/* Floating Theme Switcher Window (Mounted below Top Bar) */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="theme-modal-title"
             initial={{ opacity: 0, y: -24, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -18, scale: 0.96 }}
@@ -93,7 +96,7 @@ export default function ThemeSwitcherModal() {
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <h2 className="text-xs font-bold text-slate-100 tracking-tight">Sélecteur de Thèmes OS</h2>
+                    <h2 id="theme-modal-title" className="text-xs font-bold text-slate-100 tracking-tight">Sélecteur de Thèmes OS</h2>
                     <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-mono text-[9px] font-semibold border border-emerald-500/30">
                       {activeThemeDef.name}
                     </span>
@@ -109,6 +112,7 @@ export default function ThemeSwitcherModal() {
                 <button
                   onClick={handleRandomDark}
                   title="Aléatoire Sombre (Optimisation Éco)"
+                  aria-label="Appliquer un thème sombre aléatoire pour économie d'énergie"
                   className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 hover:border-amber-500/40 transition-all flex items-center gap-1 text-[10px] font-medium"
                 >
                   <Shuffle size={12} />
@@ -118,6 +122,7 @@ export default function ThemeSwitcherModal() {
                 {/* Close Button */}
                 <button
                   onClick={closeThemeMenu}
+                  aria-label="Fermer le sélecteur de thèmes"
                   className="p-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
                 >
                   <X size={14} />
@@ -139,6 +144,7 @@ export default function ThemeSwitcherModal() {
                 return (
                   <button
                     key={cat.id}
+                    aria-pressed={isCatActive}
                     onClick={() => {
                       haptics.trigger('selection');
                       setSelectedCategory(cat.id as ThemeCategory);
@@ -149,7 +155,7 @@ export default function ThemeSwitcherModal() {
                         : 'bg-slate-800/70 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-700/50'
                     }`}
                   >
-                    <Icon size={11} />
+                    <Icon size={11} aria-hidden="true" />
                     <span>{cat.label}</span>
                   </button>
                 );
@@ -165,6 +171,8 @@ export default function ThemeSwitcherModal() {
                   return (
                     <motion.button
                       key={th.id}
+                      aria-pressed={isSelected}
+                      aria-label={`Thème ${th.name}: ${th.subtitle}`}
                       onClick={() => handleSelectTheme(th.id)}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -220,6 +228,7 @@ export default function ThemeSwitcherModal() {
                   </span>
                   <div className="flex bg-slate-900 border border-slate-800 rounded-xl p-0.5">
                     <button
+                      aria-pressed={networkMode === 'wifi'}
                       onClick={() => {
                         haptics.trigger('selection');
                         useOSStore.getState().setNetworkMode('wifi');
@@ -230,10 +239,11 @@ export default function ThemeSwitcherModal() {
                           : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
-                      <Wifi size={10} />
+                      <Wifi size={10} aria-hidden="true" />
                       <span>Wi-Fi</span>
                     </button>
                     <button
+                      aria-pressed={networkMode === '5g'}
                       onClick={() => {
                         haptics.trigger('selection');
                         useOSStore.getState().setNetworkMode('5g');
@@ -258,6 +268,7 @@ export default function ThemeSwitcherModal() {
                     {(['low', 'medium', 'high'] as ContrastLevel[]).map(lvl => (
                       <button
                         key={lvl}
+                        aria-pressed={contrast === lvl}
                         onClick={() => handleContrastChange(lvl)}
                         className={`px-1.5 py-0.5 rounded-lg text-[9px] font-medium capitalize transition-all ${
                           contrast === lvl
