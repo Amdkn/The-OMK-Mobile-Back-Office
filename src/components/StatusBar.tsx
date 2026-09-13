@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Wifi, WifiOff, Bell, Zap, Battery, BatteryCharging, 
   BatteryFull, BatteryMedium, BatteryLow, BatteryWarning, Palette, Signal, Bot
@@ -10,23 +10,27 @@ import { OfflineStorageService } from '../services/offlineStorage';
 import { haptics } from '../services/haptics';
 import DynamicIsland from './DynamicIsland';
 
-export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
+// Optimization (Bolt ⚡): Wrapped in React.memo and using targeted Zustand store selectors
+// to prevent StatusBar from re-rendering on unrelated OS state updates (e.g. activeApp, grid order, activities).
+export default React.memo(function StatusBar({ paradigm }: { paradigm: Paradigm }) {
   const [time, setTime] = useState(new Date());
   const [isOnline, setIsOnline] = useState<boolean>(OfflineStorageService.isOnline());
   const power = usePowerManager();
   
-  const { 
-    theme, 
-    contrast, 
-    signalStrength, 
-    networkMode,
-    notifications, 
-    agents,
-    toggleNotificationCenter,
-    toggleThemeMenu,
-    toggleAgentsMenu,
-    cycleRandomDarkTheme
-  } = useOSStore();
+  // Targeted store selectors to isolate re-renders
+  const theme = useOSStore(state => state.theme);
+  const contrast = useOSStore(state => state.contrast);
+  const signalStrength = useOSStore(state => state.signalStrength);
+  const networkMode = useOSStore(state => state.networkMode);
+
+  // Select primitive unread count and active agents count directly to prevent array reference triggers
+  const unreadCount = useOSStore(state => state.notifications.filter(n => !n.isRead).length);
+  const activeAgentsCount = useOSStore(state => state.agents.filter(a => a.isActive).length);
+
+  const toggleNotificationCenter = useOSStore(state => state.toggleNotificationCenter);
+  const toggleThemeMenu = useOSStore(state => state.toggleThemeMenu);
+  const toggleAgentsMenu = useOSStore(state => state.toggleAgentsMenu);
+  const cycleRandomDarkTheme = useOSStore(state => state.cycleRandomDarkTheme);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -39,14 +43,6 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
     });
     return unsub;
   }, []);
-
-  const unreadCount = useMemo(() => {
-    return notifications.filter(n => !n.isRead).length;
-  }, [notifications]);
-
-  const activeAgentsCount = useMemo(() => {
-    return agents.filter(a => a.isActive).length;
-  }, [agents]);
 
   // Dynamic Theme & Contrast adaptive styling across all 16 UI UX Pro Max themes
   const styleConfig = useMemo(() => {
@@ -327,6 +323,6 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
       </div>
     </div>
   );
-}
+});
 
 
