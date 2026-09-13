@@ -7,7 +7,17 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  // Security Headers Middleware
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '0');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
+
+  // Limit JSON body size to prevent DoS attacks via oversized payloads
+  app.use(express.json({ limit: '100kb' }));
 
   // Health endpoint
   app.get('/api/health', (req, res) => {
@@ -85,8 +95,7 @@ Formate la réponse au format JSON strict avec les clés:
     } catch (error: any) {
       console.error('Error in /api/gemini/activity-summary:', error);
       return res.status(500).json({
-        error: 'Failed to generate activity summary',
-        message: error?.message || 'Unknown error'
+        error: 'Failed to generate activity summary'
       });
     }
   });
