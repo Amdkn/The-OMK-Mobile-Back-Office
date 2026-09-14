@@ -16,7 +16,9 @@ export const triggerFaceID = () => {
 };
 
 export default function DynamicIsland({ paradigm }: { paradigm: Paradigm }) {
-  const { workspace, setWorkspace } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selectors instead of unselected useOSStore()
+  const workspace = useOSStore(state => state.workspace);
+  const setWorkspace = useOSStore(state => state.setWorkspace);
   const {
     isExpanded,
     setIsExpanded,

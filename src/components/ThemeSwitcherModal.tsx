@@ -9,18 +9,16 @@ import { UI_UX_PRO_MAX_THEMES, ThemeId, ThemeCategory, ContrastLevel } from '../
 import { haptics } from '../services/haptics';
 
 export default function ThemeSwitcherModal() {
-  const { 
-    isThemeMenuOpen, 
-    closeThemeMenu, 
-    theme: activeTheme, 
-    setTheme, 
-    contrast, 
-    setContrast,
-    networkMode,
-    toggleNetworkMode,
-    cycleRandomDarkTheme,
-    isLowPowerMode
-  } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selectors instead of unselected useOSStore()
+  // to prevent ThemeSwitcherModal from re-rendering on telemetry events or unrelated store updates.
+  const isThemeMenuOpen = useOSStore(state => state.isThemeMenuOpen);
+  const closeThemeMenu = useOSStore(state => state.closeThemeMenu);
+  const activeTheme = useOSStore(state => state.theme);
+  const setTheme = useOSStore(state => state.setTheme);
+  const contrast = useOSStore(state => state.contrast);
+  const setContrast = useOSStore(state => state.setContrast);
+  const networkMode = useOSStore(state => state.networkMode);
+  const cycleRandomDarkTheme = useOSStore(state => state.cycleRandomDarkTheme);
 
   const [selectedCategory, setSelectedCategory] = useState<ThemeCategory>('all');
 

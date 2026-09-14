@@ -16,15 +16,14 @@ interface NavigatorWithBattery extends Navigator {
 }
 
 export function usePowerManager() {
-  const { 
-    isLowPowerMode, 
-    toggleLowPowerMode, 
-    setLowPowerMode, 
-    batteryLevel, 
-    setBatteryLevel, 
-    isCharging, 
-    toggleCharging 
-  } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selectors instead of unselected useOSStore()
+  const isLowPowerMode = useOSStore(state => state.isLowPowerMode);
+  const toggleLowPowerMode = useOSStore(state => state.toggleLowPowerMode);
+  const setLowPowerMode = useOSStore(state => state.setLowPowerMode);
+  const batteryLevel = useOSStore(state => state.batteryLevel);
+  const setBatteryLevel = useOSStore(state => state.setBatteryLevel);
+  const isCharging = useOSStore(state => state.isCharging);
+  const toggleCharging = useOSStore(state => state.toggleCharging);
 
   const [hasHardwareBattery, setHasHardwareBattery] = useState(false);
   const [hardwareLevel, setHardwareLevel] = useState<number | null>(null);

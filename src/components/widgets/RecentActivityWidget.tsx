@@ -51,7 +51,11 @@ export default function RecentActivityWidget({
   className = '',
   maxItems = 5
 }: RecentActivityWidgetProps) {
-  const { recentActivities, workspace, isLowPowerMode, emitEvent } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selectors instead of unselected useOSStore()
+  const recentActivities = useOSStore(state => state.recentActivities);
+  const workspace = useOSStore(state => state.workspace);
+  const isLowPowerMode = useOSStore(state => state.isLowPowerMode);
+  const emitEvent = useOSStore(state => state.emitEvent);
   const displayedActivities = recentActivities.slice(0, maxItems);
 
   const [isSummaryExpanded, setIsSummaryExpanded] = useState(true);

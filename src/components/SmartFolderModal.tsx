@@ -14,7 +14,12 @@ interface SmartFolderModalProps {
 }
 
 export default function SmartFolderModal({ folder, onClose, onOpenApp }: SmartFolderModalProps) {
-  const { renameSmartFolder, deleteSmartFolder, dissolveSmartFolder, removeAppFromFolder, addAppToFolder } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selectors instead of unselected useOSStore()
+  const renameSmartFolder = useOSStore(state => state.renameSmartFolder);
+  const deleteSmartFolder = useOSStore(state => state.deleteSmartFolder);
+  const dissolveSmartFolder = useOSStore(state => state.dissolveSmartFolder);
+  const removeAppFromFolder = useOSStore(state => state.removeAppFromFolder);
+  const addAppToFolder = useOSStore(state => state.addAppToFolder);
   const [isEditingName, setIsEditingName] = useState(false);
   const [folderName, setFolderName] = useState(folder.name);
   const [isAddingApps, setIsAddingApps] = useState(false);

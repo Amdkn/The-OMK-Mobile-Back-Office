@@ -13,19 +13,18 @@ interface Props {
 }
 
 export default function GlobalSearch({ onOpenApp }: Props) {
-  const { 
-    theme, 
-    setTheme, 
-    contrast, 
-    setContrast, 
-    workspace, 
-    setWorkspace, 
-    paradigm, 
-    setParadigm,
-    lock,
-    openNotificationCenter,
-    simulateIncomingAlert
-  } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selectors instead of unselected useOSStore()
+  const theme = useOSStore(state => state.theme);
+  const setTheme = useOSStore(state => state.setTheme);
+  const contrast = useOSStore(state => state.contrast);
+  const setContrast = useOSStore(state => state.setContrast);
+  const workspace = useOSStore(state => state.workspace);
+  const setWorkspace = useOSStore(state => state.setWorkspace);
+  const paradigm = useOSStore(state => state.paradigm);
+  const setParadigm = useOSStore(state => state.setParadigm);
+  const lock = useOSStore(state => state.lock);
+  const openNotificationCenter = useOSStore(state => state.openNotificationCenter);
+  const simulateIncomingAlert = useOSStore(state => state.simulateIncomingAlert);
 
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');

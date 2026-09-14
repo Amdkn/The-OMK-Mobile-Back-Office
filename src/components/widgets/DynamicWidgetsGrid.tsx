@@ -42,14 +42,14 @@ export default function DynamicWidgetsGrid({
   className = '',
   pageIndex = 0
 }: DynamicWidgetsGridProps) {
-  const { 
-    workspace, 
-    notifications, 
-    pinnedWidgetIds, 
-    widgetOrder,
-    togglePinWidget, 
-    reorderWidgets 
-  } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selectors instead of unselected useOSStore()
+  // to prevent DynamicWidgetsGrid from re-rendering on telemetry pulses or unrelated store events.
+  const workspace = useOSStore(state => state.workspace);
+  const notifications = useOSStore(state => state.notifications);
+  const pinnedWidgetIds = useOSStore(state => state.pinnedWidgetIds);
+  const widgetOrder = useOSStore(state => state.widgetOrder);
+  const togglePinWidget = useOSStore(state => state.togglePinWidget);
+  const reorderWidgets = useOSStore(state => state.reorderWidgets);
 
   const [activeTab, setActiveTab] = useState<'metrics' | 'activity'>('metrics');
   const [isCustomizing, setIsCustomizing] = useState(false);

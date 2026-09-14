@@ -12,14 +12,13 @@ import {
 } from 'lucide-react';
 
 export default function EventBusDevOverlay() {
-  const { 
-    events, 
-    clearEvents, 
-    isDevOverlayOpen, 
-    setDevOverlayOpen, 
-    workspace,
-    emitEvent 
-  } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selectors instead of unselected useOSStore()
+  const events = useOSStore(state => state.events);
+  const clearEvents = useOSStore(state => state.clearEvents);
+  const isDevOverlayOpen = useOSStore(state => state.isDevOverlayOpen);
+  const setDevOverlayOpen = useOSStore(state => state.setDevOverlayOpen);
+  const workspace = useOSStore(state => state.workspace);
+  const emitEvent = useOSStore(state => state.emitEvent);
 
   const [isRecording, setIsRecording] = useState(true);
   const [selectedSender, setSelectedSender] = useState<string>('all');

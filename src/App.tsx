@@ -23,23 +23,23 @@ import DesktopAgentsOverlay from './components/DesktopAgentsOverlay';
 import EventBusDevOverlay from './components/dev/EventBusDevOverlay';
 
 export default function App() {
-  const { 
-    isLocked, 
-    paradigm, 
-    activeApp, 
-    theme, 
-    contrast, 
-    brightness, 
-    deviceViewMode,
-    workspace,
-    unlock, 
-    closeApp, 
-    openApp, 
-    setParadigm,
-    setDeviceViewMode,
-    emitEvent,
-    simulateIncomingAlert
-  } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selectors instead of unselected useOSStore()
+  // to prevent App from re-rendering on background telemetry events, recent activities, or agent updates.
+  const isLocked = useOSStore(state => state.isLocked);
+  const paradigm = useOSStore(state => state.paradigm);
+  const activeApp = useOSStore(state => state.activeApp);
+  const theme = useOSStore(state => state.theme);
+  const contrast = useOSStore(state => state.contrast);
+  const brightness = useOSStore(state => state.brightness);
+  const deviceViewMode = useOSStore(state => state.deviceViewMode);
+  const workspace = useOSStore(state => state.workspace);
+  const unlock = useOSStore(state => state.unlock);
+  const closeApp = useOSStore(state => state.closeApp);
+  const openApp = useOSStore(state => state.openApp);
+  const setParadigm = useOSStore(state => state.setParadigm);
+  const setDeviceViewMode = useOSStore(state => state.setDeviceViewMode);
+  const emitEvent = useOSStore(state => state.emitEvent);
+  const simulateIncomingAlert = useOSStore(state => state.simulateIncomingAlert);
 
   const power = usePowerManager();
 

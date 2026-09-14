@@ -15,3 +15,9 @@
 **Learning:** Subscribing to an entire Zustand store without property selectors (`useOSStore()`) in persistent layout components (e.g., `WallpaperBackground` and `DesktopAgentsOverlay`) causes them to re-render on every state change in the OS (such as background telemetry events, time ticks, or notification alerts). This forces React to reconcile heavy CSS blur filters (`blur-3xl`), radial gradients, and floating overlay trees unnecessarily.
 
 **Action:** Always use targeted selectors (e.g., `useOSStore(state => state.wallpaper)`) and `React.memo` on persistent or heavy layout components so they only re-render when their specific slices of state change.
+
+## 2026-09-14 - Scoped Zustand Selectors for Background OS Telemetry & Event Streams
+
+**Learning:** Unselected `useOSStore()` calls across root layout components (`App`, `HomeScreen`, `StatusBar`, `NotificationCenter`, etc.) force full application tree re-renders whenever background state mutations occur (such as 5s telemetry sync events, event bus logs, or activity updates), even when no visual properties used by those components change.
+
+**Action:** Replace unselected `useOSStore()` destructuring with granular property selectors (`useOSStore(state => state.property)`) in all shell components to eliminate background re-renders.

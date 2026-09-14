@@ -31,7 +31,8 @@ export default function JaaSAppWidget({
   className = '',
   isCompact = false
 }: JaaSAppWidgetProps) {
-  const { theme } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selector instead of unselected useOSStore()
+  const theme = useOSStore(state => state.theme);
   const [waitingCount, setWaitingCount] = useState<number>(3);
   const [totalDispatched, setTotalDispatched] = useState<number>(14);
   const [referralsCount, setReferralsCount] = useState<number>(4);

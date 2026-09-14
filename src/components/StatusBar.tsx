@@ -15,18 +15,18 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
   const [isOnline, setIsOnline] = useState<boolean>(OfflineStorageService.isOnline());
   const power = usePowerManager();
   
-  const { 
-    theme, 
-    contrast, 
-    signalStrength, 
-    networkMode,
-    notifications, 
-    agents,
-    toggleNotificationCenter,
-    toggleThemeMenu,
-    toggleAgentsMenu,
-    cycleRandomDarkTheme
-  } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selectors instead of unselected useOSStore()
+  // to prevent StatusBar re-renders on telemetry events, recent activities, or grid updates.
+  const theme = useOSStore(state => state.theme);
+  const contrast = useOSStore(state => state.contrast);
+  const signalStrength = useOSStore(state => state.signalStrength);
+  const networkMode = useOSStore(state => state.networkMode);
+  const notifications = useOSStore(state => state.notifications);
+  const agents = useOSStore(state => state.agents);
+  const toggleNotificationCenter = useOSStore(state => state.toggleNotificationCenter);
+  const toggleThemeMenu = useOSStore(state => state.toggleThemeMenu);
+  const toggleAgentsMenu = useOSStore(state => state.toggleAgentsMenu);
+  const cycleRandomDarkTheme = useOSStore(state => state.cycleRandomDarkTheme);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);

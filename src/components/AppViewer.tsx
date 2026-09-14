@@ -46,7 +46,9 @@ interface AppViewerProps {
 }
 
 export default function AppViewer({ appId, onClose }: AppViewerProps) {
-  const { workspace, setWorkspace } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selectors instead of unselected useOSStore()
+  const workspace = useOSStore(state => state.workspace);
+  const setWorkspace = useOSStore(state => state.setWorkspace);
   const layout = useDeviceLayout();
   const power = usePowerManager();
   

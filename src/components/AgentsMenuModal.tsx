@@ -9,17 +9,16 @@ import { haptics } from '../services/haptics';
 import { CoachAgent } from '../types';
 
 export default function AgentsMenuModal() {
-  const { 
-    isAgentsMenuOpen, 
-    closeAgentsMenu, 
-    agents, 
-    toggleAgentActive, 
-    setAgentActive,
-    resetAllAgentPositions,
-    turnOffAllAgents,
-    activateAllAgents,
-    theme 
-  } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selectors instead of unselected useOSStore()
+  // to prevent AgentsMenuModal from re-rendering on telemetry events or unrelated store updates.
+  const isAgentsMenuOpen = useOSStore(state => state.isAgentsMenuOpen);
+  const closeAgentsMenu = useOSStore(state => state.closeAgentsMenu);
+  const agents = useOSStore(state => state.agents);
+  const toggleAgentActive = useOSStore(state => state.toggleAgentActive);
+  const setAgentActive = useOSStore(state => state.setAgentActive);
+  const resetAllAgentPositions = useOSStore(state => state.resetAllAgentPositions);
+  const turnOffAllAgents = useOSStore(state => state.turnOffAllAgents);
+  const activateAllAgents = useOSStore(state => state.activateAllAgents);
 
   const activeAgentsCount = agents.filter(a => a.isActive).length;
 

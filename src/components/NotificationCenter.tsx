@@ -13,18 +13,16 @@ interface Props {
 }
 
 export default function NotificationCenter({ onOpenApp }: Props) {
-  const { 
-    notifications, 
-    isNotificationCenterOpen, 
-    closeNotificationCenter, 
-    markNotificationAsRead, 
-    markAllNotificationsAsRead, 
-    deleteNotification, 
-    clearAllNotifications,
-    simulateIncomingAlert,
-    theme,
-    contrast
-  } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted selectors instead of unselected useOSStore()
+  // to prevent NotificationCenter from re-rendering on background telemetry events when closed or on unrelated store updates.
+  const notifications = useOSStore(state => state.notifications);
+  const isNotificationCenterOpen = useOSStore(state => state.isNotificationCenterOpen);
+  const closeNotificationCenter = useOSStore(state => state.closeNotificationCenter);
+  const markNotificationAsRead = useOSStore(state => state.markNotificationAsRead);
+  const markAllNotificationsAsRead = useOSStore(state => state.markAllNotificationsAsRead);
+  const deleteNotification = useOSStore(state => state.deleteNotification);
+  const clearAllNotifications = useOSStore(state => state.clearAllNotifications);
+  const simulateIncomingAlert = useOSStore(state => state.simulateIncomingAlert);
 
   const [activeCategory, setActiveCategory] = useState<NotificationCategory | 'all'>('all');
 
