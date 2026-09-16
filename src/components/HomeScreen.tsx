@@ -98,30 +98,22 @@ interface SystemSettingAction {
 }
 
 export default function HomeScreen({ onOpenApp }: { onOpenApp: (id: AppId) => void }) {
-  const { 
-    lock, 
-    gridAppOrder, 
-    reorderGridApps, 
-    sortGridApps, 
-    smartFolders, 
-    createSmartFolder, 
-    dissolveSmartFolder,
-    addAppToFolder,
-    notifications,
-    openNotificationCenter,
-    theme,
-    setTheme,
-    contrast,
-    setContrast,
-    wallpaper,
-    setWallpaper,
-    isLowPowerMode,
-    toggleLowPowerMode,
-    workspace,
-    setWorkspace,
-    pinnedWidgetIds,
-    widgetOrder
-  } = useOSStore();
+  // Performance Optimization (Bolt ⚡): Use targeted Zustand selectors to prevent HomeScreen
+  // from re-rendering on unrelated store updates (e.g., background telemetry pulses, agent message ticks,
+  // or active menu state toggles).
+  const lock = useOSStore(state => state.lock);
+  const gridAppOrder = useOSStore(state => state.gridAppOrder);
+  const reorderGridApps = useOSStore(state => state.reorderGridApps);
+  const sortGridApps = useOSStore(state => state.sortGridApps);
+  const smartFolders = useOSStore(state => state.smartFolders);
+  const createSmartFolder = useOSStore(state => state.createSmartFolder);
+  const dissolveSmartFolder = useOSStore(state => state.dissolveSmartFolder);
+  const addAppToFolder = useOSStore(state => state.addAppToFolder);
+  const notifications = useOSStore(state => state.notifications);
+  const openNotificationCenter = useOSStore(state => state.openNotificationCenter);
+  const workspace = useOSStore(state => state.workspace);
+  const pinnedWidgetIds = useOSStore(state => state.pinnedWidgetIds);
+  const widgetOrder = useOSStore(state => state.widgetOrder);
 
   const layout = useResponsiveLayout();
   const [currentPage, setCurrentPage] = useState(0);
