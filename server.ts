@@ -83,10 +83,10 @@ Formate la réponse au format JSON strict avec les clés:
         });
       }
     } catch (error: any) {
+      // Log detailed error internally for debugging, but return sanitized error to client
       console.error('Error in /api/gemini/activity-summary:', error);
       return res.status(500).json({
-        error: 'Failed to generate activity summary',
-        message: error?.message || 'Unknown error'
+        error: 'Failed to generate activity summary'
       });
     }
   });
