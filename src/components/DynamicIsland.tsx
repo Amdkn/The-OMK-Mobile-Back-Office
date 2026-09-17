@@ -15,8 +15,10 @@ export const triggerFaceID = () => {
   useDynamicIslandStore.getState().triggerFaceID();
 };
 
-export default function DynamicIsland({ paradigm }: { paradigm: Paradigm }) {
-  const { workspace, setWorkspace } = useOSStore();
+// Optimization (Bolt ⚡): Targeted store selectors & React.memo prevent un-needed HUD re-renders
+export const DynamicIsland = React.memo(function DynamicIsland({ paradigm }: { paradigm: Paradigm }) {
+  const workspace = useOSStore(state => state.workspace);
+  const setWorkspace = useOSStore(state => state.setWorkspace);
   const {
     isExpanded,
     setIsExpanded,
@@ -743,4 +745,6 @@ export default function DynamicIsland({ paradigm }: { paradigm: Paradigm }) {
       </div>
     </>
   );
-}
+});
+
+export default DynamicIsland;
