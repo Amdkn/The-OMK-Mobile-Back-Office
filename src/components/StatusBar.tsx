@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Wifi, WifiOff, Bell, Zap, Battery, BatteryCharging, 
   BatteryFull, BatteryMedium, BatteryLow, BatteryWarning, Palette, Signal, Bot
@@ -10,23 +10,23 @@ import { OfflineStorageService } from '../services/offlineStorage';
 import { haptics } from '../services/haptics';
 import DynamicIsland from './DynamicIsland';
 
-export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
+// Optimization (Bolt ⚡): React.memo + targeted Zustand selectors prevent
+// top-level StatusBar re-rendering on unrelated OS state changes (e.g., active app, workspace, notes).
+export const StatusBar = React.memo(function StatusBar({ paradigm }: { paradigm: Paradigm }) {
   const [time, setTime] = useState(new Date());
   const [isOnline, setIsOnline] = useState<boolean>(OfflineStorageService.isOnline());
   const power = usePowerManager();
   
-  const { 
-    theme, 
-    contrast, 
-    signalStrength, 
-    networkMode,
-    notifications, 
-    agents,
-    toggleNotificationCenter,
-    toggleThemeMenu,
-    toggleAgentsMenu,
-    cycleRandomDarkTheme
-  } = useOSStore();
+  const theme = useOSStore(state => state.theme);
+  const contrast = useOSStore(state => state.contrast);
+  const signalStrength = useOSStore(state => state.signalStrength);
+  const networkMode = useOSStore(state => state.networkMode);
+  const notifications = useOSStore(state => state.notifications);
+  const agents = useOSStore(state => state.agents);
+  const toggleNotificationCenter = useOSStore(state => state.toggleNotificationCenter);
+  const toggleThemeMenu = useOSStore(state => state.toggleThemeMenu);
+  const toggleAgentsMenu = useOSStore(state => state.toggleAgentsMenu);
+  const cycleRandomDarkTheme = useOSStore(state => state.cycleRandomDarkTheme);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -327,6 +327,8 @@ export default function StatusBar({ paradigm }: { paradigm: Paradigm }) {
       </div>
     </div>
   );
-}
+});
+
+export default StatusBar;
 
 
