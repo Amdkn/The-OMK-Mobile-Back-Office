@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, Trash2, X, Check, ShieldAlert } from 'lucide-react';
 import { haptics } from '../services/haptics';
@@ -24,9 +24,13 @@ export default function ConfirmationModal({
   onConfirm,
   onCancel
 }: ConfirmationModalProps) {
-  // Global Escape key listener
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Focus confirmation button on open & global Escape key listener
   useEffect(() => {
     if (!isOpen) return;
+    const timer = setTimeout(() => confirmButtonRef.current?.focus(), 50);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -35,7 +39,10 @@ export default function ConfirmationModal({
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isOpen, onCancel]);
 
   if (!isOpen) return null;
@@ -81,6 +88,10 @@ export default function ConfirmationModal({
         }}
       >
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirmation-modal-title"
+          aria-describedby="confirmation-modal-message"
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -94,10 +105,10 @@ export default function ConfirmationModal({
               <IconComponent size={20} strokeWidth={2} />
             </div>
             <div className="flex-1 min-w-0 pr-6">
-              <h3 className="text-sm font-bold text-slate-100 leading-tight">
+              <h3 id="confirmation-modal-title" className="text-sm font-bold text-slate-100 leading-tight">
                 {title}
               </h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              <p id="confirmation-modal-message" className="text-xs text-slate-400 mt-1 leading-relaxed">
                 {message}
               </p>
             </div>
@@ -106,8 +117,9 @@ export default function ConfirmationModal({
                 haptics.trigger('light');
                 onCancel();
               }}
-              className="absolute top-4 right-4 p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
+              className="absolute top-4 right-4 p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               title="Fermer"
+              aria-label="Fermer la boîte de dialogue"
             >
               <X size={15} />
             </button>
@@ -121,17 +133,18 @@ export default function ConfirmationModal({
                 haptics.trigger('light');
                 onCancel();
               }}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition-colors active:scale-95"
+              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
             >
               {cancelLabel}
             </button>
             <button
+              ref={confirmButtonRef}
               type="button"
               onClick={() => {
                 haptics.trigger('warning');
                 onConfirm();
               }}
-              className={`px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg transition-all active:scale-95 ${style.confirmBtn}`}
+              className={`px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${style.confirmBtn}`}
             >
               <Check size={14} strokeWidth={2.5} />
               <span>{confirmLabel}</span>
