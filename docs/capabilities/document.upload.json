@@ -1,0 +1,51 @@
+{
+  "capability_id": "document.upload",
+  "version": "1.0",
+  "domain_owner": "Business OS",
+  "intent": "Upload a requested or spontaneous document securely",
+  "effect_class": "COMMAND",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "request_id": { "type": "string" },
+      "entity_id": { "type": "string" },
+      "file_name": { "type": "string" },
+      "mime_type": { "type": "string" },
+      "size_bytes": { "type": "integer" }
+    },
+    "required": ["file_name", "mime_type", "size_bytes"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "document_id": { "type": "string" },
+      "upload_url": { "type": "string" },
+      "status": { "type": "string" }
+    }
+  },
+  "preconditions": [
+    "Entity exists and allows uploads"
+  ],
+  "authority": "business:write",
+  "deterministic_validation": [
+    "Mime type is allowed",
+    "Size is within limits"
+  ],
+  "side_effects": [
+    "Generates secure upload URL (presigned)",
+    "Creates pending document record"
+  ],
+  "idempotency": false,
+  "compensation": "document.delete",
+  "evidence_required": true,
+  "freshness": "real-time",
+  "supported_surfaces": ["api", "mobile", "in_app"],
+  "runtime_bindings": ["python", "nodejs"],
+  "effect_receipt": {
+    "type": "object",
+    "properties": {
+      "receipt_id": { "type": "string" },
+      "document_id": { "type": "string" }
+    }
+  }
+}
