@@ -1,0 +1,50 @@
+{
+  "capability_id": "approval.submit",
+  "version": "1.0",
+  "domain_owner": "Business OS",
+  "intent": "Submit an approval decision for a pending workflow or request",
+  "effect_class": "COMMAND",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "request_id": { "type": "string" },
+      "decision": { "enum": ["APPROVED", "REJECTED"] },
+      "reason": { "type": "string" }
+    },
+    "required": ["request_id", "decision"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "request_id": { "type": "string" },
+      "status": { "type": "string" },
+      "workflow_advanced": { "type": "boolean" }
+    }
+  },
+  "preconditions": [
+    "Request exists and is in a PENDING_APPROVAL state",
+    "Actor is authorized to approve this request type"
+  ],
+  "authority": "business:write",
+  "deterministic_validation": [
+    "Decision is valid enum",
+    "Reason is provided if rejected"
+  ],
+  "side_effects": [
+    "Advances the workflow state machine",
+    "Emits approval.submitted event"
+  ],
+  "idempotency": true,
+  "compensation": "approval.revoke",
+  "evidence_required": true,
+  "freshness": "real-time",
+  "supported_surfaces": ["mcp", "api", "mobile", "in_app"],
+  "runtime_bindings": ["python", "nodejs"],
+  "effect_receipt": {
+    "type": "object",
+    "properties": {
+      "receipt_id": { "type": "string" },
+      "request_id": { "type": "string" }
+    }
+  }
+}

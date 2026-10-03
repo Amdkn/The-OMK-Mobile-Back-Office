@@ -1,0 +1,42 @@
+{
+  "capability_id": "payment.status.read",
+  "version": "1.0",
+  "domain_owner": "Business OS",
+  "intent": "Read the status of a specific payment or invoice",
+  "effect_class": "QUERY",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "payment_id": { "type": "string" },
+      "invoice_id": { "type": "string" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "payment_id": { "type": "string" },
+      "status": { "type": "string" },
+      "amount": { "type": "number" },
+      "currency": { "type": "string" },
+      "paid_at": { "type": "string", "format": "date-time" }
+    }
+  },
+  "preconditions": [
+    "Actor has permission to view payment details"
+  ],
+  "authority": "business:read",
+  "deterministic_validation": [
+    "Either payment_id or invoice_id must be provided"
+  ],
+  "side_effects": [],
+  "idempotency": true,
+  "compensation": "",
+  "evidence_required": false,
+  "freshness": "eventual",
+  "supported_surfaces": ["api", "mobile", "in_app", "mcp"],
+  "runtime_bindings": ["python", "nodejs"],
+  "effect_receipt": {
+    "type": "object",
+    "properties": {}
+  }
+}
