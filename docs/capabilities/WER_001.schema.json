@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aspace://business-os/contracts/wer/v1",
+  "title": "A'Space Workflow Event and Receipt Contract (WER-001)",
+  "type": "object",
+  "$defs": {
+    "EffectReceipt": {
+      "type": "object",
+      "required": [
+        "operation_id", "correlation_id", "causation_id",
+        "capability_id", "capability_version", "source", "target",
+        "idempotency_key", "requested_at", "observed_at",
+        "observed_effect", "evidence_refs", "retry_safe", "status"
+      ],
+      "properties": {
+        "operation_id": { "type": "string" },
+        "correlation_id": { "type": "string" },
+        "causation_id": { "type": "string" },
+        "capability_id": { "type": "string" },
+        "capability_version": { "type": "string" },
+        "source": { "type": "string" },
+        "target": { "type": "string" },
+        "idempotency_key": { "type": "string" },
+        "requested_at": { "type": "string", "format": "date-time" },
+        "observed_at": { "type": "string", "format": "date-time" },
+        "observed_effect": { "type": "object" },
+        "evidence_refs": { "type": "array", "items": { "type": "string" } },
+        "retry_safe": { "type": "boolean" },
+        "compensation_ref": { "type": ["string", "null"] },
+        "status": { "enum": ["SUCCEEDED", "FAILED", "UNKNOWN"] }
+      },
+      "additionalProperties": false
+    },
+    "WorkflowTransition": {
+      "type": "object",
+      "required": [
+        "trigger", "source_states", "target_state", "authority"
+      ],
+      "properties": {
+        "trigger": { "type": "string" },
+        "source_states": { "type": "array", "items": { "type": "string" } },
+        "target_state": { "type": "string" },
+        "authority": { "type": "string" },
+        "precondition": { "type": "string" },
+        "human_approval_required": { "type": "boolean", "default": false },
+        "effect": { "type": "string" },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "timeout_seconds": { "type": "integer" },
+        "retry_safe": { "type": "boolean", "default": false },
+        "compensation": { "type": "string" },
+        "terminal": { "type": "boolean", "default": false }
+      }
+    }
+  }
+}

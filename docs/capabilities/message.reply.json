@@ -1,0 +1,50 @@
+{
+  "capability_id": "message.reply",
+  "version": "1.0",
+  "domain_owner": "Business OS",
+  "intent": "Send a reply message in an existing thread or case",
+  "effect_class": "COMMAND",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "thread_id": { "type": "string" },
+      "body": { "type": "string" },
+      "attachments": { "type": "array", "items": { "type": "string" } }
+    },
+    "required": ["thread_id", "body"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "message_id": { "type": "string" },
+      "thread_id": { "type": "string" },
+      "status": { "type": "string" }
+    }
+  },
+  "preconditions": [
+    "Thread exists and is active",
+    "Actor is participant in thread"
+  ],
+  "authority": "business:write",
+  "deterministic_validation": [
+    "Body is not empty"
+  ],
+  "side_effects": [
+    "Persists message to thread",
+    "Emits message.sent event",
+    "Triggers notifications to other participants"
+  ],
+  "idempotency": true,
+  "compensation": "message.delete",
+  "evidence_required": true,
+  "freshness": "real-time",
+  "supported_surfaces": ["mcp", "api", "mobile", "in_app"],
+  "runtime_bindings": ["python", "nodejs"],
+  "effect_receipt": {
+    "type": "object",
+    "properties": {
+      "receipt_id": { "type": "string" },
+      "message_id": { "type": "string" }
+    }
+  }
+}

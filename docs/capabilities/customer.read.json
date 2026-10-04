@@ -1,0 +1,41 @@
+{
+  "capability_id": "customer.read",
+  "version": "1.0",
+  "domain_owner": "Business OS",
+  "intent": "Retrieve a customer record by ID or lookup parameters",
+  "effect_class": "QUERY",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "customer_id": { "type": "string" },
+      "email": { "type": "string", "format": "email" }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "customer_id": { "type": "string" },
+      "name": { "type": "string" },
+      "email": { "type": "string" },
+      "status": { "type": "string" }
+    }
+  },
+  "preconditions": [
+    "Actor has permission to view customer records"
+  ],
+  "authority": "business:read",
+  "deterministic_validation": [
+    "Either customer_id or email must be provided"
+  ],
+  "side_effects": [],
+  "idempotency": true,
+  "compensation": "",
+  "evidence_required": false,
+  "freshness": "eventual",
+  "supported_surfaces": ["api", "mobile", "in_app", "mcp"],
+  "runtime_bindings": ["python", "nodejs"],
+  "effect_receipt": {
+    "type": "object",
+    "properties": {}
+  }
+}

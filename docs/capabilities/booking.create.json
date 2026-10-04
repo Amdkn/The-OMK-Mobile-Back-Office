@@ -1,0 +1,50 @@
+{
+  "capability_id": "booking.create",
+  "version": "1.0",
+  "domain_owner": "Business OS",
+  "intent": "Create a new booking/appointment",
+  "effect_class": "COMMAND",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "customer_id": { "type": "string" },
+      "service_id": { "type": "string" },
+      "start_time": { "type": "string", "format": "date-time" },
+      "end_time": { "type": "string", "format": "date-time" }
+    },
+    "required": ["customer_id", "service_id", "start_time", "end_time"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "booking_id": { "type": "string" },
+      "status": { "type": "string" }
+    }
+  },
+  "preconditions": [
+    "Customer exists and is active",
+    "Service is available during the requested time slot"
+  ],
+  "authority": "business:write",
+  "deterministic_validation": [
+    "start_time is before end_time",
+    "Time slot does not conflict with existing bookings"
+  ],
+  "side_effects": [
+    "Creates booking record in tenant database",
+    "Emits booking.created event"
+  ],
+  "idempotency": true,
+  "compensation": "booking.cancel",
+  "evidence_required": true,
+  "freshness": "real-time",
+  "supported_surfaces": ["mcp", "api", "mobile", "in_app"],
+  "runtime_bindings": ["python", "nodejs"],
+  "effect_receipt": {
+    "type": "object",
+    "properties": {
+      "receipt_id": { "type": "string" },
+      "booking_id": { "type": "string" }
+    }
+  }
+}

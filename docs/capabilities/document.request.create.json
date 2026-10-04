@@ -1,0 +1,48 @@
+{
+  "capability_id": "document.request.create",
+  "version": "1.0",
+  "domain_owner": "Business OS",
+  "intent": "Create a new document request for a customer",
+  "effect_class": "COMMAND",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "customer_id": { "type": "string" },
+      "document_type": { "type": "string" },
+      "due_date": { "type": "string", "format": "date-time" }
+    },
+    "required": ["customer_id", "document_type"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "request_id": { "type": "string" },
+      "status": { "type": "string" }
+    }
+  },
+  "preconditions": [
+    "Customer exists and is active"
+  ],
+  "authority": "business:write",
+  "deterministic_validation": [
+    "document_type is valid for the tenant",
+    "due_date is in the future"
+  ],
+  "side_effects": [
+    "Creates document request record in tenant database",
+    "Emits document.request.created event"
+  ],
+  "idempotency": true,
+  "compensation": "document.request.cancel",
+  "evidence_required": true,
+  "freshness": "real-time",
+  "supported_surfaces": ["mcp", "api", "mobile", "in_app"],
+  "runtime_bindings": ["python", "nodejs"],
+  "effect_receipt": {
+    "type": "object",
+    "properties": {
+      "receipt_id": { "type": "string" },
+      "request_id": { "type": "string" }
+    }
+  }
+}

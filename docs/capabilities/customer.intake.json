@@ -1,0 +1,48 @@
+{
+  "capability_id": "customer.intake",
+  "version": "1.0",
+  "domain_owner": "Business OS",
+  "intent": "Record a new customer lead or intake form",
+  "effect_class": "COMMAND",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "email": { "type": "string", "format": "email" },
+      "name": { "type": "string" },
+      "context": { "type": "string" }
+    },
+    "required": ["email", "name"]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "customer_id": { "type": "string" },
+      "status": { "type": "string" }
+    }
+  },
+  "preconditions": [
+    "Customer email must not already exist with active status"
+  ],
+  "authority": "business:write",
+  "deterministic_validation": [
+    "Email format is valid",
+    "Name is not empty"
+  ],
+  "side_effects": [
+    "Creates customer record in tenant database",
+    "Emits customer.created event"
+  ],
+  "idempotency": true,
+  "compensation": "customer.archive",
+  "evidence_required": true,
+  "freshness": "real-time",
+  "supported_surfaces": ["mcp", "api", "cli", "in_app"],
+  "runtime_bindings": ["python", "nodejs"],
+  "effect_receipt": {
+    "type": "object",
+    "properties": {
+      "receipt_id": { "type": "string" },
+      "customer_id": { "type": "string" }
+    }
+  }
+}
